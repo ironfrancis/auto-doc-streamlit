@@ -1,0 +1,8 @@
+streamlit
+requests
+jinja2
+markdown
+selenium
+webdriver-manager
+bs4
+markdownify 

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or 'Creative Vibrant Article' }}</title>
+    <style>
+        body { background: linear-gradient(120deg, #f9f6ff 0%, #e0f7fa 100%); color: #222; font-family: 'Montserrat', 'Source Han Sans SC', 'PingFang SC', Arial, sans-serif; font-weight: 300; margin: 0; padding: 0; }
+        .creative-container { max-width: 740px; margin: 0 auto; background: #fff; border-radius: 18px; box-shadow: 0 6px 32px rgba(0,87,217,0.10); padding: 40px 32px 48px 32px; border: 2px solid #FF9900; }
+        .creative-badge { display: inline-block; background: linear-gradient(90deg, #FF9900, #FF5E62); color: #fff; padding: 8px 24px; border-radius: 10px; font-size: 20px; font-weight: bold; margin-bottom: 20px; letter-spacing: 2px; }
+        .creative-title { font-size: 32px; color: #FF5E62; font-weight: 900; margin: 22px 0 14px 0; line-height: 1.2; text-shadow: 1px 2px 8px #ffe0b2; }
+        .creative-meta { color: #888; font-size: 15px; margin-bottom: 30px; }
+        .creative-content { font-size: 18px; line-height: 2.1; }
+        img { max-width: 100%; border-radius: 12px; margin: 22px 0; box-shadow: 0 2px 12px rgba(255,158,0,0.10); }
+        blockquote { background: #fff8e1; border-left: 5px solid #FF9900; color: #FF5E62; margin: 26px 0; padding: 14px 22px; border-radius: 0 12px 12px 0; font-style: italic; }
+        hr { margin: 38px 0; border: none; border-top: 2px dashed #ffe0b2; }
+        h2 { color: #FF9900; margin-top: 36px; }
+        h3 { color: #0057D9; margin-top: 26px; }
+        ul, ol { margin: 20px 0 20px 32px; }
+        li { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="creative-container">
+        <div class="creative-badge">{{ channel or '创意活力' }}</div>
+        <div class="creative-title">{{ title or 'Creative Vibrant Article' }}</div>
+        <div class="creative-meta">作者：{{ author or 'AI助手' }} | 日期：{{ date or '' }}</div>
+        <div class="creative-content">{{ content|safe }}</div>
+    </div>
+</body>
+</html> 

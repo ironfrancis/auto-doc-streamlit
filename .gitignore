@@ -1,0 +1,40 @@
+# Python缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Streamlit/临时/日志
+*.log
+*.tmp
+
+# macOS系统文件
+.DS_Store
+
+# VSCode等编辑器配置
+.vscode/
+.idea/
+
+# 用户数据/历史/自动生成内容
+app/md_review/
+app/ori_docs/
+app/static/
+app/md_transcribe_history.json
+
+# 前端遗留
+frontend/
+
+# 其他
+*.bak
+
+# 保留模板和页面、配置、说明等
+!app/html_templates/
+!app/pages/
+!app/*.py
+!app/*.md
+!app/*.json
+!app/*.js
+!app/README_web2md.md
+
+# 保留空目录用.gitkeep
+*.gitkeep

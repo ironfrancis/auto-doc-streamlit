@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Magic deepseek-v3",
+    "api_type": "Magic",
+    "is_openai_compatible": false,
+    "api_url": "https://i-magic-service.letsmagic.cn/v1/chat/completions",
+    "api_key": "8897db693350f77e55a9f057ebc69128",
+    "model": "deepseek-v3",
+    "temperature": 0.7,
+    "remark": "原转写默认模型",
+    "default": false
+  },
+  {
+    "name": "Magic doubao 1.5pro",
+    "api_type": "Magic",
+    "is_openai_compatible": false,
+    "api_url": "https://i-magic-service.letsmagic.cn/v1/chat/completions",
+    "api_key": "8897db693350f77e55a9f057ebc69128",
+    "model": "doubao-1.5-pro-256k",
+    "temperature": 0.7,
+    "remark": "",
+    "default": false
+  },
+  {
+    "name": "Magic gpt4.1",
+    "api_type": "Magic",
+    "is_openai_compatible": false,
+    "api_url": "https://i-magic-service.letsmagic.cn/api/chat",
+    "api_key": "api-sk-686e3fe2ec8e09-41451860",
+    "model": "magic-chat",
+    "temperature": 0.7,
+    "remark": "麦吉AI助理封装的gpt4.1",
+    "default": true
+  },
+  {
+    "name": "Magic doubao seed 1.6",
+    "api_type": "Magic",
+    "is_openai_compatible": false,
+    "api_url": " https://i-magic-service.letsmagic.cn/v1/chat/completions",
+    "api_key": "8897db693350f77e55a9f057ebc69128",
+    "model": "doubao-seed-1.6",
+    "temperature": 0.7,
+    "remark": "",
+    "default": false
+  },
+  {
+    "name": "LM Studio deepseek R1",
+    "api_type": "OpenAI",
+    "is_openai_compatible": true,
+    "api_url": "http://localhost:1234/v1/chat/completions",
+    "api_key": "1234",
+    "model": "deepseek/deepseek-r1-0528-qwen3-8b",
+    "temperature": 0.7,
+    "remark": "",
+    "default": false
+  },
+  {
+    "name": "LM Studio Gemma3 12B",
+    "api_type": "OpenAI",
+    "is_openai_compatible": true,
+    "api_url": "http://localhost:1234/v1/chat/completions",
+    "api_key": "1234",
+    "model": "google/gemma-3-12b",
+    "temperature": 0.7,
+    "remark": "",
+    "default": false
+  }
+]
