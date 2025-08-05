@@ -5,93 +5,202 @@ import streamlit as st
 import requests
 from datetime import datetime
 from app.md_utils import md_to_html
+from app.language_manager import init_language, language_selector, get_text
+from app.navigation_manager import render_feature_cards
 
-TEXTS = {
-    "en": {
-        "title": "Welcome to the AI Content Platform",
-        "desc": "This platform provides three main features:",
-        "feature1": "1. AI Content Creation & Transcription",
-        "feature2": "2. Local Markdown Review",
-        "feature3": "3. Upload Markdown & Generate HTML",
-        "tip": "Use the sidebar to switch between features.",
-        "lang": "Language",
-    },
-    "zh": {
-        "title": "欢迎使用AI内容平台",
-        "desc": "本平台提供三大功能：",
-        "feature1": "1. AI内容创作与转写",
-        "feature2": "2. 本地MD人工审核",
-        "feature3": "3. 上传MD并生成HTML",
-        "tip": "请使用侧边栏切换功能页面。",
-        "lang": "语言",
-    }
+# 初始化语言设置
+init_language()
+
+st.set_page_config(
+    page_title="AI内容创作与分发平台",
+    page_icon="🚀",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# 自定义CSS样式
+st.markdown("""
+<style>
+.main-header {
+    font-size: 2.5rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-if "lang" not in st.session_state:
-    st.session_state["lang"] = "en"
+.welcome-text {
+    font-size: 1.2rem;
+    color: #666;
+    text-align: center;
+    margin-bottom: 3rem;
+}
 
-st.set_page_config(page_title="AI内容平台首页", layout="wide")
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
 
-with st.sidebar:
-    lang = st.selectbox("语言 / Language", ["zh", "en"], index=0 if st.session_state.get("lang", "zh") == "zh" else 1, key="lang_global")
-    if lang != st.session_state.get("lang", "zh"):
-        st.session_state["lang"] = lang
+.feature-card {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e5e9;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
 
-if st.session_state.get("lang", "zh") == "zh":
-    st.title("🚀 AI内容生产与分发平台（纯Streamlit版）")
-    st.markdown("""
-    <div style='font-size:22px; font-weight:bold; margin-bottom:12px;'>🎉 欢迎使用本平台！</div>
-    <hr style='margin: 8px 0 18px 0; border: none; border-top: 2px solid #eee;'>
-    <div style='display:flex; gap:18px; flex-wrap:wrap;'>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>📝</span> <b>频道写作与AI转写</b><br>
-        <span style='color:#666;'>多频道风格写作，自动联动LLM端点，高效内容生产。</span>
-      </div>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>🔌</span> <b>LLM端点注册与管理</b><br>
-        <span style='color:#666;'>灵活注册、测试、切换多种大模型API，支持自定义参数。</span>
-      </div>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>📄</span> <b>Markdown/HTML转换与历史</b><br>
-        <span style='color:#666;'>本地MD审核、MD转HTML、历史记录与复用。</span>
-      </div>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>🌐</span> <b>网页转写</b><br>
-        <span style='color:#666;'>一键提取网页内容并转为Markdown。</span>
-      </div>
-    </div>
-    <hr style='margin: 18px 0 18px 0; border: none; border-top: 2px solid #eee;'>
-    <div style='font-size:16px; color:#444; margin-bottom:8px;'>
-      👉 请使用左侧侧边栏切换功能页面，并可随时切换界面语言。
-    </div>
-    <div style='font-size:14px; color:#888;'>建议使用 <b>uv</b> 工具进行依赖环境管理，详见下方推荐。</div>
-    """, unsafe_allow_html=True)
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.feature-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.feature-desc {
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.feature-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.feature-tag {
+    background: #f8f9fa;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    border: 1px solid #e9ecef;
+}
+
+.category-section {
+    margin: 3rem 0 2rem 0;
+}
+
+.category-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.footer {
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 3rem;
+    padding: 2rem 0;
+    border-top: 1px solid #e9ecef;
+}
+
+.language-selector {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+</style>
+""", unsafe_allow_html=True)
+
+# 语言选择器（固定在右上角）
+with st.container():
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col3:
+        language_selector()
+
+# 主标题
+st.markdown('<div class="main-header">🚀 AI内容创作与分发平台</div>', unsafe_allow_html=True)
+
+# 欢迎文本
+lang = st.session_state.get("lang", "zh")
+if lang == "zh":
+    st.markdown('<div class="welcome-text">🎉 欢迎使用本平台！高效、灵活、可扩展的AI内容创作与管理工具</div>', unsafe_allow_html=True)
 else:
-    st.title("🚀 AI Content Creation & Distribution Platform (Streamlit Only)")
-    st.markdown("""
-    <div style='font-size:22px; font-weight:bold; margin-bottom:12px;'>🎉 Welcome!</div>
-    <hr style='margin: 8px 0 18px 0; border: none; border-top: 2px solid #eee;'>
-    <div style='display:flex; gap:18px; flex-wrap:wrap;'>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>📝</span> <b>Channel Writing & AI Transcription</b><br>
-        <span style='color:#666;'>Multi-channel style writing, auto-linked LLM endpoints, for efficient content production.</span>
-      </div>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>🔌</span> <b>LLM Endpoint Registration & Management</b><br>
-        <span style='color:#666;'>Flexibly register, test, and switch between various LLM APIs with custom parameters.</span>
-      </div>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>📄</span> <b>Markdown/HTML Conversion & History</b><br>
-        <span style='color:#666;'>Local MD review, MD-to-HTML conversion, and history management for easy reuse.</span>
-      </div>
-      <div style='background:#f6f8fa; border-radius:12px; padding:18px 22px; margin-bottom:12px; min-width:260px; box-shadow:0 2px 8px rgba(0,0,0,0.03);'>
-        <span style='font-size:22px;'>🌐</span> <b>Web to Markdown</b><br>
-        <span style='color:#666;'>Extract web content and convert to Markdown in one click.</span>
-      </div>
-    </div>
-    <hr style='margin: 18px 0 18px 0; border: none; border-top: 2px solid #eee;'>
-    <div style='font-size:16px; color:#444; margin-bottom:8px;'>
-      👉 Use the sidebar to switch between features and change the interface language at any time.
-    </div>
-    <div style='font-size:14px; color:#888;'>It is recommended to use <b>uv</b> for dependency and environment management. See below for details.</div>
-    """, unsafe_allow_html=True) 
+    st.markdown('<div class="welcome-text">🎉 Welcome! Efficient, flexible, and scalable AI content creation and management tool</div>', unsafe_allow_html=True)
+
+# 渲染功能卡片
+features = render_feature_cards()
+
+for category_key, category_data in features.items():
+    st.markdown(f'<div class="category-title">{category_data["title"]}</div>', unsafe_allow_html=True)
+    
+    # 将卡片分成两列显示
+    cards = category_data["cards"]
+    for i in range(0, len(cards), 2):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            card = cards[i]
+            st.markdown(f"""
+            <div class="feature-card" onclick="window.location.href='/?page={card['page']}'">
+                <span class="feature-icon">{card['icon']}</span>
+                <div class="feature-title">{card['title']}</div>
+                <div class="feature-desc">{card['description']}</div>
+                <div class="feature-tags">
+                    {''.join([f'<span class="feature-tag">{tag}</span>' for tag in card['tags']])}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # 如果还有第二个卡片，显示在第二列
+        if i + 1 < len(cards):
+            with col2:
+                card = cards[i + 1]
+                st.markdown(f"""
+                <div class="feature-card" onclick="window.location.href='/?page={card['page']}'">
+                    <span class="feature-icon">{card['icon']}</span>
+                    <div class="feature-title">{card['title']}</div>
+                    <div class="feature-desc">{card['description']}</div>
+                    <div class="feature-tags">
+                        {''.join([f'<span class="feature-tag">{tag}</span>' for tag in card['tags']])}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+# 页脚
+st.markdown("""
+<div class="footer">
+    🚀 AI内容创作与分发平台 | 基于Streamlit构建 | 高效、灵活、可扩展
+</div>
+""", unsafe_allow_html=True) 

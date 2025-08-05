@@ -1,6 +1,14 @@
+import sys
 import os
 import json
 import streamlit as st
+
+# 添加正确的路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from language_manager import init_language, get_text
 import requests
 
 st.set_page_config(page_title="信息源注册", layout="wide")

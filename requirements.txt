@@ -5,4 +5,6 @@ markdown
 selenium
 webdriver-manager
 bs4
-markdownify 
+markdownify
+plotly
+pandas 

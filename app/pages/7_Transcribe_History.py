@@ -1,15 +1,19 @@
-import streamlit as st
-import json
+import sys
 import os
+import streamlit as st
+
+# 添加正确的路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from language_manager import init_language, get_text
+import json
 
 HISTORY_PATH = "app/md_transcribe_history.json"
 
 st.title("转写历史")
 
-with st.sidebar:
-    lang = st.selectbox("语言 / Language", ["zh", "en"], index=0 if st.session_state.get("lang", "zh") == "zh" else 1, key="lang_global")
-    if lang != st.session_state.get("lang", "zh"):
-        st.session_state["lang"] = lang
 
 if os.path.exists(HISTORY_PATH):
     with open(HISTORY_PATH, "r", encoding="utf-8") as f:

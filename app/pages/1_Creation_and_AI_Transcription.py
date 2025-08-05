@@ -3,11 +3,38 @@ import os
 import json
 import datetime
 import subprocess
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
+
+# 添加正确的路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
 import streamlit as st
+from language_manager import init_language, get_text
+from path_manager import get_static_dir, get_md_review_dir, get_json_data_dir
 import requests
 
-HISTORY_PATH = "app/md_transcribe_history.json"
+# 多语言文本定义
+T = {
+    "zh": {
+        "page_title": "AI内容创作与转写",
+        "select_channel": "选择频道",
+        "transcribe_btn": "AI转写",
+        "success": "转写成功！",
+        "md_preview": "Markdown预览",
+        "md_newtab": "在新标签页中打开"
+    },
+    "en": {
+        "page_title": "AI Content Creation and Transcription",
+        "select_channel": "Select Channel",
+        "transcribe_btn": "AI Transcribe",
+        "success": "Transcription successful!",
+        "md_preview": "Markdown Preview",
+        "md_newtab": "Open in new tab"
+    }
+}
+
+HISTORY_PATH = get_json_data_dir() / "md_transcribe_history.json"
 
 def save_transcribe_history(channel, input_type, input_content, md_result, extra=None):
     record = {
@@ -28,56 +55,15 @@ def save_transcribe_history(channel, input_type, input_content, md_result, extra
     with open(HISTORY_PATH, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-TEXTS = {
-    "en": {
-        "page_title": "AI Content Creation & Transcription",
-        "select_channel": "Select Channel",
-        "input_type": "Input Type",
-        "input_content": "Input Content (draft, Markdown, or link)",
-        "channel": "Channel/Style (e.g. AGI Apocalypse)",
-        "style": "Channel Style/Description",
-        "default_prompt": "Default Prompt",
-        "custom_prompt": "Custom Prompt (optional)",
-        "template": "HTML Template",
-        "transcribe_btn": "AI Transcribe",
-        "success": "AI transcription succeeded! Preview on the right or in a new tab.",
-        "md_preview": "Markdown Preview:",
-        "md_newtab": "👉 Preview Markdown in New Tab",
-        "lang": "Language",
-    },
-    "zh": {
-        "page_title": "AI内容创作与转写",
-        "select_channel": "选择频道",
-        "input_type": "输入类型",
-        "input_content": "输入内容（初稿、Markdown或链接）",
-        "channel": "频道/风格（如AGI启示录）",
-        "style": "频道风格/描述",
-        "default_prompt": "默认提示词",
-        "custom_prompt": "自定义提示词（可选）",
-        "template": "HTML模板",
-        "transcribe_btn": "AI转写",
-        "success": "AI转写成功！请在右侧或新标签页预览。",
-        "md_preview": "Markdown预览：",
-        "md_newtab": "👉 新标签页预览Markdown",
-        "lang": "语言",
-    }
-}
+# 初始化语言设置
+init_language()
 
-if "lang" not in st.session_state:
-    st.session_state["lang"] = "en"
+st.set_page_config(page_title=get_text("page_title"), layout="wide")
+st.title(get_text("page_title"))
 
-with st.sidebar:
-    lang = st.selectbox("语言 / Language", ["zh", "en"], index=0 if st.session_state.get("lang", "zh") == "zh" else 1, key="lang_global")
-    if lang != st.session_state.get("lang", "zh"):
-        st.session_state["lang"] = lang
-T = TEXTS[lang]
-
-st.set_page_config(page_title=T["page_title"], layout="wide")
-st.title(T["page_title"])
-
-STATIC_DIR = "app/static"
-CHANNELS_PATH = "app/channels.json"
-ENDPOINTS_PATH = "app/llm_endpoints.json"
+STATIC_DIR = get_static_dir()
+CHANNELS_PATH = get_json_data_dir() / "channels.json"
+ENDPOINTS_PATH = get_json_data_dir() / "llm_endpoints.json"
 os.makedirs(STATIC_DIR, exist_ok=True)
 
 # 读取频道
@@ -91,7 +77,7 @@ channel_names = [c["name"] for c in channels] if channels else []
 # 频道和端点选择同一行
 sel_col1, sel_col2 = st.columns([1, 1])
 with sel_col1:
-    selected_channel = st.selectbox(T["select_channel"], ["-"] + channel_names)
+    selected_channel = st.selectbox(get_text("select_channel"), ["-"] + channel_names)
 with sel_col2:
     # 获取频道对象
     channel_obj = next((c for c in channels if c["name"] == selected_channel), None)
@@ -115,9 +101,9 @@ text_input = st.text_area("Text", height=100, key="text_input_1_Creation")
 link_input = st.text_area("Link", height=60, key="link_input_1_Creation")
 
 # AI转写按钮单独一行
-if st.button(T["transcribe_btn"]):
+if st.button(get_text("transcribe_btn")):
     if not (md_input.strip() or text_input.strip() or link_input.strip()):
-        st.warning("请至少输入一项内容！" if lang=="zh" else "Please input at least one field!")
+        st.warning("请至少输入一项内容！" if get_language()=="zh" else "Please input at least one field!")
     else:
         # 根据有值的输入框拼接内容
         input_parts = []
@@ -127,7 +113,7 @@ if st.button(T["transcribe_btn"]):
             input_parts.append(f"用户的想法或灵感:{text_input.strip()}\n")
         if link_input.strip():
             try:
-                from app.gzh_url2md import fetch_and_convert_to_md
+                from gzh_url2md import fetch_and_convert_to_md
                 md_content = fetch_and_convert_to_md(link_input.strip())
                 if md_content:
                     input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析后的Markdown内容:\n{md_content}")
@@ -201,7 +187,7 @@ if st.button(T["transcribe_btn"]):
                             subprocess.Popen(["open", "-a", "Typora", local_md_path])
                         except Exception as e:
                             st.info(f"无法自动打开Typora: {e}")
-                        st.success(T["success"])
+                        st.success(get_text("success"))
                     else:
                         st.error(f"AI转写失败: {resp.text}")
             except Exception as e:
@@ -209,9 +195,12 @@ if st.button(T["transcribe_btn"]):
 
 # Markdown Preview独占一行
 st.markdown("---")
-st.subheader(T["md_preview"])
+st.subheader(get_text("md_preview"))
 ai_md = st.session_state.get("ai_md_result", "")
 if ai_md:
     st.markdown(ai_md)
     md_url = "/static/preview.md"
-    st.markdown(f"[{T['md_newtab']}](http://localhost:8501{md_url})", unsafe_allow_html=True) 
+    # 获取当前语言
+    current_lang = get_language() if hasattr(get_language, '__call__') else "zh"
+    link_text = T[current_lang]['md_newtab']
+    st.markdown(f"[{link_text}](http://localhost:8501{md_url})", unsafe_allow_html=True) 

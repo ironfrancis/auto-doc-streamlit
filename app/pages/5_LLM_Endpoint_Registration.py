@@ -1,12 +1,34 @@
 import sys
 import os
 import json
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/..'))
 import streamlit as st
 
-TEXTS = {
+# 添加正确的路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from language_manager import init_language, get_text
+from path_manager import get_json_data_dir
+
+# 多语言文本定义
+T = {
+    "zh": {
+        "page_title": "LLM端点注册",
+        "name": "端点名称",
+        "api_type": "API类型",
+        "is_openai": "OpenAI兼容",
+        "api_url": "API地址",
+        "api_key": "API密钥",
+        "model": "模型名称",
+        "temperature": "温度",
+        "remark": "备注",
+        "default": "默认端点",
+        "new_endpoint": "新端点",
+        "submit": "提交"
+    },
     "en": {
-        "page_title": "LLM Endpoint Registration & Management",
+        "page_title": "LLM Endpoint Registration",
         "name": "Endpoint Name",
         "api_type": "API Type",
         "is_openai": "OpenAI Compatible",
@@ -15,67 +37,17 @@ TEXTS = {
         "model": "Model Name",
         "temperature": "Temperature",
         "remark": "Remark",
-        "default": "Set as Default",
-        "submit": "Register Endpoint",
-        "success": "Endpoint registered successfully!",
-        "registered": "Registered Endpoints",
-        "edit": "Edit",
-        "save": "Save",
-        "cancel": "Cancel",
-        "delete": "Delete",
-        "edit_success": "Endpoint updated successfully!",
-        "delete_success": "Endpoint deleted!",
-        "new_endpoint": "➕ New Endpoint",
-        "show": "Show",
-        "hide": "Hide",
-        "lang": "Language",
-        "test": "Test Endpoint",
-        "test_success": "Test succeeded!",
-        "test_fail": "Test failed!",
-    },
-    "zh": {
-        "page_title": "LLM端点注册与管理",
-        "name": "端点名称",
-        "api_type": "API类型",
-        "is_openai": "兼容OpenAI",
-        "api_url": "API地址",
-        "api_key": "API密钥",
-        "model": "模型名称",
-        "temperature": "温度",
-        "remark": "备注",
-        "default": "设为默认",
-        "submit": "注册端点",
-        "success": "端点注册成功！",
-        "registered": "已注册端点",
-        "edit": "修改",
-        "save": "保存",
-        "cancel": "取消",
-        "delete": "删除",
-        "edit_success": "端点修改成功！",
-        "delete_success": "端点已删除！",
-        "new_endpoint": "➕ 新建端点",
-        "show": "显示",
-        "hide": "隐藏",
-        "lang": "语言",
-        "test": "测试端点",
-        "test_success": "测试成功！",
-        "test_fail": "测试失败！",
+        "default": "Default Endpoint",
+        "new_endpoint": "New Endpoint",
+        "submit": "Submit"
     }
 }
 
-if "lang" not in st.session_state:
-    st.session_state["lang"] = "en"
 
-with st.sidebar:
-    lang = st.selectbox("语言 / Language", ["zh", "en"], index=0 if st.session_state.get("lang", "zh") == "zh" else 1, key="lang_global")
-    if lang != st.session_state.get("lang", "zh"):
-        st.session_state["lang"] = lang
-T = TEXTS[lang]
+st.set_page_config(page_title=get_text("page_title"), layout="wide")
+st.title(get_text("page_title"))
 
-st.set_page_config(page_title=T["page_title"], layout="wide")
-st.title(T["page_title"])
-
-ENDPOINTS_PATH = "app/llm_endpoints.json"
+ENDPOINTS_PATH = get_json_data_dir() / "llm_endpoints.json"
 API_TYPES = ["OpenAI", "Magic", "Qwen", "Claude", "Other"]
 
 # 读取已注册端点
@@ -91,7 +63,7 @@ def save_endpoints(endpoints):
 
 endpoints = load_endpoints()
 
-st.subheader(T["registered"])
+st.subheader(get_text("registered"))
 
 cols_per_row = 2
 num_cards = len(endpoints) + 1
@@ -168,35 +140,35 @@ for row in range(rows):
             with cols[col_idx]:
                 with st.expander(ep['name'], expanded=False):
                     # 只保留内容本身，去掉多余div
-                    st.markdown(f"<b>{T['name']}:</b> {ep['name']}", unsafe_allow_html=True)
-                    st.markdown(f"<b>{T['api_type']}:</b> {ep['api_type']}", unsafe_allow_html=True)
-                    st.markdown(f"<b>{T['is_openai']}:</b> {'✅' if ep.get('is_openai_compatible') else '❌'}", unsafe_allow_html=True)
-                    st.markdown(f"<b>{T['api_url']}:</b> {ep['api_url']}", unsafe_allow_html=True)
+                    st.markdown(f"<b>{T['zh']['name']}:</b> {ep['name']}", unsafe_allow_html=True)
+                    st.markdown(f"<b>{T['zh']['api_type']}:</b> {ep['api_type']}", unsafe_allow_html=True)
+                    st.markdown(f"<b>{T['zh']['is_openai']}:</b> {'✅' if ep.get('is_openai_compatible') else '❌'}", unsafe_allow_html=True)
+                    st.markdown(f"<b>{T['zh']['api_url']}:</b> {ep['api_url']}", unsafe_allow_html=True)
                     # API Key遮掩
                     key_shown = st.session_state["show_key"].get(card_idx, False)
                     key_val = ep['api_key'] if key_shown else ("*" * 8 if ep['api_key'] else "")
-                    st.text_input(T["api_key"], value=key_val, type="default", disabled=True, key=f"showkey_{card_idx}")
-                    if st.button(T["show"] if not key_shown else T["hide"], key=f"showbtn_{card_idx}"):
+                    st.text_input(get_text("api_key"), value=key_val, type="default", disabled=True, key=f"showkey_{card_idx}")
+                    if st.button(get_text("show") if not key_shown else get_text("hide"), key=f"showbtn_{card_idx}"):
                         st.session_state["show_key"][card_idx] = not key_shown
                         st.rerun()
-                    st.markdown(f"<b>{T['model']}:</b> {ep['model']}", unsafe_allow_html=True)
-                    st.markdown(f"<b>{T['temperature']}:</b> {ep.get('temperature', '')}", unsafe_allow_html=True)
-                    st.markdown(f"<b>{T['remark']}:</b> {ep.get('remark', '')}", unsafe_allow_html=True)
+                    st.markdown(f"<b>{T['zh']['model']}:</b> {ep['model']}", unsafe_allow_html=True)
+                    st.markdown(f"<b>{T['zh']['temperature']}:</b> {ep.get('temperature', '')}", unsafe_allow_html=True)
+                    st.markdown(f"<b>{T['zh']['remark']}:</b> {ep.get('remark', '')}", unsafe_allow_html=True)
                     if st.session_state["default_idx"] == card_idx:
-                        st.markdown(f"<span style='color:green;font-weight:bold'>{T['default']}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='color:green;font-weight:bold'>{T['zh']['default']}</span>", unsafe_allow_html=True)
                     btn_cols = st.columns(4)
                     with btn_cols[0]:
-                        if st.button(T["edit"], key=f"edit_ep_{card_idx}"):
+                        if st.button(get_text("edit"), key=f"edit_ep_{card_idx}"):
                             st.session_state["edit_idx_ep"] = card_idx
                             st.rerun()
                     with btn_cols[1]:
-                        if st.button(T["delete"], key=f"del_ep_{card_idx}"):
+                        if st.button(get_text("delete"), key=f"del_ep_{card_idx}"):
                             endpoints.pop(card_idx)
                             save_endpoints(endpoints)
-                            st.success(T["delete_success"])
+                            st.success(get_text("delete_success"))
                             st.rerun()
                     with btn_cols[2]:
-                        if st.button(T["default"], key=f"setdef_ep_{card_idx}"):
+                        if st.button(get_text("default"), key=f"setdef_ep_{card_idx}"):
                             for i, ep2 in enumerate(endpoints):
                                 ep2["default"] = (i == card_idx)
                             save_endpoints(endpoints)
@@ -204,7 +176,7 @@ for row in range(rows):
                             st.rerun()
                     # Test Endpoint单独一排，宽度与卡片一致
                     with st.container():
-                        if st.button(T["test"], key=f"test_ep_{card_idx}"):
+                        if st.button(get_text("test"), key=f"test_ep_{card_idx}"):
                             ok, meta, reply = test_endpoint(ep['api_url'], ep['api_key'], ep['model'], ep.get('is_openai_compatible', False), ep.get('api_type', ''))
                             st.session_state["test_result"] = {"idx": card_idx, "ok": ok, "meta": meta, "reply": reply}
                         if st.session_state.get("test_result", {}).get("idx") == card_idx:
@@ -213,17 +185,17 @@ for row in range(rows):
                                 st.code(f"模型回复：\n{st.session_state['test_result']['reply'] or '无回复'}", language="markdown")
                     if st.session_state["edit_idx_ep"] == card_idx:
                         # 编辑模式
-                        new_name = st.text_input(T["name"], value=ep["name"], key=f"edit_ep_name_{card_idx}")
-                        new_api_type = st.selectbox(T["api_type"], API_TYPES, index=API_TYPES.index(ep["api_type"]) if ep["api_type"] in API_TYPES else 0, key=f"edit_ep_type_{card_idx}")
-                        new_is_openai = st.checkbox(T["is_openai"], value=ep.get("is_openai_compatible", False), key=f"edit_ep_isopenai_{card_idx}")
-                        new_api_url = st.text_input(T["api_url"], value=ep["api_url"], key=f"edit_ep_url_{card_idx}")
-                        new_api_key = st.text_input(T["api_key"], value=ep["api_key"], type="password", key=f"edit_ep_key_{card_idx}")
-                        new_model = st.text_input(T["model"], value=ep["model"], key=f"edit_ep_model_{card_idx}")
-                        new_temp = st.text_input(T["temperature"], value=str(ep.get("temperature", "")), key=f"edit_ep_temp_{card_idx}")
-                        new_remark = st.text_area(T["remark"], value=ep.get("remark", ""), key=f"edit_ep_remark_{card_idx}")
+                        new_name = st.text_input(get_text("name"), value=ep["name"], key=f"edit_ep_name_{card_idx}")
+                        new_api_type = st.selectbox(get_text("api_type"), API_TYPES, index=API_TYPES.index(ep["api_type"]) if ep["api_type"] in API_TYPES else 0, key=f"edit_ep_type_{card_idx}")
+                        new_is_openai = st.checkbox(get_text("is_openai"), value=ep.get("is_openai_compatible", False), key=f"edit_ep_isopenai_{card_idx}")
+                        new_api_url = st.text_input(get_text("api_url"), value=ep["api_url"], key=f"edit_ep_url_{card_idx}")
+                        new_api_key = st.text_input(get_text("api_key"), value=ep["api_key"], type="password", key=f"edit_ep_key_{card_idx}")
+                        new_model = st.text_input(get_text("model"), value=ep["model"], key=f"edit_ep_model_{card_idx}")
+                        new_temp = st.text_input(get_text("temperature"), value=str(ep.get("temperature", "")), key=f"edit_ep_temp_{card_idx}")
+                        new_remark = st.text_area(get_text("remark"), value=ep.get("remark", ""), key=f"edit_ep_remark_{card_idx}")
                         save_col, cancel_col = st.columns(2)
                         with save_col:
-                            if st.button(T["save"], key=f"save_ep_{card_idx}"):
+                            if st.button(get_text("save"), key=f"save_ep_{card_idx}"):
                                 endpoints[card_idx] = {
                                     "name": new_name,
                                     "api_type": new_api_type,
@@ -237,30 +209,30 @@ for row in range(rows):
                                 }
                                 save_endpoints(endpoints)
                                 st.session_state["edit_idx_ep"] = None
-                                st.success(T["edit_success"])
+                                st.success(get_text("edit_success"))
                                 st.rerun()
                         with cancel_col:
-                            if st.button(T["cancel"], key=f"cancel_ep_{card_idx}"):
+                            if st.button(get_text("cancel"), key=f"cancel_ep_{card_idx}"):
                                 st.session_state["edit_idx_ep"] = None
                                 st.rerun()
         elif card_idx == len(endpoints):
             # 新建端点卡片
             with cols[col_idx]:
-                with st.expander(T["new_endpoint"], expanded=False):
+                with st.expander(get_text("new_endpoint"), expanded=False):
                     # 只保留内容本身，去掉多余div
-                    st.markdown(f"<b>{T['new_endpoint']}</b>", unsafe_allow_html=True)
-                    name = st.text_input(T["name"], key=f"reg_ep_name_{card_idx}")
-                    api_type = st.selectbox(T["api_type"], API_TYPES, key=f"reg_ep_type_{card_idx}")
-                    is_openai = st.checkbox(T["is_openai"], value=(api_type=="OpenAI"), key=f"reg_ep_isopenai_{card_idx}")
-                    api_url = st.text_input(T["api_url"], key=f"reg_ep_url_{card_idx}")
-                    api_key = st.text_input(T["api_key"], type="password", key=f"reg_ep_key_{card_idx}")
-                    model = st.text_input(T["model"], key=f"reg_ep_model_{card_idx}")
-                    temp = st.text_input(T["temperature"], key=f"reg_ep_temp_{card_idx}")
-                    remark = st.text_area(T["remark"], key=f"reg_ep_remark_{card_idx}")
-                    set_default = st.checkbox(T["default"], key=f"reg_ep_default_{card_idx}")
-                    if st.button(T["submit"], key=f"reg_ep_submit_{card_idx}"):
+                    st.markdown(f"<b>{T['zh']['new_endpoint']}</b>", unsafe_allow_html=True)
+                    name = st.text_input(get_text("name"), key=f"reg_ep_name_{card_idx}")
+                    api_type = st.selectbox(get_text("api_type"), API_TYPES, key=f"reg_ep_type_{card_idx}")
+                    is_openai = st.checkbox(get_text("is_openai"), value=(api_type=="OpenAI"), key=f"reg_ep_isopenai_{card_idx}")
+                    api_url = st.text_input(get_text("api_url"), key=f"reg_ep_url_{card_idx}")
+                    api_key = st.text_input(get_text("api_key"), type="password", key=f"reg_ep_key_{card_idx}")
+                    model = st.text_input(get_text("model"), key=f"reg_ep_model_{card_idx}")
+                    temp = st.text_input(get_text("temperature"), key=f"reg_ep_temp_{card_idx}")
+                    remark = st.text_area(get_text("remark"), key=f"reg_ep_remark_{card_idx}")
+                    set_default = st.checkbox(get_text("default"), key=f"reg_ep_default_{card_idx}")
+                    if st.button(get_text("submit"), key=f"reg_ep_submit_{card_idx}"):
                         if not name.strip():
-                            st.warning("Please input endpoint name!" if lang=="en" else "请输入端点名称！")
+                            st.warning("Please input endpoint name!" if get_text("get_language()")=="en" else "请输入端点名称！")
                         else:
                             if set_default:
                                 for ep in endpoints:
@@ -278,5 +250,5 @@ for row in range(rows):
                             }
                             endpoints.append(endpoint)
                             save_endpoints(endpoints)
-                            st.success(T["success"])
+                            st.success(get_text("success"))
                             st.rerun() 

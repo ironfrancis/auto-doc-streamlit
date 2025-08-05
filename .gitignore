@@ -17,9 +17,14 @@ __pycache__/
 
 # 用户数据/历史/自动生成内容
 app/md_review/
-app/ori_docs/
+# 已迁移到workspace
+# app/ori_docs/
 app/static/
 app/md_transcribe_history.json
+
+# 工作空间和用户数据
+workspace/
+app/static_backup/
 
 # 前端遗留
 frontend/

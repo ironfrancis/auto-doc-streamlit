@@ -2,13 +2,105 @@ import os
 import time
 import argparse
 import platform
+import re
+import requests
+import hashlib
+from urllib.parse import urljoin, urlparse
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from app.path_manager import get_ori_docs_dir
+
+def download_image(url, save_dir, base_url=None):
+    """下载网络图片到本地"""
+    try:
+        # 如果是相对URL，转换为绝对URL
+        if not url.startswith(('http://', 'https://')) and base_url:
+            url = urljoin(base_url, url)
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=30, stream=True)
+        response.raise_for_status()
+        
+        # 从URL或响应头获取文件扩展名
+        content_type = response.headers.get('content-type', '')
+        if 'image/' in content_type:
+            ext = content_type.split('/')[-1].split(';')[0]
+            if ext == 'jpeg':
+                ext = 'jpg'
+        else:
+            # 从URL获取扩展名
+            parsed_url = urlparse(url)
+            ext = os.path.splitext(parsed_url.path)[1]
+            if not ext:
+                ext = '.jpg'  # 默认扩展名
+        
+        # 生成唯一文件名
+        url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+        timestamp = int(time.time())
+        filename = f"web_img_{timestamp}_{url_hash}{ext}"
+        
+        # 确保文件名唯一
+        base_name, ext_name = os.path.splitext(filename)
+        counter = 1
+        final_filename = filename
+        while os.path.exists(os.path.join(save_dir, final_filename)):
+            final_filename = f"{base_name}_{counter}{ext_name}"
+            counter += 1
+        
+        # 保存图片
+        file_path = os.path.join(save_dir, final_filename)
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+        
+        return final_filename
+        
+    except Exception as e:
+        print(f"下载图片失败 {url}: {str(e)}")
+        return None
+
+def process_images_in_markdown(markdown_content, base_url, images_dir):
+    """处理Markdown内容中的图片，下载网络图片并更新路径"""
+    # 创建图片目录
+    os.makedirs(images_dir, exist_ok=True)
+    
+    # 匹配Markdown图片语法
+    image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+    
+    def replace_image(match):
+        alt_text = match.group(1)
+        image_url = match.group(2)
+        
+        # 检查是否是网络图片
+        if image_url.startswith(('http://', 'https://')) or (not image_url.startswith('/') and not os.path.isabs(image_url)):
+            try:
+                # 下载网络图片
+                filename = download_image(image_url, images_dir, base_url)
+                if filename:
+                    # 返回绝对路径
+                    new_path = os.path.abspath(os.path.join(images_dir, filename))
+                    return f'![{alt_text}]({new_path})'
+                else:
+                    # 下载失败，保持原URL并添加警告
+                    return f'![{alt_text}]({image_url}) <!-- 图片下载失败: {image_url} -->'
+            except Exception as e:
+                # 如果处理失败，保持原路径
+                return f'![{alt_text}]({image_url}) <!-- 图片处理失败: {str(e)} -->'
+        else:
+            # 如果是本地路径或已经是相对路径，保持不变
+            return match.group(0)
+    
+    # 替换所有图片路径
+    processed_md = re.sub(image_pattern, replace_image, markdown_content)
+    return processed_md
 
 def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time=5,
                              scroll=True, scroll_pause=1.0, viewport_height=1080,
-                             remove_selectors=None):
+                             remove_selectors=None, download_images=True):
     """
     使用MagicLens从网页提取Markdown内容（增强版）
 
@@ -21,6 +113,7 @@ def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time
         scroll_pause (float, optional): 每次滚动后的暂停时间（秒）
         viewport_height (int, optional): 浏览器视口高度（像素）
         remove_selectors (list, optional): 要移除的元素的CSS选择器列表
+        download_images (bool, optional): 是否下载图片到本地
 
     返回:
         str: 提取的Markdown内容
@@ -119,11 +212,22 @@ def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time
         print(f"使用MagicLens提取内容 (scope={scope})...")
         markdown_content = driver.execute_script(f"return window.MagicLens.readAsMarkdown('{scope}');")
 
-        # 自动生成输出文件名
-        if not output_file:
+        # 如果启用图片下载，处理图片
+        if download_images and markdown_content:
+            print("正在处理图片...")
             # 获取项目根目录
             project_root = os.path.dirname(current_dir)
-            ori_docs_dir = os.path.join(project_root, 'ori_docs')
+            static_dir = os.path.join(project_root, 'app', 'static')
+            images_dir = os.path.join(static_dir, 'images')
+            
+            # 处理图片
+            markdown_content = process_images_in_markdown(markdown_content, url, images_dir)
+            print(f"图片处理完成，保存到: {images_dir}")
+
+        # 自动生成输出文件名
+        if not output_file:
+            # 使用path_manager获取ori_docs目录
+            ori_docs_dir = str(get_ori_docs_dir())
 
             # 确保ori_docs目录存在
             os.makedirs(ori_docs_dir, exist_ok=True)
@@ -174,6 +278,8 @@ def main():
                         help="浏览器视口高度（像素）")
     parser.add_argument("--remove", nargs="+", dest="remove_selectors",
                         help="要移除的元素的CSS选择器（空格分隔）")
+    parser.add_argument("--no-images", action="store_false", dest="download_images",
+                        help="禁用图片下载")
 
     args = parser.parse_args()
 
@@ -186,8 +292,15 @@ def main():
         args.scroll,
         args.scroll_pause,
         args.viewport_height,
-        args.remove_selectors
+        args.remove_selectors,
+        args.download_images
     )
 
+# if __name__ == "__main__":
+#     main()
 if __name__ == "__main__":
-    main()
+    test_url = "https://mp.weixin.qq.com/s/R0ninv_5YTlLeNnw0zk4Ew"
+    extract_markdown_from_url(
+        url=test_url,
+    )
+

@@ -2,7 +2,17 @@ import sys
 import os
 import json
 import streamlit as st
+
+# 添加正确的路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from language_manager import init_language, get_text
 import requests
+
+# 初始化语言设置
+init_language()
 
 st.set_page_config(page_title="LLM Testing", layout="wide")
 st.title("LLM Endpoint & Prompt 测试工具")
@@ -77,7 +87,4 @@ with col1:
 with col2:
     st.info("本页面用于快速测试不同端点和提示词组合，适合调试和对比LLM效果。\n\n左侧选择端点并输入提示词，点击测试即可实时查看回复。")
 
-with st.sidebar:
-    lang = st.selectbox("语言 / Language", ["zh", "en"], index=0 if st.session_state.get("lang", "zh") == "zh" else 1, key="lang_global")
-    if lang != st.session_state.get("lang", "zh"):
-        st.session_state["lang"] = lang 
+# 移除原有的语言选择器，使用统一的语言管理 

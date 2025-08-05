@@ -1,10 +1,26 @@
-import streamlit as st
+import sys
 import os
-import subprocess
+
+# 添加正确的路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from language_manager import init_language, get_text
+import streamlit as st
+import requests
+from enhanced_web2md import extract_markdown_from_url
+from utils import get_project_root
+import json
 from datetime import datetime
+import time
+import re
 from pathlib import Path
-from app.enhanced_web2md import extract_markdown_from_url
-from app.utils import get_project_root
+import urllib.parse
+from urllib.parse import urlparse
+import hashlib
+import base64
+from path_manager import get_ori_docs_dir
 
 # 页面设置
 st.set_page_config(
@@ -19,7 +35,8 @@ st.caption("Extract content from web pages and convert to Markdown format")
 
 # 获取项目根目录
 project_root = get_project_root()
-ori_docs_dir = project_root / "ori_docs"
+from app.path_manager import get_ori_docs_dir
+ori_docs_dir = get_ori_docs_dir()
 
 # 创建表单
 with st.form("web2md_form"):
@@ -69,6 +86,13 @@ with st.form("web2md_form"):
             help="Time to wait after each scroll action"
         )
 
+        # 图片下载选项
+        download_images = st.checkbox(
+            "Download Images to Local",
+            value=True,
+            help="Automatically download images from the webpage to local directory"
+        )
+
         # 自动打开文件选项
         auto_open = st.checkbox(
             "Auto-open file after extraction",
@@ -108,11 +132,6 @@ if submitted and url:
             # 处理要移除的选择器
             selectors_to_remove = None
             if 'remove_selectors' in locals() and remove_selectors:
-                selectors_to_remove = [s.strip() for s in remove_selectors.split(',')]
-            
-            # 处理要移除的选择器
-            selectors_to_remove = None
-            if 'remove_selectors' in locals() and remove_selectors:
                 selectors_to_remove = [s.strip() for s in remove_selectors.split(',') if s.strip()]
             
             # 提取Markdown内容
@@ -123,12 +142,26 @@ if submitted and url:
                 scroll=enable_scroll if 'enable_scroll' in locals() else True,
                 scroll_pause=scroll_pause if 'scroll_pause' in locals() else 1.0,
                 viewport_height=viewport_height if 'viewport_height' in locals() else 1080,
-                remove_selectors=selectors_to_remove
+                remove_selectors=selectors_to_remove,
+                download_images=download_images if 'download_images' in locals() else True
             )
 
             if markdown:
                 # 显示成功消息
                 st.success("Content extracted successfully!")
+
+                # 显示图片下载信息
+                if 'download_images' in locals() and download_images:
+                    static_dir = project_root / "app" / "static"
+                    images_dir = static_dir / "images"
+                    if images_dir.exists():
+                        image_files = [f for f in images_dir.iterdir() if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.gif', '.webp')]
+                        if image_files:
+                            st.info(f"✅ Downloaded {len(image_files)} images to local directory")
+                            with st.expander("View downloaded images", expanded=False):
+                                for img_file in sorted(image_files):
+                                    file_size = img_file.stat().st_size
+                                    st.markdown(f"- {img_file.name} ({file_size} bytes)")
 
                 # 创建两列布局
                 col1, col2 = st.columns([3, 1])
@@ -211,5 +244,7 @@ with st.expander("Usage Tips"):
        
     5. **Adjust viewport height** if the page has unusual layout requirements.
     
-    6. If extraction fails, try opening the page in a regular browser first to ensure it loads properly.
+    6. **Image Download**: Enable "Download Images to Local" to automatically download images from the webpage. Images will be saved to `app/static/images/` directory and paths will be updated in the Markdown content.
+    
+    7. If extraction fails, try opening the page in a regular browser first to ensure it loads properly.
     """)

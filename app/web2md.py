@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from app.path_manager import get_ori_docs_dir
 
 def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time=5):
     """
@@ -53,9 +54,8 @@ def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time
 
         # 自动生成输出文件名
         if not output_file:
-            # 获取项目根目录
-            project_root = os.path.dirname(current_dir)
-            ori_docs_dir = os.path.join(project_root, 'ori_docs')
+            # 使用path_manager获取ori_docs目录
+            ori_docs_dir = str(get_ori_docs_dir())
 
             # 确保ori_docs目录存在
             os.makedirs(ori_docs_dir, exist_ok=True)
@@ -105,4 +105,5 @@ def main():
     extract_markdown_from_url(args.url, args.output, args.scope, args.wait)
 
 if __name__ == "__main__":
-    main()
+    # main()
+    extract_markdown_from_url("https://mp.weixin.qq.com/s/BMIQe8HkEDmwXZGD12SgoA", scope="viewport", wait_time=5)

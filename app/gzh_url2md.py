@@ -1,11 +1,13 @@
 import time
-
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import requests
 from bs4 import BeautifulSoup
 import markdownify
 import re
 from urllib.parse import urljoin, urlparse, unquote
-from app.ai_service import ai_generate_markdown
+from app.path_manager import get_ori_docs_dir
+# from app.ai_service import ai_generate_markdown  # 已废弃，无需导入
 
 
 def fetch_and_convert_to_md(url, output_file=None):
@@ -104,12 +106,9 @@ def fetch_and_convert_to_md(url, output_file=None):
 
         # 自动生成文件名逻辑
         if not output_file:
-            import os
-            # 获取项目根目录的绝对路径
-            current_dir = os.path.dirname(os.path.abspath(__file__))  # app目录
-            project_root = os.path.dirname(current_dir)  # 项目根目录
-            ori_docs_dir = os.path.join(project_root, 'ori_docs')
-            
+            # 使用path_manager获取ori_docs目录
+            ori_docs_dir = str(get_ori_docs_dir())
+
             # 确保ori_docs目录存在
             os.makedirs(ori_docs_dir, exist_ok=True)
             
@@ -185,5 +184,5 @@ def fetch_and_convert_to_md(url, output_file=None):
 
 
 if __name__ == "__main__":
-    url = "https://mp.weixin.qq.com/s/PyOk4fKebF00ZC-CPsD-3Q"
+    url = "https://mp.weixin.qq.com/s/BMIQe8HkEDmwXZGD12SgoA"
     print(fetch_and_convert_to_md(url))

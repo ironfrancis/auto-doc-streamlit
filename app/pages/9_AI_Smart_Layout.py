@@ -2,15 +2,18 @@ import sys
 import os
 import json
 import streamlit as st
+
+# 添加正确的路径
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from language_manager import init_language, get_text
 import requests
 
 st.set_page_config(page_title="AI智能排版", layout="wide")
 st.title("AI智能排版（实验功能）")
 
-with st.sidebar:
-    lang = st.selectbox("语言 / Language", ["zh", "en"], index=0 if st.session_state.get("lang", "zh") == "zh" else 1, key="lang_global")
-    if lang != st.session_state.get("lang", "zh"):
-        st.session_state["lang"] = lang
 
 # 读取模板
 TEMPLATE_DIR = "app/html_templates"

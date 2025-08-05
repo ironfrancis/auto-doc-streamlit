@@ -64,5 +64,16 @@
     "temperature": 0.7,
     "remark": "",
     "default": false
+  },
+  {
+    "name": "Magic gpt-4 nano",
+    "api_type": "OpenAI",
+    "is_openai_compatible": true,
+    "api_url": "https://i-magic-service.letsmagic.cn/api/chat",
+    "api_key": "api-sk-686e3fe2ec8e09-41451860",
+    "model": "doubao",
+    "temperature": 0.7,
+    "remark": "",
+    "default": false
   }
 ]
