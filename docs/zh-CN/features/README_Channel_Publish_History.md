@@ -33,7 +33,7 @@
 
 ## 📊 数据结构
 
-### 频道发布历史记录 (channel_publish_history.json)
+### 频道发布历史记录 (publish_history.csv)
 
 ```json
 [

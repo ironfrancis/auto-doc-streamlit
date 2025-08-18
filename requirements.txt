@@ -7,4 +7,6 @@ webdriver-manager
 bs4
 markdownify
 plotly
-pandas 
+pandas
+openpyxl
+xlrd 

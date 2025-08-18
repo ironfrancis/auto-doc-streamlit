@@ -28,7 +28,7 @@ T = {
 
 # 移除顶部语言选择相关代码
 
-st.set_page_config(page_title=get_text("page_title"), layout="wide")
+st.set_page_config(page_title="本地MD审核", layout="wide")
 st.title(get_text("page_title"))
 
 # 路径配置

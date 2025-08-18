@@ -139,14 +139,14 @@ streamlit run app/pages/14_Data_Entry.py
 ## 🔧 技术实现
 
 ### 数据存储
-- **格式**：JSON文件存储
-- **位置**：`app/channel_publish_history.json`
+- **格式**：CSV文件存储
+- **位置**：`workspace/data/publish_history.csv`
 - **编码**：UTF-8编码，支持中文
 
 ### 数据备份
 建议定期备份数据文件：
 ```bash
-cp app/channel_publish_history.json backup/channel_publish_history_$(date +%Y%m%d).json
+cp workspace/data/publish_history.csv backup/publish_history_$(date +%Y%m%d).csv
 ```
 
 ### 数据导出
@@ -161,10 +161,10 @@ cp app/channel_publish_history.json backup/channel_publish_history_$(date +%Y%m%
 如果您想从零开始录入真实数据，可以：
 ```bash
 # 备份当前数据
-cp app/channel_publish_history.json app/channel_publish_history_backup.json
+cp workspace/data/publish_history.csv workspace/data/publish_history_backup.csv
 
 # 创建空的数据文件
-echo "[]" > app/channel_publish_history.json
+echo "内容标题,发表时间,总阅读人数,总阅读次数,总分享人数,总分享次数,阅读后关注人数,送达人数,公众号消息阅读次数,送达阅读率,首次分享次数,分享产生阅读次数,首次分享率,每次分享带来阅读次数,阅读完成率,内容url,channel_name,publish_date,publish_time,status,likes,comments,id,tags" > workspace/data/publish_history.csv
 ```
 
 ### 2. 添加您的频道

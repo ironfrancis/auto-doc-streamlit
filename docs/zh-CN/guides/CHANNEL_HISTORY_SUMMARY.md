@@ -7,7 +7,7 @@
 ## 📁 创建的文件
 
 ### 1. 数据结构文件
-- **`app/channel_publish_history.json`** - 频道发布历史记录数据文件
+- **`workspace/data/publish_history.csv`** - 频道发布历史记录数据文件
   - 包含7个频道的发布记录
   - 每个记录包含完整的发布信息（标题、日期、时间、状态、数据指标等）
 

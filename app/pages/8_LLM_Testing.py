@@ -14,7 +14,7 @@ import requests
 # 初始化语言设置
 init_language()
 
-st.set_page_config(page_title="LLM Testing", layout="wide")
+st.set_page_config(page_title="LLM测试", layout="wide")
 st.title("LLM Endpoint & Prompt 测试工具")
 
 # 读取端点

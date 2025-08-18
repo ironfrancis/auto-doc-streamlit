@@ -34,7 +34,7 @@ T = {
 }
 
 
-st.set_page_config(page_title=get_text("page_title"), layout="wide")
+st.set_page_config(page_title="频道注册", layout="wide")
 st.title(get_text("page_title"))
 
 TEMPLATE_DIR = "app/html_templates"

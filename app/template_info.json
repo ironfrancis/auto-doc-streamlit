@@ -66,5 +66,16 @@
     "category": "General",
     "created": "2025-08-04T18:44:42.293497",
     "modified": "2025-08-04T18:44:42.293500"
+  },
+  "new_template.html": {
+    "name": "新模板",
+    "description": "这是一个新的HTML模板",
+    "category": "General",
+    "created": "2025-08-14T13:50:05.948926",
+    "modified": "2025-08-14T13:50:05.949279",
+    "variables": [
+      "content",
+      "title or '新模板'"
+    ]
   }
 }

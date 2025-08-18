@@ -29,7 +29,7 @@ def get_page_mapping():
         "10_InfoSource_Registration": "信息源注册",
         "11_HTML_Template_Manager": "HTML模板管理",
         "12_Image_Search_Test": "图片搜索测试",
-        "13_Channel_Publish_History": "频道发布历史",
+        "publish_history": "频道发布历史",
         "14_Data_Entry": "数据录入"
     }
 
@@ -128,7 +128,7 @@ def render_feature_cards():
                         "title": "频道发布历史",
                         "description": "查看频道发布历史和数据分析",
                         "icon": "📈",
-                        "page": "13_Channel_Publish_History",
+                        "page": "publish_history",
                         "tags": ["数据分析", "发布记录", "可视化"]
                     },
                     {
@@ -231,7 +231,7 @@ def render_feature_cards():
                         "title": "Channel Publish History",
                         "description": "View channel publish history and data analysis",
                         "icon": "📈",
-                        "page": "13_Channel_Publish_History",
+                        "page": "publish_history",
                         "tags": ["Data Analysis", "Publish Records", "Visualization"]
                     },
                     {

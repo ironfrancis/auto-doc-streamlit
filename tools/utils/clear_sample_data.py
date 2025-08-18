@@ -10,7 +10,7 @@ from datetime import datetime
 
 def backup_current_data():
     """备份当前数据"""
-    data_file = "workspace/data/json/channel_publish_history.json"
+    data_file = "workspace/data/publish_history.csv"
     if os.path.exists(data_file):
         backup_file = f"workspace/data/json/channel_publish_history_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(data_file, 'r', encoding='utf-8') as f:
@@ -27,14 +27,14 @@ def backup_current_data():
 
 def clear_sample_data():
     """清空示例数据"""
-    data_file = "workspace/data/json/channel_publish_history.json"
+    data_file = "workspace/data/publish_history.csv"
     
-    # 创建空的数据结构
-    empty_data = []
+    # 创建空的CSV文件（只包含表头）
+    csv_header = "内容标题,发表时间,总阅读人数,总阅读次数,总分享人数,总分享次数,阅读后关注人数,送达人数,公众号消息阅读次数,送达阅读率,首次分享次数,分享产生阅读次数,首次分享率,每次分享带来阅读次数,阅读完成率,内容url,channel_name,publish_date,publish_time,status,likes,comments,id,tags"
     
     # 写入空数据
     with open(data_file, 'w', encoding='utf-8') as f:
-        json.dump(empty_data, f, ensure_ascii=False, indent=2)
+        f.write(csv_header + '\n')
     
     print("✅ 示例数据已清空")
     print("📝 现在您可以开始录入真实的频道发布数据")
@@ -62,17 +62,19 @@ def main():
     print("=" * 50)
     
     # 检查当前数据
-    data_file = "workspace/data/json/channel_publish_history.json"
+    data_file = "workspace/data/publish_history.csv"
     if os.path.exists(data_file):
-        with open(data_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        import pandas as pd
+        df = pd.read_csv(data_file, encoding='utf-8')
         
         print(f"📊 当前数据统计:")
-        print(f"  频道数: {len(data)}")
-        total_records = sum(len(channel['publish_records']) for channel in data)
-        print(f"  记录数: {total_records}")
+        print(f"  记录数: {len(df)}")
+        if 'channel_name' in df.columns:
+            channels = df['channel_name'].unique()
+            print(f"  频道数: {len(channels)}")
+            print(f"  频道列表: {list(channels)}")
         
-        if total_records > 0:
+        if len(df) > 0:
             print("\n⚠️ 警告: 这将删除所有现有数据!")
             confirm = input("确认要清空数据吗? (输入 'yes' 确认): ")
             

@@ -10,7 +10,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 import streamlit as st
-from language_manager import init_language, get_text
+from language_manager import init_language, get_text, get_language
 from path_manager import get_static_dir, get_md_review_dir, get_json_data_dir
 import requests
 
@@ -58,7 +58,7 @@ def save_transcribe_history(channel, input_type, input_content, md_result, extra
 # 初始化语言设置
 init_language()
 
-st.set_page_config(page_title=get_text("page_title"), layout="wide")
+st.set_page_config(page_title="AI内容创作与转写", layout="wide")
 st.title(get_text("page_title"))
 
 STATIC_DIR = get_static_dir()
@@ -177,9 +177,9 @@ if st.button(get_text("transcribe_btn")):
                         from datetime import datetime
                         safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
                         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        md_review_dir = "app/md_review"
+                        md_review_dir = get_md_review_dir()  # 使用统一的路径管理
                         os.makedirs(md_review_dir, exist_ok=True)
-                        local_md_path = os.path.join(md_review_dir, f"{safe_channel}_{ts}.md")
+                        local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}.md")
                         with open(local_md_path, "w", encoding="utf-8") as f:
                             f.write(md_result)
                         # 用Typora打开

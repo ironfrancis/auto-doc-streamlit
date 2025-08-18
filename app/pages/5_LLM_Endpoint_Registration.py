@@ -8,7 +8,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
-from language_manager import init_language, get_text
+from language_manager import init_language, get_text, get_language
 from path_manager import get_json_data_dir
 
 # 多语言文本定义
@@ -44,7 +44,7 @@ T = {
 }
 
 
-st.set_page_config(page_title=get_text("page_title"), layout="wide")
+st.set_page_config(page_title="LLM端点管理", layout="wide")
 st.title(get_text("page_title"))
 
 ENDPOINTS_PATH = get_json_data_dir() / "llm_endpoints.json"

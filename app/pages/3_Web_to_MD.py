@@ -1,5 +1,6 @@
 import sys
 import os
+from asyncio import subprocess
 
 # 添加正确的路径
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -23,11 +24,7 @@ import base64
 from path_manager import get_ori_docs_dir
 
 # 页面设置
-st.set_page_config(
-    page_title="Web to Markdown",
-    page_icon="🌐",
-    layout="wide"
-)
+st.set_page_config(page_title="网页转MD", layout="wide")
 
 # 标题
 st.title("🌐 Web to Markdown")
@@ -248,3 +245,5 @@ with st.expander("Usage Tips"):
     
     7. If extraction fails, try opening the page in a regular browser first to ensure it loads properly.
     """)
+
+

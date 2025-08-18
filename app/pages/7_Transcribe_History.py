@@ -1,6 +1,7 @@
 import sys
 import os
 import streamlit as st
+st.set_page_config(page_title="转写历史", layout="wide")
 
 # 添加正确的路径
 current_dir = os.path.dirname(os.path.abspath(__file__))

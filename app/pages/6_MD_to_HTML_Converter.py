@@ -7,7 +7,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 import streamlit as st
-from language_manager import init_language, get_text
+from language_manager import init_language, get_text, get_language
 from md_utils import md_to_html
 from path_manager import get_static_dir, get_md_review_dir, get_images_dir
 import glob
@@ -28,40 +28,9 @@ T = {
     }
 }
 
-st.markdown("### 📋 功能说明")
-st.markdown("""
-    **支持的图片格式:**
-    - 本地图片路径 (绝对路径或相对路径)
-    - 网络图片URL (自动下载到本地)
-    - 静态资源路径
-    
-    **图片处理:**
-    - 自动复制本地图片到静态目录
-    - 自动下载网络图片到本地
-    - Markdown中使用绝对路径
-    - HTML中自动转换为base64编码
-    - 支持PNG、JPG、JPEG、GIF、WebP格式
-    """)
-    
-st.markdown("### 💡 使用提示")
-st.markdown("""
-    **本地图片示例:**
-    ```
-    ![图片描述](/Users/username/Desktop/image.png)
-    ![图片描述](./images/photo.jpg)
-    ```
-    
-    **网络图片示例:**
-    ```
-    ![图片描述](https://example.com/image.jpg)
-    ![图片描述](https://cdn.example.com/photo.png)
-    ```
-    
-    **注意:** 网络图片会自动下载到本地，图片路径会更新为绝对路径，确保图片在离线环境下也能正常显示。
-    """)
 
-st.set_page_config(page_title=get_text("page_title"), layout="wide")
-st.title(get_text("page_title"))
+st.set_page_config(page_title="MD转HTML", layout="wide")
+st.title("MD转HTML")
 
 STATIC_DIR = get_static_dir()
 TEMPLATE_DIR = "app/html_templates"
@@ -143,6 +112,10 @@ if st.button(get_text("convert"), key="convert_button"):
             )
             import json
             repr_html = json.dumps(html_result)
+            # 获取当前语言并准备相应的提示信息
+            current_lang = get_language()
+            copy_message = "已复制到剪贴板" if current_lang == "zh" else "Copied to clipboard!"
+            
             st.markdown(f"""
             <script>
             function copyToClipboard(text) {{
@@ -152,7 +125,7 @@ if st.button(get_text("convert"), key="convert_button"):
             if (btn) {{
                 btn.onclick = function() {{
                     copyToClipboard({repr_html});
-                    alert('{('已复制到剪贴板' if lang == 'zh' else 'Copied to clipboard!')}');
+                    alert('{copy_message}');
                 }}
             }}
             </script>

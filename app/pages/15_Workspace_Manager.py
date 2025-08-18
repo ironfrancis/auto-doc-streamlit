@@ -129,7 +129,7 @@ def main():
     """主函数"""
     init_language()
     
-    st.set_page_config(page_title=get_text("page_title"), layout="wide")
+    st.set_page_config(page_title="工作区管理", layout="wide")
     st.title("📁 " + get_text("page_title"))
     
     # 检查workspace是否可用
