@@ -1,0 +1,45 @@
+{
+  "cookies": {
+    "AGI观察室": {
+      "cookie_string": "appmsglist_action_3932945554=card; yyb_muid=09829BC94D52631210D48DDE4C5A62BB; _qimei_uuid42=1971a1610131009ebc2dd019ed0e245e7a1ca5ea28; pac_uid=0_S7aTAhbPN8zc4; _qimei_fingerprint=146a4b5dee57fd7aa64ceb17f0efd3a4; _qimei_h38=058c5743bc2dd019ed0e245e0300000c91971a; _qimei_q36=; omgid=0_S7aTAhbPN8zc4; ua_id=aoVhumP8IAhCnsoJAAAAAPTENSvQg7HDvexdsaYIi-A=; wxuin=55508229703740; mm_lang=zh_CN; _clck=3990676610|1|fys|0; uuid=7f1061a192b9cee829d11e038a7f526b; rand_info=CAESII6jgf+fvYd+QhDh/DcwFhAsWpo8WwTcg+MTUA1LPXp+; slave_bizuin=3990455685; data_bizuin=3990455685; bizuin=3990455685; data_ticket=FdwKLOVc9RgdQ1iWfIrecVr4J0NJnnHtSiib+JNRMsLI4guTmdOQvylkT1X8l4bZ; slave_sid=dk1QSUdhYmcyMHBmQUJzWnpYdGJXUUJuRzBVYjJ0TmhnSEtjcktySDBtWVJ6VkN0aUY4TlBreWxqdU1QVVFZek9CQl9oVkdqbmdfYlpoVnd1R0RUTkRDTXBBUUJsemE4TnhlX2V4eGR4NkFuNGNzMDhDRnlEN3ZRY29qSGJrQU9TUHR6bGNjUk0wQ1Q0dGhT; slave_user=gh_41c34101bb54; xid=77fc0011622a4bad2376d5d823992859; _clsk=fqe9mh|1756197816932|5|1|mp.weixin.qq.com/weheat-agent/payload/record",
+      "last_updated": "2025-08-26T16:44:02.800916",
+      "status": "active",
+      "description": "AGI观察室公众号的登录cookie"
+    },
+    "AGI启示录": {
+      "cookie_string": "yyb_muid=09829BC94D52631210D48DDE4C5A62BB; _qimei_uuid42=1971a1610131009ebc2dd019ed0e245e7a1ca5ea28; pac_uid=0_S7aTAhbPN8zc4; _qimei_fingerprint=146a4b5dee57fd7aa64ceb17f0efd3a4; _qimei_h38=058c5743bc2dd019ed0e245e0300000c91971a; _qimei_q36=; omgid=0_S7aTAhbPN8zc4; ua_id=aoVhumP8IAhCnsoJAAAAAPTENSvQg7HDvexdsaYIi-A=; wxuin=55508229703740; mm_lang=zh_CN; rand_info=CAESIBgR+0B4rqsLw50i/DC/3EqiSn/8Qgl8uK2/wm98DKOr; slave_bizuin=3990676610; data_bizuin=3990676610; bizuin=3990676610; data_ticket=6kdHjw4Aboy2zkKqLRiJqchpywyskKZtmMdznembSn7xGn90BjkUnAfyWULVushc; slave_sid=aTRINHJpVDB2OXBQNlFIZHpjYzBTOEJIak5uMGFabDB0Y0tzTXBmN0RTMXFpV0ZDTnlTeVIwVksxenppMlNvSmtqRkJLOFJOeTJMbnRocFFuRXRNVDNHVWNWNm9HcGFmTDNQeXhJS0hHSXN1WFNwMThhTTNMZGhDa1oxQU14SEo4bWZNN2lUOVZrdkZSNW9q; slave_user=gh_67f98c375b75; xid=8c1b4d993e783eb11792fb20d448fdc4; _clck=3990676610|1|fys|0; _clsk=fqe9mh|1756197642424|1|1|mp.weixin.qq.com/weheat-agent/payload/record",
+      "last_updated": "2025-08-26T16:41:21.820085",
+      "status": "active",
+      "description": "AGI启示录公众号的登录cookie"
+    },
+    "AI 万象志": {
+      "cookie_string": "appmsglist_action_3932945554=card; yyb_muid=09829BC94D52631210D48DDE4C5A62BB; _qimei_uuid42=1971a1610131009ebc2dd019ed0e245e7a1ca5ea28; pac_uid=0_S7aTAhbPN8zc4; _qimei_fingerprint=146a4b5dee57fd7aa64ceb17f0efd3a4; _qimei_h38=058c5743bc2dd019ed0e245e0300000c91971a; _qimei_q36=; omgid=0_S7aTAhbPN8zc4; ua_id=aoVhumP8IAhCnsoJAAAAAPTENSvQg7HDvexdsaYIi-A=; wxuin=55508229703740; mm_lang=zh_CN; _clck=3990676610|1|fys|0; uuid=7f1061a192b9cee829d11e038a7f526b; xid=77fc0011622a4bad2376d5d823992859; slave_sid=X1dONGNJaUJUNklYdElvV29GdDZ6SzR5UGpOUVI4bFBuS2VwMlZKRTRqZWxaUGFKdldIYWFRdFd5bjAxc2dhbjlscjhKblRSRldxUzRsRDhDR1EyRk1qa1FxM05pZmk5d2k2dG5HQ01VZzNqbVFpM2RCOFA0blo0U3NMZWc3MTFzNlZkQnNZc2hSY0k5Tmxm; slave_user=gh_6c0ac84a33d4; rand_info=CAESIKHRf/VawUtCLhvC/xfpQ0SddaNcoDWIdQd5YG/i7961; slave_bizuin=3567454006; bizuin=3567454006; _clsk=fqe9mh|1756197878960|7|1|mp.weixin.qq.com/weheat-agent/payload/record",
+      "last_updated": "2025-08-26T16:45:05.275027",
+      "status": "active",
+      "description": "AI 万象志公众号的登录cookie"
+    },
+    "人工智能漫游指南": {
+      "cookie_string": "appmsglist_action_3932945554=card; yyb_muid=09829BC94D52631210D48DDE4C5A62BB; _qimei_uuid42=1971a1610131009ebc2dd019ed0e245e7a1ca5ea28; pac_uid=0_S7aTAhbPN8zc4; _qimei_fingerprint=146a4b5dee57fd7aa64ceb17f0efd3a4; _qimei_h38=058c5743bc2dd019ed0e245e0300000c91971a; _qimei_q36=; omgid=0_S7aTAhbPN8zc4; ua_id=aoVhumP8IAhCnsoJAAAAAPTENSvQg7HDvexdsaYIi-A=; wxuin=55508229703740; mm_lang=zh_CN; _clck=3990676610|1|fys|0; uuid=7f1061a192b9cee829d11e038a7f526b; xid=77fc0011622a4bad2376d5d823992859; slave_sid=dWZodkJnS3UzQlZlaWZoZWhPaWlCcEFwUXB2S0pzSGc0anEwUTl4Nzd5QUVCZjYzMm1GYjlZQ2pZQjZPSnYxaHZwdFR3WWduTjFSM2l2ZGV1bHEybmpLcndlV0diUlVONVhoQnhIdURCZV9EMGNGN2lySkxLNTV6YjllaEt5dFhJR0dYa1RXSnh4dUwyVTJw; slave_user=gh_a2a3ed13c33c; rand_info=CAESINOE44SKYoCZ/veavMFscokip9cpCCD0ObBFD2VdQzph; slave_bizuin=3988754792; bizuin=3988754792; _clsk=fqe9mh|1756197945232|9|1|mp.weixin.qq.com/weheat-agent/payload/record",
+      "last_updated": "2025-08-26T16:46:12.239120",
+      "status": "active",
+      "description": "人工智能漫游指南公众号的登录cookie"
+    },
+    "野路子思考局": {
+      "cookie_string": "yyb_muid=09829BC94D52631210D48DDE4C5A62BB; _qimei_uuid42=1971a1610131009ebc2dd019ed0e245e7a1ca5ea28; pac_uid=0_S7aTAhbPN8zc4; _qimei_fingerprint=146a4b5dee57fd7aa64ceb17f0efd3a4; _qimei_h38=058c5743bc2dd019ed0e245e0300000c91971a; _qimei_q36=; omgid=0_S7aTAhbPN8zc4; ua_id=aoVhumP8IAhCnsoJAAAAAPTENSvQg7HDvexdsaYIi-A=; wxuin=55508229703740; mm_lang=zh_CN; xid=8c1b4d993e783eb11792fb20d448fdc4; _clck=3990676610|1|fys|0; slave_sid=WmdlSjJaTVZadVUwcU9DZDV3ajdnQVN0NVF2MVNwcU1vamxkN0h3Y1ZWVFk2dW1USExzRFgwTmNtanVLU3l6R3ZvSjZ2cWNoZHp6TWVHYVVCaGw2NnZtZHJKdkpwdjlaUndvbV80VFYxWTRsXzNqNXp4MDE0OFQ2U2MyaGNHZDZkbnd2WXhNa0lsNDV1aXFh; slave_user=gh_9d9521f7a98f; rand_info=CAESIJgsTecXT93sB8J0NpO+wMee7jJ+Tj9IeaF0guu42sam; slave_bizuin=3624050643; bizuin=3624050643; _clsk=fqe9mh|1756197722655|3|1|mp.weixin.qq.com/weheat-agent/payload/record",
+      "last_updated": "2025-08-26T16:42:39.111909",
+      "status": "active",
+      "description": "野路子思考局公众号的登录cookie"
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2025-01-15T10:00:00",
+    "last_modified": "2025-08-26T16:46:12.239188",
+    "description": "微信公众号登录Cookie配置文件",
+    "notes": [
+      "Cookie有效期通常为24小时",
+      "建议每12小时更新一次",
+      "如果获取数据失败，请检查Cookie是否过期"
+    ]
+  }
+}

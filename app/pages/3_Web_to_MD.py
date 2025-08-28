@@ -1,6 +1,6 @@
 import sys
 import os
-from asyncio import subprocess
+import subprocess
 
 # 添加正确的路径
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -122,7 +122,8 @@ with st.form("web2md_form"):
 # 处理表单提交
 if submitted and url:
     if not url.startswith(("http://", "https://")):
-        url = f"https://{url}"
+        if not url.startswith("file:/"):
+            url = f"https://{url}"
 
     with st.spinner(f"Extracting content from {url}..."):
         try:
@@ -194,11 +195,19 @@ if submitted and url:
                         # 如果用户选择了自动打开文件
                         if 'auto_open' in locals() and auto_open:
                             try:
-                                # 使用默认应用打开文件（macOS）
-                                subprocess.call(['open', str(latest_file)])
-                                st.success(f"File opened with default application")
+                                # 跨平台文件打开
+                                if sys.platform == "darwin":  # macOS
+                                    subprocess.run(['open', str(latest_file)], check=True)
+                                elif sys.platform == "win32":  # Windows
+                                    subprocess.run(['start', str(latest_file)], shell=True, check=True)
+                                else:  # Linux
+                                    subprocess.run(['xdg-open', str(latest_file)], check=True)
+                                
+                                st.success(f"✅ 文件已使用默认应用打开：{latest_file.name}")
+                            except subprocess.CalledProcessError as e:
+                                st.warning(f"⚠️ 无法自动打开文件：{str(e)}")
                             except Exception as e:
-                                st.warning(f"Could not open file automatically: {str(e)}")
+                                st.warning(f"⚠️ 打开文件时发生错误：{str(e)}")
 
                 # 提取统计信息
                 st.subheader("Extraction Statistics")

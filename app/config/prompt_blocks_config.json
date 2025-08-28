@@ -1,0 +1,134 @@
+{
+  "prompt_blocks": {
+    "public": {
+      "political_sensitive": {
+        "id": "political_sensitive",
+        "name": "政治敏感词要求",
+        "description": "避免使用政治敏感词汇，保持内容中立",
+        "content": {
+          "avoid": [
+            "避免使用政治敏感词汇",
+            "不要涉及敏感政治话题",
+            "避免使用争议性政治表述"
+          ],
+          "should": [
+            "保持内容中立客观",
+            "使用中性的政治表述",
+            "关注技术本身而非政治立场"
+          ]
+        },
+        "category": "public",
+        "version": "1.0",
+        "last_updated": "2025-01-15T10:00:00"
+      },
+      "human_editing": {
+        "id": "human_editing",
+        "name": "人类口吻",
+        "description": "应当部分82字，严禁部分83字",
+        "content": "应当：模仿人类编辑的断句风格，适当加入口语化的表达，对必要的关键词标重点，保留参考原文中的图片标签，更多的表格而不是冗余的段落层级，除非绝对学术的内容否则不要使用段落编号\n\n严禁：使用过于正式的官方语言，使用机器翻译式的表达'，过度使用感叹号和夸张表述 ，使用非必要的标题编号和段落层级，空洞空泛的总结（如果没有足够精炼的洞察，不要贸然给出总结）",
+        "category": "public",
+        "version": "1.0",
+        "last_updated": "2025-08-27 17:51:21"
+      },
+      "neutral_tone": {
+        "id": "neutral_tone",
+        "name": "中立客观要求",
+        "description": "这是一篇非营销性质的文章，对事件保持克制和中立",
+        "content": {
+          "avoid": [
+            "避免过度宣传或广告性质",
+            "不要使用夸张的营销语言",
+            "避免主观臆断和夸大其词"
+          ],
+          "should": [
+            "保持客观中立的立场",
+            "对事件保持克制和理性",
+            "提供事实依据而非主观判断",
+            "平衡呈现不同观点"
+          ]
+        },
+        "category": "public",
+        "version": "1.0",
+        "last_updated": "2025-01-15T10:00:00"
+      }
+    },
+    "industry": {
+      "tech": {
+        "id": "tech",
+        "name": "科技行业通用要求",
+        "description": "应当部分7字，严禁部分27字",
+        "content": "应当：客观公正的报道\n\n严禁：自以为是的观点，自称“技术团队”或夸大自己的频道影响力",
+        "category": "industry",
+        "version": "1.0",
+        "last_updated": "2025-08-27 17:50:41"
+      },
+      "finance": {
+        "id": "finance",
+        "name": "财经行业通用要求",
+        "description": "财经内容创作通用规范",
+        "content": {
+          "avoid": [
+            "不要使用过时的财经数据",
+            "避免过度乐观或悲观的预测",
+            "不要涉及内幕信息"
+          ],
+          "should": [
+            "使用最新的财经数据",
+            "提供具体案例和数据分析",
+            "关注行业发展趋势",
+            "分析投资机会和风险"
+          ]
+        },
+        "category": "industry",
+        "version": "1.0",
+        "last_updated": "2025-01-15T10:00:00"
+      },
+      "education": {
+        "id": "education",
+        "name": "教育行业通用要求",
+        "description": "教育内容创作通用规范",
+        "content": {
+          "avoid": [
+            "不要使用过于理论化的表述",
+            "避免过度说教",
+            "不要忽略实践性"
+          ],
+          "should": [
+            "语言活泼生动，亲和温情",
+            "讲道理但避免浓厚的说教味道",
+            "段落和断句要更像人类作者",
+            "在段落之间插入表达语气的字、词、短句和emoji"
+          ]
+        },
+        "category": "industry",
+        "version": "1.0",
+        "last_updated": "2025-01-15T10:00:00"
+      }
+    },
+    "custom": {
+      "block_20250827_175026": {
+        "name": "测试块",
+        "description": "这是一个测试块",
+        "content": "测试内容",
+        "category": "custom",
+        "id": "block_20250827_175026",
+        "created_time": "2025-08-27 17:50:26",
+        "last_updated": "2025-08-27 17:50:26"
+      },
+      "block_20250827_175027": {
+        "name": "测试块",
+        "description": "这是一个测试块",
+        "content": "测试内容",
+        "category": "custom",
+        "id": "block_20250827_175027",
+        "created_time": "2025-08-27 17:50:27",
+        "last_updated": "2025-08-27 17:50:27"
+      }
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "last_modified": "2025-08-27 17:51:21",
+    "description": "提示词块配置文件"
+  }
+}

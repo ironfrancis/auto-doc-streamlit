@@ -92,9 +92,7 @@ if st.button("AI智能排版并生成HTML", key="ai_layout_btn"):
                 template_html = f.read()
             
             # 构造LLM提示词
-            prompt = f
-            """
-你是一个专业的内容排版助手。请根据以下要求，将用户提供的Markdown内容，结合给定的HTML模板，智能排版为一篇适合公众号/网页发布的完整HTML文章：
+            prompt = f"""你是一个专业的内容排版助手。请根据以下要求，将用户提供的Markdown内容，结合给定的HTML模板，智能排版为一篇适合公众号/网页发布的完整HTML文章：
 - 保持模板的样式和结构，内容插入到模板的主内容区（如<!--CONTENT-->或<div class='magic-article-container'>）
 - 每一行都用<p>标签包裹，代码块、列表、引用等用模板推荐的结构
 - 保证排版美观、结构清晰、适合阅读
@@ -104,7 +102,7 @@ if st.button("AI智能排版并生成HTML", key="ai_layout_btn"):
 {template_html}
 
 **用户Markdown内容：**
-{md_input} """
+{md_input}"""
             
             # 所有端点都使用OpenAI兼容格式
             headers = {"Authorization": f"Bearer {llm_api_key}", "Content-Type": "application/json"}
@@ -125,35 +123,32 @@ if st.button("AI智能排版并生成HTML", key="ai_layout_btn"):
             if resp.status_code == 200:
                 result = resp.json()
                 try:
-                    # 根据API类型解析不同的响应格式
-                    if api_type == "anthropic":
-                        html_result = result["content"][0]["text"]
-                    elif api_type == "openai":
-                        html_result = result["choices"][0]["message"]["content"]
-                    else:  # custom API
-                        # 尝试多种可能的响应格式
-                        if "data" in result and "messages" in result["data"]:
-                            # Magic API格式
-                            if len(result["data"]["messages"]) > 0:
-                                html_result = result["data"]["messages"][0]["message"]["content"]
-                            else:
-                                html_result = "API返回的消息列表为空"
-                        elif "choices" in result and len(result["choices"]) > 0:
-                            if "message" in result["choices"][0]:
-                                html_result = result["choices"][0]["message"]["content"]
-                            else:
-                                html_result = result["choices"][0].get("text", str(result["choices"][0]))
-                        elif "content" in result:
-                            html_result = result["content"]
-                        elif "text" in result:
-                            html_result = result["text"]
-                        elif "response" in result:
-                            html_result = result["response"]
+                    # 根据API响应格式解析结果
+                    # 尝试多种可能的响应格式
+                    if "choices" in result and len(result["choices"]) > 0:
+                        if "message" in result["choices"][0]:
+                            html_result = result["choices"][0]["message"]["content"]
                         else:
-                            # 如果都不匹配，显示整个响应用于调试
-                            st.warning("无法识别API响应格式，显示原始响应：")
-                            st.json(result)
-                            html_result = str(result)
+                            html_result = result["choices"][0].get("text", str(result["choices"][0]))
+                    elif "content" in result:
+                        if isinstance(result["content"], list) and len(result["content"]) > 0:
+                            html_result = result["content"][0].get("text", str(result["content"][0]))
+                        else:
+                            html_result = result["content"]
+                    elif "data" in result and "messages" in result["data"]:
+                        # Magic API格式
+                        if len(result["data"]["messages"]) > 0:
+                            html_result = result["data"]["messages"][0]["message"]["content"]
+                        else:
+                            html_result = "API返回的消息列表为空"
+                    elif "text" in result:
+                        html_result = result["text"]
+                    elif "response" in result:
+                        html_result = result["response"]
+                        # 如果都不匹配，显示整个响应用于调试
+                        st.warning("无法识别API响应格式，显示原始响应：")
+                        st.json(result)
+                        html_result = str(result)
                     
                     # 验证HTML格式
                     if not html_result.strip().startswith('<!DOCTYPE html') and not html_result.strip().startswith('<html'):

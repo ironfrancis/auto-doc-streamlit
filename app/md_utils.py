@@ -39,6 +39,77 @@ def convert_class_to_inline_style(html):
             del tag["class"]
     return str(soup)
 
+def convert_class_to_inline_style_preserve_code(html):
+    """转换class到inline style，但保留代码高亮相关的类"""
+    soup = BeautifulSoup(html, "html.parser")
+    
+    # 代码高亮相关的类名（这些类需要保留）
+    code_highlight_classes = {
+        'highlight', 'codehilite', 'highlighttable', 'linenodiv', 'linenos',
+        'hljs', 'python', 'javascript', 'html', 'css', 'bash', 'shell',
+        'json', 'yaml', 'xml', 'sql', 'java', 'cpp', 'c', 'go', 'rust',
+        'php', 'ruby', 'swift', 'kotlin', 'scala', 'r', 'matlab',
+        'code-block'  # 我们添加的自定义类
+    }
+    
+    # Pygments语法高亮类（所有单字母和双字母的类）
+    pygments_classes = {
+        # 基本语法元素
+        'k', 'kc', 'kd', 'kn', 'kp', 'kr', 'kt',  # 关键字
+        's', 's1', 's2', 'sa', 'sb', 'sc', 'sd', 'se', 'sh', 'si', 'sx', 'sr', 'ss',  # 字符串
+        'c', 'c1', 'ch', 'cm', 'cp', 'cpf', 'cs',  # 注释
+        'n', 'na', 'nb', 'nc', 'nd', 'ne', 'nf', 'ni', 'nl', 'nn', 'no', 'nt', 'nv', 'nx',  # 名称
+        'o', 'ow',  # 操作符
+        'm', 'mb', 'mf', 'mh', 'mi', 'mo',  # 数字
+        'p',  # 标点
+        'w',  # 空白
+        'err',  # 错误
+        'hll',  # 高亮行
+        'g', 'gd', 'ge', 'gr', 'gh', 'gi', 'go', 'gp', 'gs', 'gu', 'gt',  # 通用
+        'bp', 'fm', 'vc', 'vg', 'vi', 'vm',  # 变量
+        'py', 'dl',  # Python特定
+        # 更多类...
+        'keyword', 'string', 'comment', 'name', 'operator', 'number', 'punctuation',
+        'builtin', 'decorator', 'entity', 'exception', 'function', 'label', 
+        'namespace', 'property', 'tag', 'variable'
+    }
+    
+    # 合并所有需要保留的类
+    preserved_class_names = code_highlight_classes | pygments_classes
+    
+    for tag in soup.find_all(True):
+        if tag.has_attr("class"):
+            styles = []
+            preserved_classes = []
+            
+            for cls in tag["class"]:
+                if cls in CLASS_STYLE_MAP:
+                    # 应用我们的自定义样式
+                    styles.append(CLASS_STYLE_MAP[cls])
+                    # 如果是H标签相关的类，也要保留
+                    if cls.startswith('magic-article-h'):
+                        preserved_classes.append(cls)
+                elif cls in preserved_class_names:
+                    # 保留代码高亮相关的类
+                    preserved_classes.append(cls)
+                # 其他类会被移除
+            
+            # 合并原有style
+            if tag.has_attr("style"):
+                styles.insert(0, tag["style"])
+            
+            # 设置样式
+            if styles:
+                tag["style"] = ";".join(styles)
+            
+            # 更新class属性
+            if preserved_classes:
+                tag["class"] = preserved_classes
+            else:
+                del tag["class"]
+    
+    return str(soup)
+
 def image_to_base64(image_path):
     """将图片转换为base64编码"""
     try:
@@ -272,20 +343,83 @@ def convert_absolute_paths_to_web_paths(html_content, static_dir="app/static"):
     
     return processed_html
 
+def add_language_classes(html_content):
+    """为代码块添加语言特定的类"""
+    import re
+    
+    # 匹配代码块，查找语言标识
+    code_block_pattern = r'```(\w+)\n(.*?)```'
+    
+    def replace_code_block(match):
+        language = match.group(1)
+        code_content = match.group(2)
+        
+        # 查找对应的HTML代码块
+        # 这里需要更复杂的逻辑来匹配Markdown代码块和生成的HTML
+        return match.group(0)
+    
+    # 处理HTML中的代码块，添加语言类
+    # 查找 <div class="highlight"> 并添加语言类
+    highlight_pattern = r'<div class="highlight">'
+    
+    def add_lang_to_highlight(match):
+        # 这里需要从上下文推断语言
+        # 暂时返回原始匹配
+        return match.group(0)
+    
+    # 简单的语言检测和类添加
+    html_content = re.sub(r'<div class="highlight">', r'<div class="highlight code-block">', html_content)
+    
+    return html_content
+
+def add_header_classes(html_content):
+    """为H标签添加CSS类"""
+    import re
+    
+    # 为各级标题添加对应的CSS类
+    html_content = re.sub(r'<h1([^>]*)>', r'<h1\1 class="magic-article-h1">', html_content)
+    html_content = re.sub(r'<h2([^>]*)>', r'<h2\1 class="magic-article-h2">', html_content)
+    html_content = re.sub(r'<h3([^>]*)>', r'<h3\1 class="magic-article-h3">', html_content)
+    html_content = re.sub(r'<h4([^>]*)>', r'<h4\1 class="magic-article-h4">', html_content)
+    html_content = re.sub(r'<h5([^>]*)>', r'<h5\1 class="magic-article-h5">', html_content)
+    html_content = re.sub(r'<h6([^>]*)>', r'<h6\1 class="magic-article-h6">', html_content)
+    
+    return html_content
+
 def md_to_html(md_text: str, template_name: str = 'wepub.html', static_dir: str = "app/static", **kwargs) -> str:
     # 处理图片（包括本地和网络图片）
     processed_md = process_images(md_text, static_dir)
     
-    # 转换为HTML
-    html_body = markdown.markdown(processed_md, extensions=['extra', 'codehilite'])
+    # 配置代码高亮扩展
+    codehilite_config = {
+        'css_class': 'highlight',
+        'use_pygments': True,
+        'noclasses': False,
+        'linenums': False,
+        'guess_lang': True,
+        'pygments_style': 'default'  # 使用默认样式，确保兼容性
+    }
+    
+    # 转换为HTML，启用代码高亮
+    html_body = markdown.markdown(
+        processed_md, 
+        extensions=['extra', 'codehilite'],
+        extension_configs={'codehilite': codehilite_config}
+    )
+    
+    # 手动添加语言特定的类到代码块
+    html_body = add_language_classes(html_body)
+    
+    # 为H标签添加CSS类
+    html_body = add_header_classes(html_body)
     
     # 使用模板渲染
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     template = env.get_template(template_name)
     html = template.render(content=html_body, **kwargs)
     
-    # 转换class到inline style
-    html = convert_class_to_inline_style(html)
+    # 转换class到inline style（但保留代码高亮相关的类）
+    html = convert_class_to_inline_style_preserve_code(html)
     
     # 处理HTML中的绝对路径图片
     html = convert_absolute_paths_to_web_paths(html, static_dir)

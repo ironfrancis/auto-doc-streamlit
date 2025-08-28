@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import streamlit as st
+import requests
 
 # 添加正确的路径
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,7 +46,13 @@ T = {
 
 
 st.set_page_config(page_title="LLM端点管理", layout="wide")
-st.title(get_text("page_title"))
+
+# 创建标签页
+tab1, tab2 = st.tabs(["🔧 端点管理", "🧪 端点测试"])
+
+# 第一个标签页：端点管理
+with tab1:
+    st.title("LLM端点管理")
 
 ENDPOINTS_PATH = get_json_data_dir() / "llm_endpoints.json"
 API_TYPES = ["OpenAI", "Magic", "Qwen", "Claude", "Other"]
@@ -85,7 +92,7 @@ def test_endpoint(api_url, api_key, model, is_openai, api_type):
         if is_openai:
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
             data = {"model": model, "messages": [{"role": "user", "content": test_message}], "temperature": 0.1}
-            resp = requests.post(api_url, headers=headers, json=data, timeout=10)
+            resp = requests.post(api_url, headers=headers, json=data, timeout=180)
             meta = {"status_code": resp.status_code, "headers": dict(resp.headers)}
             if resp.status_code == 200:
                 try:
@@ -111,7 +118,7 @@ def test_endpoint(api_url, api_key, model, is_openai, api_type):
                 "temperature": 0.1,
                 "stream": False
             }
-            resp = requests.post(api_url, headers=headers, json=data, timeout=10)
+            resp = requests.post(api_url, headers=headers, json=data, timeout=180)
             meta = {"status_code": resp.status_code, "headers": dict(resp.headers)}
             if resp.status_code == 200:
                 try:
@@ -252,3 +259,77 @@ for row in range(rows):
                             save_endpoints(endpoints)
                             st.success(get_text("success"))
                             st.rerun() 
+
+# 第二个标签页：端点测试
+with tab2:
+    st.title("LLM Endpoint & Prompt 测试工具")
+    
+    # 读取端点
+    if os.path.exists(ENDPOINTS_PATH):
+        with open(ENDPOINTS_PATH, "r", encoding="utf-8") as f:
+            test_endpoints = json.load(f)
+    else:
+        test_endpoints = []
+    test_endpoint_names = [ep["name"] for ep in test_endpoints] if test_endpoints else []
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_endpoint = st.selectbox("选择LLM端点", test_endpoint_names) if test_endpoint_names else ""
+        prompt = st.text_area("提示词 (Prompt)", height=120)
+        if st.button("测试LLM回复"):
+            if not selected_endpoint or not prompt.strip():
+                st.warning("请选择端点并输入提示词！")
+            else:
+                ep = next((e for e in test_endpoints if e["name"] == selected_endpoint), None)
+                if not ep:
+                    st.error("端点未找到！")
+                else:
+                    # 构造请求
+                    api_type = ep.get("api_type", "")
+                    api_url = ep.get("api_url", "")
+                    api_key = ep.get("api_key", "")
+                    model = ep.get("model", "")
+                    is_openai = ep.get("is_openai_compatible", False)
+                    try:
+                        if is_openai:
+                            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                            data = {"model": model, "messages": [{"role": "user", "content": prompt}], "temperature": 0.7}
+                            resp = requests.post(api_url, headers=headers, json=data, timeout=180)
+                        elif api_type == "Magic":
+                            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                            data = {
+                                "model": model,
+                                "messages": [
+                                    {"role": "system", "content": "你是一个有帮助的助手。"},
+                                    {"role": "user", "content": prompt}
+                                ],
+                                "temperature": 0.7,
+                                "stream": False
+                            }
+                            resp = requests.post(api_url, headers=headers, json=data, timeout=180)
+                        else:
+                            st.error("暂不支持该API类型")
+                            resp = None
+                        if resp is not None:
+                            meta = {"status_code": resp.status_code, "headers": dict(resp.headers)}
+                            if resp.status_code == 200:
+                                try:
+                                    result = resp.json()
+                                    if "data" in result and "messages" in result["data"] and result["data"]["messages"]:
+                                        reply = result["data"]["messages"][0]["message"]["content"]
+                                    else:
+                                        reply = result["choices"][0]["message"]["content"]
+                                except Exception:
+                                    reply = resp.text
+                                st.success("测试成功！")
+                                st.code(f"元数据：\n{meta}", language="json")
+                                st.code(f"模型回复：\n{reply or '无回复'}", language="markdown")
+                            else:
+                                st.error(f"测试失败，状态码：{resp.status_code}")
+                                st.code(f"响应内容：\n{resp.text}")
+                    except Exception as e:
+                        st.error(f"请求异常：{e}")
+    
+    with col2:
+        st.info("本页面用于快速测试不同端点和提示词组合，适合调试和对比LLM效果。\n\n左侧选择端点并输入提示词，点击测试即可实时查看回复。")
+        st.info("⏱️ **注意：** 测试超时时间已设置为180秒，适合处理需要较长推理时间的模型。")

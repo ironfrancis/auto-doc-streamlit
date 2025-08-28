@@ -42,7 +42,7 @@ class TemplateManager:
     
     def get_template_files(self):
         """获取所有模板文件"""
-        pattern = os.path.join(self.template_info_file, "*.html")
+        pattern = os.path.join(self.template_dir, "*.html")
         return sorted(glob.glob(pattern))
     
     def get_template_info(self, filepath):
