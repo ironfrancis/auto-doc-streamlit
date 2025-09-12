@@ -1,0 +1,110 @@
+{
+  "01_modern_news.html": {
+    "name": "01 Modern News",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.829218",
+    "modified": "2025-07-21T10:22:57.075116",
+    "variables": [],
+    "file_size": 1912,
+    "lines_count": 31
+  },
+  "02_creative_vibrant.html": {
+    "name": "02 Creative Vibrant",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.829793",
+    "modified": "2025-08-22T17:11:03.776143",
+    "variables": [],
+    "file_size": 9046,
+    "lines_count": 238
+  },
+  "03_minimalist_white.html": {
+    "name": "03 Minimalist White",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.830194",
+    "modified": "2025-08-23T08:23:05.704508",
+    "variables": [],
+    "file_size": 15565,
+    "lines_count": 537
+  },
+  "04_professional_blue.html": {
+    "name": "04 Professional Blue",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.830528",
+    "modified": "2025-07-21T10:23:13.424346",
+    "variables": [],
+    "file_size": 1980,
+    "lines_count": 31
+  },
+  "05_academic_research.html": {
+    "name": "05 Academic Research",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.830679",
+    "modified": "2025-07-21T10:23:19.113913",
+    "variables": [],
+    "file_size": 2269,
+    "lines_count": 34
+  },
+  "06_agi-observation-room-article-template.html": {
+    "name": "06 Agi-Observation-Room-Article-Template",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.830811",
+    "modified": "2025-07-23T11:21:34.881333",
+    "variables": [],
+    "file_size": 25928,
+    "lines_count": 806
+  },
+  "07_ai-tour-guide-template.html": {
+    "name": "07 Ai-Tour-Guide-Template",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.831034",
+    "modified": "2025-08-14T11:09:00.796585",
+    "variables": [],
+    "file_size": 8222,
+    "lines_count": 275
+  },
+  "08-yeluzi.html": {
+    "name": "08-Yeluzi",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.831473",
+    "modified": "2025-08-26T18:32:35.923281",
+    "variables": [],
+    "file_size": 161,
+    "lines_count": 1
+  },
+  "ai-tour-template.html": {
+    "name": "Ai-Tour-Template",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.831851",
+    "modified": "2025-08-03T17:55:38.444168",
+    "variables": [],
+    "file_size": 5383,
+    "lines_count": 180
+  },
+  "magic-article-template.html": {
+    "name": "Magic-Article-Template",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.832042",
+    "modified": "2025-08-28T14:07:57.374830",
+    "variables": [],
+    "file_size": 33333,
+    "lines_count": 961
+  },
+  "new_template.html": {
+    "name": "New Template",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-08-28T16:07:24.832295",
+    "modified": "2025-08-28T16:07:24.832296",
+    "variables": []
+  }
+}

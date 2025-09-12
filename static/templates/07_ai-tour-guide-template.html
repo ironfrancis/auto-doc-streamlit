@@ -1,0 +1,442 @@
+<!--
+AI漫游指南模板 - 严格按照用户样式规范
+专门为人工智能漫游指南频道设计，具有现代化科技感的排版
+适用于微信公众号发布，经过兼容性优化
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI漫游指南</title>
+    <style>
+        /* 严格按照用户样式规范 */
+        body {
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif
+            font-size: 17px;
+            line-height: 1.8;
+            color: #333;
+            padding: 0 15px;
+            background: #fff;
+            -webkit-text-size-adjust: 100%;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        /* 标题样式 - 严格按照用户规范 */
+        h2 {
+            text-align: center;
+            color: #3f3f3f;
+            line-height: 1.5;
+            font-size: 140%;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            margin: 40px 10px 40px 10px;
+            font-weight: normal;
+        }
+
+        h3 {
+            text-align: left;
+            color: #3f3f3f;
+            line-height: 1.5;
+            font-size: 120%;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            margin: 20px 10px 20px 10px;
+            font-weight: bold;
+        }
+
+        /* 段落样式 - 严格按照用户规范 */
+        p {
+            text-align: left;
+            color: #3f3f3f;
+            line-height: 1.6;
+            font-size: 16px;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            margin: 10px 10px;
+        }
+
+        /* 引用块样式 - 严格按照用户规范 */
+        blockquote {
+            text-align: left;
+            color: rgb(91, 91, 91);
+            line-height: 1.5;
+            font-size: 16px;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            margin: 20px 10px;
+            padding: 1px 0 1px 10px;
+            background: rgba(158, 158, 158, 0.1);
+            border-left: 3px solid rgb(158,158,158);
+        }
+
+        blockquote p {
+            text-align: left;
+            color: #3f3f3f;
+            line-height: 1.6;
+            font-size: 16px;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            margin: 10px 10px;
+        }
+
+        /* 强调文本 */
+        strong {
+            text-align: left;
+            color: #3f3f3f;
+            line-height: 1.5;
+            font-size: 16px;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            font-weight: bold;
+        }
+
+        /* 列表样式 - 严格按照用户规范 */
+        ul, ol {
+            text-align: left;
+            color: #3f3f3f;
+            line-height: 1.5;
+            font-size: 16px;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            margin: 20px 10px;
+            margin-left: 0;
+            padding-left: 20px;
+            list-style: circle;
+        }
+
+        li {
+            text-align: left;
+            color: #3f3f3f;
+            line-height: 1.5;
+            font-size: 16px;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            text-indent: -20px;
+            display: block;
+            margin: 10px 10px;
+        }
+
+        li span {
+            margin-right: 10px;
+        }
+
+        /* 图片样式 - 严格按照用户规范 */
+        img {
+            text-align: left;
+            color: #3f3f3f;
+            line-height: 1.5;
+            font-size: 16px;
+            font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            margin: 20px auto;
+            border-radius: 4px;
+            display: block;
+            width: 100%;
+        }
+
+        /* 分割线 */
+        hr {
+            border: none;
+            height: 1px;
+            background: #e2e8f0;
+            margin: 32px 0;
+        }
+
+        /* 代码块样式 */
+        pre {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            margin: 16px 0;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 14px;
+            white-space: pre-wrap; /* 保持空格和换行 */
+            word-wrap: break-word; /* 长单词换行 */
+            tab-size: 4; /* 设置tab缩进 */
+        }
+
+        code {
+            background: #f1f5f9;
+            color: #2563eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 14px;
+            white-space: pre-wrap; /* 保持空格 */
+        }
+
+        /* 行内代码样式 */
+        p code, li code, blockquote code {
+            background: #f1f5f9;
+            color: #2563eb;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* 代码块语法高亮 */
+        pre code {
+            background: transparent;
+            color: #2d3748;
+            padding: 0;
+            border-radius: 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* 关键字高亮 */
+        .keyword {
+            color: #805ad5;
+            font-weight: bold;
+        }
+
+        .string {
+            color: #38a169;
+        }
+
+        .comment {
+            color: #718096;
+            font-style: italic;
+        }
+
+        .number {
+            color: #d69e2e;
+        }
+
+        .function {
+            color: #3182ce;
+            font-weight: bold;
+        }
+
+        .variable {
+            color: #e53e3e;
+        }
+
+        .operator {
+            color: #805ad5;
+        }
+
+        .punctuation {
+            color: #4a5568;
+        }
+
+        /* 代码块标题 */
+        .code-title {
+            background: #2563eb;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px 8px 0 0;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .code-title + pre {
+            margin-top: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* 特定语言样式 */
+        .language-python pre {
+            background: #f7fafc;
+        }
+
+        .language-javascript pre {
+            background: #fffbf0;
+        }
+
+        .language-html pre {
+            background: #f0fff4;
+        }
+
+        .language-css pre {
+            background: #faf5ff;
+        }
+
+        .language-json pre {
+            background: #f0f9ff;
+        }
+
+        /* 确保代码块中的空格和缩进正确显示 */
+        pre, code {
+            white-space: pre-wrap !important;
+            word-wrap: break-word;
+        }
+
+        /* 代码块行号样式（可选） */
+        .line-numbers {
+            counter-reset: line;
+        }
+
+        .line-numbers .line {
+            counter-increment: line;
+            position: relative;
+            padding-left: 3em;
+        }
+
+        .line-numbers .line:before {
+            content: counter(line);
+            position: absolute;
+            left: 0;
+            color: #999;
+            font-size: 12px;
+            width: 2em;
+            text-align: right;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+                font-size: 15px;
+            }
+
+            h2 {
+                font-size: 120%;
+                margin: 60px 10px 30px 10px;
+            }
+
+            h3 {
+                font-size: 110%;
+                margin: 30px 10px 15px 10px;
+            }
+
+            img {
+                width: 100%;
+            }
+        }
+
+        /* 特殊元素样式 */
+        .ai-highlight {
+            background: linear-gradient(120deg, transparent 0%, #60a5fa 20%, transparent 100%);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .ai-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 4px;
+        }
+
+        /* 脚注样式 */
+        .footnote {
+            font-size: 14px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 32px;
+            padding-top: 16px;
+        }
+
+        /* 目录样式 */
+        .toc {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 20px 0;
+        }
+
+        .toc-title {
+            font-weight: 600;
+            color: #2563eb;
+            margin-bottom: 12px;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .toc li {
+            margin: 4px 0;
+        }
+
+        .toc a {
+            color: #475569;
+            text-decoration: none;
+        }
+
+        .toc a:hover {
+            color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 正文内容 - 这里将插入markdown转换后的HTML内容 -->
+    <div class="ai-content">
+        {{ content|safe }}
+    </div>
+
+    <!-- 总结 -->
+    <hr>
+    
+    <blockquote>
+        <p>🎯 <strong>总结</strong>：人工智能正在重塑我们的世界，从日常应用到科学研究，AI技术无处不在。通过持续学习和实践，我们每个人都可以成为AI时代的参与者和创造者。</p>
+    </blockquote>
+
+    <!-- 语法高亮脚本 -->
+    <script>
+        // 简单的语法高亮函数
+        function highlightCode() {
+            const codeBlocks = document.querySelectorAll('pre code');
+            
+            codeBlocks.forEach(block => {
+                let code = block.textContent;
+                let highlightedCode = highlightSyntax(code);
+                block.innerHTML = highlightedCode;
+            });
+        }
+
+        function highlightSyntax(code) {
+            // Python 关键字
+            const pythonKeywords = /\b(def|class|if|else|elif|for|while|try|except|finally|with|as|import|from|return|yield|lambda|and|or|not|in|is|True|False|None)\b/g;
+            
+            // JavaScript 关键字
+            const jsKeywords = /\b(function|var|let|const|if|else|for|while|do|switch|case|break|continue|return|try|catch|finally|throw|new|this|class|extends|import|export|default|async|await)\b/g;
+            
+            // 字符串
+            const strings = /(["'`])((?:\\.|(?!\1)[^\\])*?)\1/g;
+            
+            // 注释
+            const comments = /(\/\/.*$|\/\*[\s\S]*?\*\/|#.*$)/gm;
+            
+            // 数字
+            const numbers = /\b\d+\.?\d*\b/g;
+            
+            // 函数调用
+            const functions = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g;
+            
+            // 操作符
+            const operators = /([+\-*/%=<>!&|^~]+)/g;
+            
+            // 应用高亮
+            code = code.replace(comments, '<span class="comment">$1</span>');
+            code = code.replace(strings, '<span class="string">$1$2$1</span>');
+            code = code.replace(numbers, '<span class="number">$&</span>');
+            code = code.replace(functions, '<span class="function">$1</span>');
+            code = code.replace(operators, '<span class="operator">$1</span>');
+            code = code.replace(pythonKeywords, '<span class="keyword">$1</span>');
+            code = code.replace(jsKeywords, '<span class="keyword">$1</span>');
+            
+            return code;
+        }
+
+        // 页面加载完成后执行语法高亮
+        document.addEventListener('DOMContentLoaded', function() {
+            highlightCode();
+        });
+
+        // 如果页面已经加载完成，立即执行
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', highlightCode);
+        } else {
+            highlightCode();
+        }
+    </script>
+
+</body>
+</html> 

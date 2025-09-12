@@ -1,0 +1,132 @@
+{
+  "$schema": "./channels_schema.json",
+  "version": "3.1",
+  "metadata": {
+    "description": "优化版频道配置文件",
+    "fields_guide": {
+      "id": "频道唯一标识（小写+下划线）",
+      "name": "频道名称",
+      "template": "留空则使用系统默认模板",
+      "content_rules": "内容规范要求"
+    },
+    "last_updated": "2025-09-01T00:00:00Z"
+  },
+  "channels": [
+    {
+      "id": "agi_observer",
+      "created": "2025-01-15T10:00:00Z",
+      "updated": "2025-09-09T10:09:59.274311Z",
+      "name": "AGI观察室",
+      "description": "专业科技内容频道，深度观察AI行业动态",
+      "template": "06_agi-observation-room-article-template.html",
+      "llm_endpoint": "Magic gpt4.1",
+      "content_rules": {
+        "target_audience": "互联网、AI行业前沿高管、投资人",
+        "writing_style": {
+          "title": "使用吸引眼球的标题",
+          "tone": "生动活泼，避免生硬死板.用更颠覆性的断言或更强烈的冲突开场，第一时间抓住读者眼球。插入更多犀利、短小、便于记忆和传播的“金句”。",
+          "depth": "深度分析，一针见血"
+        },
+        "technical_rules": [
+          "保留原文的图片链接",
+          "在必要的情况下给出少量个人观察和体会",
+          "不要使用过于复杂的段落层级结构",
+          "使用表格而非过多段落和列表.",
+          "必须提供“原文没有的洞察”和“预测性的判断”（精炼的）"
+        ]
+      }
+    },
+    {
+      "id": "ai_guide",
+      "created": "2025-01-15T10:00:00Z",
+      "updated": "2025-09-04T10:25:50.736581Z",
+      "name": "人工智能漫游指南",
+      "description": "AI技术科普与深度解读",
+      "template": "01_modern_news.html",
+      "llm_endpoint": "Magic gpt4.1",
+      "content_rules": {
+        "target_audience": "AI和技术圈专业人士",
+        "writing_style": {
+          "title": "如果是开源项目，在标题中保留Star数量",
+          "tone": "专业但通俗易懂\n保留图片标签",
+          "depth": "循序渐进"
+        },
+        "technical_rules": [
+          "技术内容必须准确",
+          "避免过度简化核心概念",
+          "不要改动图片标签，保留所有图片标签",
+          "尝试发散一下"
+        ]
+      }
+    },
+    {
+      "id": "agi_revelation",
+      "created": "2025-08-28T15:40:39.053753Z",
+      "updated": "2025-09-09T14:30:27.538439Z",
+      "name": "AGI启示录",
+      "description": "AI行业自媒体，从新闻事件和技术发展中，给出令人深思的启示。",
+      "template": "01_modern_news.html",
+      "llm_endpoint": "Magic gpt4.1",
+      "content_rules": {
+        "target_audience": "AI行业从业者、技术爱好者",
+        "writing_style": {
+          "title": "深度思考式标题，引发读者思考",
+          "tone": "深刻洞察，富有启发性，使用适当的口语化表的和人类断句，不要过于死板的标题层级，不要改动原文中的图片标签。对适当的关键词标重点，用更颠覆性的断言或更强烈的冲突开场，第一时间抓住读者眼球。插入更多犀利、短小、便于记忆和传播的“金句”。",
+          "depth": "从事件中提炼深层启示"
+        },
+        "technical_rules": [
+          "根据搜集的参考文章进行转写",
+          "保持客观分析的同时给出独特见解",
+          "注重从技术发展中提炼人文思考"
+        ]
+      }
+    },
+    {
+      "id": "ai_panorama",
+      "created": "2025-08-28T17:39:22.497959Z",
+      "updated": "2025-09-04T09:45:45.847311Z",
+      "name": "AI万象志",
+      "description": "洞见 AI万象，消除信息差，极致的深度思考者。你是AI万象志这个公众号频道的专业媒体主编，你年薪百万，你是享誉全国的鬼才。",
+      "template": "01_modern_news.html",
+      "llm_endpoint": "Magic gpt4.1",
+      "content_rules": {
+        "target_audience": "泛职场人群，关注AI发展的专业和非专业人士，职场人、学生、年轻人、中小企业家等等",
+        "writing_style": {
+          "title": "极其出圈和富有吸引力。",
+          "tone": "专业媒体主编的权威观点，深度思考。",
+          "depth": "消除信息差，提供独特洞察，并喜欢用通俗易懂、幽默风趣或轻松戏谑的方式来叙述。"
+        },
+        "technical_rules": [
+          "将事件写作成独特的报道",
+          "体现专业媒体主编的高度和视野",
+          "注重消除读者的信息认知差距",
+          "保持权威性和可读性的平衡",
+          "频道的作者是一名文理兼修的深度思考人士，分析哲学",
+          "保留所有图片标签"
+        ]
+      }
+    },
+    {
+      "id": "野路子思考局",
+      "created": "2025-09-02T11:40:45.015671Z",
+      "updated": "2025-09-02T11:40:45.015680Z",
+      "name": "野路子思考局",
+      "description": "职场工作、学习生活随谈，用哲学、经济学、心理学等剖析现象，给出让读者有获得感的思考体会。",
+      "template": "01_modern_news.html",
+      "llm_endpoint": "Magic gpt4.1",
+      "content_rules": {
+        "target_audience": "通用受众",
+        "writing_style": {
+          "title": "吸引读者的标题",
+          "tone": "专业且易懂",
+          "depth": "适度深入"
+        },
+        "technical_rules": [
+          "根据输入内容进行专业转写",
+          "保持内容的准确性和可读性",
+          "适当添加个人观点和分析"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "tokens": {
+    "AGI观察室": {
+      "token": "254511315",
+      "last_updated": "2025-08-29T16:53:58.035544",
+      "status": "active",
+      "description": "AGI观察室公众号的token"
+    },
+    "AGI启示录": {
+      "token": "254511315",
+      "last_updated": "2025-08-29T16:53:58.035846",
+      "status": "active",
+      "description": "AGI启示录公众号的token"
+    },
+    "AI 万象志": {
+      "token": "254511315",
+      "last_updated": "2025-08-29T16:53:58.036192",
+      "status": "active",
+      "description": "AI 万象志公众号的token"
+    },
+    "人工智能漫游指南": {
+      "token": "254511315",
+      "last_updated": "2025-08-29T16:53:58.036323",
+      "status": "active",
+      "description": "人工智能漫游指南公众号的token"
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2025-08-29T16:53:58.033978",
+    "last_modified": "2025-08-29T16:53:58.036330",
+    "description": "微信公众号Token配置文件",
+    "notes": [
+      "Token用于微信公众平台API调用",
+      "每个公众号都有唯一的token",
+      "如果token失效，请联系管理员更新"
+    ]
+  }
+}
