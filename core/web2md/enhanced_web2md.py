@@ -245,11 +245,15 @@ Chrome初始化失败，可能是以下原因之一：
         # 如果启用图片下载，处理图片
         if download_images and markdown_content:
             print("正在处理图片...")
-            # 获取项目根目录
-            project_root = os.path.dirname(current_dir)
-            static_dir = os.path.join(project_root, 'app', 'static')
-            images_dir = os.path.join(static_dir, 'images')
-            
+            # 使用正确的图片存储路径
+            try:
+                from simple_paths import get_images_dir
+                images_dir = get_images_dir()
+            except ImportError:
+                # 备用方案：直接计算路径
+                project_root = os.path.dirname(current_dir)
+                images_dir = os.path.join(project_root, 'workspace', 'images')
+
             # 处理图片
             markdown_content = process_images_in_markdown(markdown_content, url, images_dir)
             print(f"图片处理完成，保存到: {images_dir}")

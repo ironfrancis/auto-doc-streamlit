@@ -249,7 +249,7 @@ with st.expander("Usage Tips"):
        
     5. **Adjust viewport height** if the page has unusual layout requirements.
     
-    6. **Image Download**: Enable "Download Images to Local" to automatically download images from the webpage. Images will be saved to `static/images/` directory and paths will be updated in the Markdown content.
+    6. **Image Download**: Enable "Download Images to Local" to automatically download images from the webpage. Images will be saved to `workspace/images/` directory and paths will be updated in the Markdown content.
     
     7. If extraction fails, try opening the page in a regular browser first to ensure it loads properly.
     """)
