@@ -169,3 +169,6 @@ default_year_index = years.index(current_year) if current_year in years else 0
 ---
 
 **总结**：月度日历的年份和月份选择问题已完全修复，现在能够智能地根据实际数据显示相应的年份选项，并自动选择当前年月，大大提升了用户体验！ 
+---
+
+**最后更新**: 2025年9月13日

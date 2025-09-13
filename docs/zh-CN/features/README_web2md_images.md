@@ -118,3 +118,6 @@ https://example.com/article-with-images
 - 图片下载进度
 - 成功/失败的图片数量
 - 错误详情 
+---
+
+**最后更新**: 2025年9月13日

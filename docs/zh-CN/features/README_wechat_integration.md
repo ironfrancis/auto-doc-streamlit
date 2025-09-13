@@ -182,3 +182,6 @@ python auto_wechat_collector_with_integration.py --start
 ---
 
 **现在您的微信公众号文章会自动记录并显示在频道发布历史记录中了！** 🎉 
+---
+
+**最后更新**: 2025年9月13日

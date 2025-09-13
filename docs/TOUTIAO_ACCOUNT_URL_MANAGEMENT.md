@@ -178,3 +178,7 @@ print(f"提取的账号ID: {account_id}")
 url = get_url_for_account(account_id)
 print(f"选择的URL: {url}")
 ```
+
+---
+
+**最后更新**: 2025年9月13日

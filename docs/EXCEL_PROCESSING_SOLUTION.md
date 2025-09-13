@@ -226,3 +226,7 @@ workspace/data/publish_history_for_calendar.csv
 5. **可维护性** - 代码结构清晰，易于维护
 
 现在可以放心使用 `python scripts/comprehensive_excel_processor.py` 来处理所有Excel文件了！
+
+---
+
+**最后更新**: 2025年9月13日

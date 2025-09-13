@@ -126,4 +126,8 @@ https://mp.weixin.qq.com/s/xxx
 
 - [数据录入管理](../README_Data_Entry.md)
 - [频道管理](../README_Channel_Registration.md)
-- [数据导出](../README_Data_Export.md) 
+- [数据导出](../README_Data_Export.md)
+
+---
+
+**最后更新**: 2025年9月13日 
