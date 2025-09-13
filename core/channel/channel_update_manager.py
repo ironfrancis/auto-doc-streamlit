@@ -36,7 +36,7 @@ class ChannelUpdateManager:
         # 配置文件路径
         self.config_dir = get_json_data_dir()
         self.channels_file = self.config_dir / "channels_v3.json"
-        self.cookies_file = Path("config/cookies_config.json")
+        self.cookies_file = Path("workspace/data/json/cookies_config.json")
         
     def update_all_channels(self) -> Dict[str, Dict]:
         """

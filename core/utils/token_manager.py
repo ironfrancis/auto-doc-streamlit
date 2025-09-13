@@ -15,7 +15,7 @@ from pathlib import Path
 class TokenManager:
     """Token管理器类"""
     
-    def __init__(self, config_file: str = "app/tokens_config.json"):
+    def __init__(self, config_file: str = "workspace/data/json/tokens_config.json"):
         """
         初始化Token管理器
         

@@ -45,7 +45,7 @@ if str(CORE_UTILS_DIR) not in sys.path:
     sys.path.insert(0, str(CORE_UTILS_DIR))
 
 # 常用目录路径
-CONFIG_DIR = PROJECT_ROOT / "config"
+CONFIG_DIR = PROJECT_ROOT / "workspace" / "data" / "json"
 TEMPLATES_DIR = PROJECT_ROOT / "templates"
 STATIC_DIR = PROJECT_ROOT / "static"
 WORKSPACE_DIR = PROJECT_ROOT / "workspace"

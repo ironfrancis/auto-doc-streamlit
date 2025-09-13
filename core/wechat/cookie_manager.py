@@ -15,7 +15,7 @@ from pathlib import Path
 class CookieManager:
     """Cookie管理器类"""
     
-    def __init__(self, config_file: str = "app/cookies_config.json"):
+    def __init__(self, config_file: str = "workspace/data/json/cookies_config.json"):
         """
         初始化Cookie管理器
         
