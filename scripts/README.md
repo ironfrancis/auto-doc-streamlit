@@ -1,33 +1,48 @@
-# Excel数据处理脚本
+# 项目脚本目录
 
 ## 概述
 
-这个目录包含了用于处理Excel文件并写入到日历发布历史CSV文件的脚本。
+这个目录包含了项目运行所需的核心脚本和工具，按功能分类组织。
 
-## 脚本说明
+## 📂 目录结构
 
-### 1. `excel_to_calendar_processor.py`
-**主要处理脚本** - 完整的Excel数据处理功能
+```
+scripts/
+├── comprehensive_excel_processor.py    # 综合Excel数据处理器（主要）
+├── process_excel_data.py              # Excel处理快捷脚本
+├── example_river_flow_usage.py        # 河流图可视化使用示例
+├── publish_excel/                     # 原始Excel数据文件
+├── examples/                          # 示例脚本和演示文件
+├── maintenance/                       # 维护工具脚本
+├── migration/                         # 数据迁移脚本
+└── workspace/                         # 工作区目录
+```
+
+## 🔧 核心脚本说明
+
+### 1. `comprehensive_excel_processor.py`
+**主要Excel数据处理脚本** - 功能最完整的Excel处理器
 
 **功能特点：**
-- 自动扫描 `publish_excel/` 目录下的所有Excel文件
+- 处理多种类型的文件：Excel (.xlsx/.xls)、CSV文件
+- 支持多个数据源目录（原始、修复、恢复、转换的文件）
 - 智能列映射和数据标准化
-- 完善的去重机制
-- 增量更新支持
+- 完善的去重机制和增量更新
 - 多平台支持（头条号、百家号）
+- 底层XML解析，处理损坏的Excel文件
 
 **使用方法：**
 ```bash
-python scripts/excel_to_calendar_processor.py
+python scripts/comprehensive_excel_processor.py
 ```
 
 ### 2. `process_excel_data.py`
-**快捷使用脚本** - 简化版调用接口
+**快捷使用脚本** - 调用综合处理器的简化接口
 
 **功能特点：**
 - 一键处理所有Excel文件
-- 友好的用户界面
-- 简化的错误提示
+- 友好的用户界面和提示
+- 简化的错误处理
 
 **使用方法：**
 ```bash

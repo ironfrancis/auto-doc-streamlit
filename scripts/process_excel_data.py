@@ -12,7 +12,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from scripts.excel_to_calendar_processor import process_all_excel_files
+from scripts.comprehensive_excel_processor import process_all_files
 
 def main():
     """主函数"""
@@ -23,7 +23,7 @@ def main():
     print("=" * 50)
     
     try:
-        success = process_all_excel_files()
+        success = process_all_files()
         
         if success:
             print("\n✅ 处理完成！")
