@@ -317,83 +317,93 @@ def fix_pseudo_list_format(md_text):
     return md_text
 
 def clean_orphaned_asterisks(md_text):
-    """清理孤立和不配对的星号，避免在HTML中显示意外的*符号"""
+    """清理孤立和不配对的星号，避免在HTML中显示意外的*符号
+
+    这个函数现在更加保守，只处理明显的错误情况：
+    1. 行尾的孤立星号
+    2. 句子中间完全孤立的单星号（前后都有空格）
+    3. 不配对的双星号
+    """
     import re
-    
+
     # 保护代码块中的内容
     code_blocks = []
     def preserve_code_block(match):
         code_blocks.append(match.group(0))
         return f"__CODE_BLOCK_{len(code_blocks)-1}__"
-    
+
     # 保护围栏代码块和行内代码
     md_text = re.sub(r'```[\s\S]*?```', preserve_code_block, md_text)
-    md_text = re.sub(r'`[^`]*?`', preserve_code_block, md_text)
-    
+    md_text = re.sub(r'`[^`]*`', preserve_code_block, md_text)
+
     # 1. 清理行尾的孤立星号（通常是转换错误）
     md_text = re.sub(r'\s+\*\s*$', '', md_text, flags=re.MULTILINE)
-    
-    # 2. 清理句子中间的孤立单星号（前后都有空格）
-    md_text = re.sub(r'\s+\*\s+', ' ', md_text)
-    
-    # 3. 清理句子开头的孤立星号（不是列表标记）
+
+    # 2. 清理句子中间的孤立单星号（前后都有空格，且不是Markdown语法的一部分）
+    # 注意：这个模式不会匹配像 "word*word" 或 "*word*" 这样的有效语法
+    md_text = re.sub(r'(?<=\w)\s+\*\s+(?=\w)', ' ', md_text)
+
+    # 3. 清理句子开头的孤立星号（不是列表标记，且后面有空格）
     md_text = re.sub(r'^([^*\s].*?)\s+\*\s+', r'\1 ', md_text, flags=re.MULTILINE)
-    
-    # 4. 清理不配对的双星号（只在明显错误的情况下）
-    # 查找行中只有开始的**但没有结束的情况
+
+    # 4. 处理不配对的双星号和单星号（只在明显错误的情况下）
     lines = md_text.split('\n')
     cleaned_lines = []
-    
+
     for line in lines:
         # 跳过列表行和标题行
         if re.match(r'^\s*[\*\+\-]\s', line) or re.match(r'^\s*#{1,6}\s', line):
             cleaned_lines.append(line)
             continue
-            
-        # 计算星号数量
-        single_asterisk_count = line.count('*') - line.count('**') * 2
-        double_asterisk_pairs = line.count('**') // 2
-        
-        # 如果有奇数个单星号，可能有不配对的情况
-        if single_asterisk_count % 2 == 1:
-            # 简单处理：移除最后一个孤立的单星号
-            # 找到最后一个不配对的星号位置
-            temp_line = line
-            asterisk_positions = []
+
+        # 计算单星号和双星号的数量
+        single_asterisks = []
+        double_asterisks = []
+        i = 0
+        while i < len(line):
+            if line[i] == '*':
+                if i + 1 < len(line) and line[i + 1] == '*':
+                    double_asterisks.append(i)
+                    i += 2
+                else:
+                    single_asterisks.append(i)
+                    i += 1
+            else:
+                i += 1
+
+        # 处理不配对的双星号（奇数个**）
+        if len(double_asterisks) % 2 == 1:
+            # 移除最后一个不配对的**
+            last_double_pos = double_asterisks[-1]
+            line = line[:last_double_pos] + line[last_double_pos + 2:]
+
+        # 处理不配对的单星号（奇数个*，且不是有效的Markdown语法）
+        # 只有当单星号数量是奇数且没有形成有效的配对时才处理
+        single_count = len(single_asterisks)
+        if single_count % 2 == 1 and single_count > 0:
+            # 检查是否可能是有效的Markdown语法（相邻的两个单星号之间有内容）
+            valid_pairs = 0
             i = 0
-            while i < len(temp_line):
-                if temp_line[i] == '*':
-                    if i + 1 < len(temp_line) and temp_line[i + 1] == '*':
-                        # 这是双星号，跳过
-                        i += 2
-                    else:
-                        # 这是单星号
-                        asterisk_positions.append(i)
-                        i += 1
+            while i < single_count - 1:
+                if single_asterisks[i + 1] - single_asterisks[i] > 1:
+                    valid_pairs += 1
+                    i += 2
                 else:
                     i += 1
-            
-            # 如果单星号数量是奇数，移除最后一个
-            if len(asterisk_positions) % 2 == 1:
-                last_pos = asterisk_positions[-1]
-                temp_line = temp_line[:last_pos] + temp_line[last_pos + 1:]
-                line = temp_line
-        
-        # 处理不配对的双星号
-        if line.count('**') % 2 == 1:
-            # 移除最后一个不配对的**
-            last_double_pos = line.rfind('**')
-            if last_double_pos != -1:
-                line = line[:last_double_pos] + line[last_double_pos + 2:]
-        
+
+            # 如果没有有效的配对，移除最后一个单星号
+            if valid_pairs == 0:
+                last_pos = single_asterisks[-1]
+                line = line[:last_pos] + line[last_pos + 1:]
+
         cleaned_lines.append(line)
-    
+
     md_text = '\n'.join(cleaned_lines)
-    
+
     # 恢复代码块
     for i, code_block in enumerate(code_blocks):
         md_text = md_text.replace(f"__CODE_BLOCK_{i}__", code_block)
-    
+
     return md_text
 
 def fix_escaped_markdown_syntax(md_text):
@@ -663,7 +673,7 @@ def add_header_classes(html_content):
     
     return html_content
 
-def md_to_html(md_text: str, template_name: str = 'wepub.html', static_dir: str = None, **kwargs) -> str:
+def md_to_html(md_text: str, template_name: str = 'magic-article-template.html', static_dir: str = None, **kwargs) -> str:
     # 如果没有指定static_dir，使用simple_paths中的配置
     if static_dir is None:
         try:
