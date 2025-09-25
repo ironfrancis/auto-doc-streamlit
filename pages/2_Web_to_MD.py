@@ -80,11 +80,19 @@ with st.form("web2md_form"):
             help="Time to wait after each scroll action"
         )
 
-        # 图片下载选项
-        download_images = st.checkbox(
-            "Download Images to Local",
-            value=True,
-            help="Automatically download images from the webpage to local directory"
+        # 图片处理选项
+        image_handling = st.radio(
+            "Image Handling",
+            ["Download to Local", "Upload to Image Bed", "Keep Original URLs"],
+            index=0,
+            help="'Download to Local': Download images to local directory | 'Upload to Image Bed': Upload images to online image hosting service | 'Keep Original URLs': Keep original image URLs unchanged"
+        )
+
+        # 显示图片处理错误选项
+        show_image_errors = st.checkbox(
+            "Show image processing errors in Markdown",
+            value=False,
+            help="Display error messages in Markdown when image processing fails (errors are always logged to console)"
         )
 
         # 自动打开文件选项
@@ -128,7 +136,7 @@ if submitted and url:
             selectors_to_remove = None
             if 'remove_selectors' in locals() and remove_selectors:
                 selectors_to_remove = [s.strip() for s in remove_selectors.split(',') if s.strip()]
-            
+
             # 提取Markdown内容
             result = extract_markdown_from_url(
                 url=url,
@@ -138,7 +146,8 @@ if submitted and url:
                 scroll_pause=scroll_pause if 'scroll_pause' in locals() else 1.0,
                 viewport_height=viewport_height if 'viewport_height' in locals() else 1080,
                 remove_selectors=selectors_to_remove,
-                download_images=download_images if 'download_images' in locals() else True
+                image_handling=image_handling if 'image_handling' in locals() else "Download to Local",
+                show_image_errors=show_image_errors if 'show_image_errors' in locals() else False
             )
 
             # 解析返回结果
@@ -151,18 +160,28 @@ if submitted and url:
                 # 显示成功消息
                 st.success("Content extracted successfully!")
 
-                # 显示图片下载信息
-                if 'download_images' in locals() and download_images:
-                    static_dir = project_root / "app" / "static"
-                    images_dir = static_dir / "images"
-                    if images_dir.exists():
-                        image_files = [f for f in images_dir.iterdir() if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.gif', '.webp')]
-                        if image_files:
-                            st.info(f"✅ Downloaded {len(image_files)} images to local directory")
-                            with st.expander("View downloaded images", expanded=False):
-                                for img_file in sorted(image_files):
-                                    file_size = img_file.stat().st_size
-                                    st.markdown(f"- {img_file.name} ({file_size} bytes)")
+                # 显示图片处理信息
+                if 'image_handling' in locals():
+                    if image_handling == "Download to Local":
+                        # 检查本地图片目录
+                        try:
+                            from simple_paths import get_images_dir
+                            images_dir = get_images_dir()
+                        except ImportError:
+                            images_dir = project_root / "workspace" / "images"
+
+                        if images_dir.exists():
+                            image_files = [f for f in images_dir.iterdir() if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.gif', '.webp')]
+                            if image_files:
+                                st.info(f"✅ Downloaded {len(image_files)} images to local directory")
+                                with st.expander("View downloaded images", expanded=False):
+                                    for img_file in sorted(image_files):
+                                        file_size = img_file.stat().st_size
+                                        st.markdown(f"- {img_file.name} ({file_size:,} bytes)")
+                    elif image_handling == "Upload to Image Bed":
+                        st.info("✅ Images uploaded to image hosting service")
+                    elif image_handling == "Keep Original URLs":
+                        st.info("ℹ️ Original image URLs preserved")
 
                 # 创建两列布局
                 col1, col2 = st.columns([3, 1])
@@ -249,9 +268,14 @@ with st.expander("Usage Tips"):
        
     5. **Adjust viewport height** if the page has unusual layout requirements.
     
-    6. **Image Download**: Enable "Download Images to Local" to automatically download images from the webpage. Images will be saved to `workspace/images/` directory and paths will be updated in the Markdown content.
-    
-    7. If extraction fails, try opening the page in a regular browser first to ensure it loads properly.
+    6. **Image Handling Options**:
+       - **Download to Local**: Download images to `workspace/images/` directory and update paths in Markdown
+       - **Upload to Image Bed**: Upload images to online image hosting service for permanent storage
+       - **Keep Original URLs**: Preserve original image URLs without downloading or uploading
+
+    7. **Error Display**: By default, image processing errors are logged to console only. Check "Show image processing errors in Markdown" to display error messages directly in the Markdown content.
+
+    8. If extraction fails, try opening the page in a regular browser first to ensure it loads properly.
     """)
 
 

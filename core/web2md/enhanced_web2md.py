@@ -64,44 +64,105 @@ def download_image(url, save_dir, base_url=None):
         print(f"下载图片失败 {url}: {str(e)}")
         return None
 
-def process_images_in_markdown(markdown_content, base_url, images_dir):
-    """处理Markdown内容中的图片，下载网络图片并更新路径"""
-    # 创建图片目录
-    os.makedirs(images_dir, exist_ok=True)
-    
+def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode="download", show_errors=False):
+    """
+    处理Markdown内容中的图片
+
+    参数:
+        markdown_content (str): Markdown内容
+        base_url (str): 基础URL，用于处理相对路径
+        images_dir (str, optional): 图片保存目录，仅在mode="download"时使用
+        mode (str): 处理模式 - "download"（下载到本地）或 "upload"（上传到图床）
+        show_errors (bool): 是否在Markdown中显示错误信息
+
+    返回:
+        str: 处理后的Markdown内容
+    """
     # 匹配Markdown图片语法
     image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
-    
+
     def replace_image(match):
         alt_text = match.group(1)
         image_url = match.group(2)
-        
+
         # 检查是否是网络图片
         if image_url.startswith(('http://', 'https://')) or (not image_url.startswith('/') and not os.path.isabs(image_url)):
             try:
-                # 下载网络图片
-                filename = download_image(image_url, images_dir, base_url)
-                if filename:
-                    # 返回绝对路径
-                    new_path = os.path.abspath(os.path.join(images_dir, filename))
-                    return f'![{alt_text}]({new_path})'
+                if mode == "download":
+                    # 下载到本地
+                    if not images_dir:
+                        return f'![{alt_text}]({image_url}) <!-- 图片目录未指定 -->'
+
+                    # 创建图片目录
+                    os.makedirs(images_dir, exist_ok=True)
+
+                    filename = download_image(image_url, images_dir, base_url)
+                    if filename:
+                        # 返回绝对路径
+                        new_path = os.path.abspath(os.path.join(images_dir, filename))
+                        return f'![{alt_text}]({new_path})'
+                    else:
+                        # 下载失败，在控制台记录错误，保持原URL
+                        print(f"图片下载失败: {image_url}")
+                        if show_errors:
+                            return f'![{alt_text}]({image_url}) <!-- 图片下载失败 -->'
+                        else:
+                            return f'![{alt_text}]({image_url})'
+
+                elif mode == "upload":
+                    # 上传到图床
+                    try:
+                        from core.utils.img_bed import upload_image_from_url
+                        bed_url = upload_image_from_url(image_url, base_url)
+                        if bed_url:
+                            return f'![{alt_text}]({bed_url})'
+                        else:
+                            # 上传失败，在控制台记录错误，保持原URL
+                            print(f"图片上传失败: {image_url}")
+                            if show_errors:
+                                return f'![{alt_text}]({image_url}) <!-- 图片上传失败 -->'
+                            else:
+                                return f'![{alt_text}]({image_url})'
+                    except ImportError:
+                        print(f"图床模块未找到，无法上传图片: {image_url}")
+                        if show_errors:
+                            return f'![{alt_text}]({image_url}) <!-- 图床模块未找到 -->'
+                        else:
+                            return f'![{alt_text}]({image_url})'
+                    except Exception as e:
+                        print(f"图片上传失败 {image_url}: {str(e)}")
+                        if show_errors:
+                            return f'![{alt_text}]({image_url}) <!-- 图片上传失败: {str(e)[:50]}... -->'
+                        else:
+                            return f'![{alt_text}]({image_url})'
+
                 else:
-                    # 下载失败，保持原URL并添加警告
-                    return f'![{alt_text}]({image_url}) <!-- 图片下载失败: {image_url} -->'
+                    # 未知模式，在控制台记录错误，保持原URL
+                    print(f"未知图片处理模式: {mode}，图片: {image_url}")
+                    if show_errors:
+                        return f'![{alt_text}]({image_url}) <!-- 未知处理模式: {mode} -->'
+                    else:
+                        return f'![{alt_text}]({image_url})'
+
             except Exception as e:
-                # 如果处理失败，保持原路径
-                return f'![{alt_text}]({image_url}) <!-- 图片处理失败: {str(e)} -->'
+                # 如果处理失败，在控制台记录错误，保持原路径
+                print(f"图片处理失败 {image_url}: {str(e)}")
+                if show_errors:
+                    return f'![{alt_text}]({image_url}) <!-- 图片处理失败: {str(e)[:50]}... -->'
+                else:
+                    return f'![{alt_text}]({image_url})'
         else:
             # 如果是本地路径或已经是相对路径，保持不变
             return match.group(0)
-    
+
     # 替换所有图片路径
     processed_md = re.sub(image_pattern, replace_image, markdown_content)
     return processed_md
 
 def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time=5,
                              scroll=True, scroll_pause=1.0, viewport_height=1080,
-                             remove_selectors=None, download_images=True):
+                             remove_selectors=None, image_handling="Download to Local",
+                             show_image_errors=False):
     """
     使用MagicLens从网页提取Markdown内容（增强版）
 
@@ -114,7 +175,11 @@ def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time
         scroll_pause (float, optional): 每次滚动后的暂停时间（秒）
         viewport_height (int, optional): 浏览器视口高度（像素）
         remove_selectors (list, optional): 要移除的元素的CSS选择器列表
-        download_images (bool, optional): 是否下载图片到本地
+        image_handling (str, optional): 图片处理方式
+            - "Download to Local": 下载图片到本地
+            - "Upload to Image Bed": 上传图片到图床
+            - "Keep Original URLs": 保持原始URL
+        show_image_errors (bool, optional): 是否在Markdown中显示图片处理错误信息
 
     返回:
         str: 提取的Markdown内容
@@ -242,21 +307,28 @@ Chrome初始化失败，可能是以下原因之一：
             except Exception as e:
                 print(f"警告：星号处理失败: {e}")
 
-        # 如果启用图片下载，处理图片
-        if download_images and markdown_content:
-            print("正在处理图片...")
-            # 使用正确的图片存储路径
-            try:
-                from simple_paths import get_images_dir
-                images_dir = get_images_dir()
-            except ImportError:
-                # 备用方案：直接计算路径
-                project_root = os.path.dirname(current_dir)
-                images_dir = os.path.join(project_root, 'workspace', 'images')
+        # 如果启用图片处理，处理图片
+        if image_handling != "Keep Original URLs" and markdown_content:
+            print(f"正在处理图片 ({image_handling})...")
 
-            # 处理图片
-            markdown_content = process_images_in_markdown(markdown_content, url, images_dir)
-            print(f"图片处理完成，保存到: {images_dir}")
+            if image_handling == "Download to Local":
+                # 使用正确的图片存储路径
+                try:
+                    from simple_paths import get_images_dir
+                    images_dir = get_images_dir()
+                except ImportError:
+                    # 备用方案：直接计算路径
+                    project_root = os.path.dirname(current_dir)
+                    images_dir = os.path.join(project_root, 'workspace', 'images')
+
+                # 处理图片 - 下载到本地
+                markdown_content = process_images_in_markdown(markdown_content, url, images_dir, mode="download", show_errors=show_image_errors)
+                print(f"图片下载完成，保存到: {images_dir}")
+            elif image_handling == "Upload to Image Bed":
+                # 处理图片 - 上传到图床
+                markdown_content = process_images_in_markdown(markdown_content, url, None, mode="upload", show_errors=show_image_errors)
+                print("图片上传到图床完成")
+            # 对于"Keep Original URLs"，不做任何处理
 
         # 自动生成输出文件名
         if not output_file:
@@ -312,8 +384,11 @@ def main():
                         help="浏览器视口高度（像素）")
     parser.add_argument("--remove", nargs="+", dest="remove_selectors",
                         help="要移除的元素的CSS选择器（空格分隔）")
-    parser.add_argument("--no-images", action="store_false", dest="download_images",
-                        help="禁用图片下载")
+    parser.add_argument("--image-handling", choices=["Download to Local", "Upload to Image Bed", "Keep Original URLs"],
+                        default="Download to Local", dest="image_handling",
+                        help="图片处理方式: 'Download to Local'(下载到本地) | 'Upload to Image Bed'(上传到图床) | 'Keep Original URLs'(保持原始URL)")
+    parser.add_argument("--show-image-errors", action="store_true", dest="show_image_errors",
+                        help="在Markdown中显示图片处理错误信息")
 
     args = parser.parse_args()
 
@@ -327,7 +402,8 @@ def main():
         args.scroll_pause,
         args.viewport_height,
         args.remove_selectors,
-        args.download_images
+        args.image_handling,
+        args.show_image_errors
     )
 
 # if __name__ == "__main__":
