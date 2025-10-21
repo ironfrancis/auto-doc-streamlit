@@ -570,7 +570,16 @@ if concurrent_transcribe_clicked:
             
             # 创建结果容器
             results = {}
+            saved_files = []
             completed_count = 0
+            success_count = 0
+            failed_count = 0
+            
+            # 准备保存目录和基础时间戳
+            base_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
+            md_review_dir = get_md_review_dir()
+            os.makedirs(md_review_dir, exist_ok=True)
             
             # 使用线程池执行并发请求
             with ThreadPoolExecutor(max_workers=len(endpoint_configs)) as executor:
@@ -580,7 +589,7 @@ if concurrent_transcribe_clicked:
                     for ep_name, ep_config in endpoint_configs.items()
                 }
                 
-                # 处理完成的任务
+                # 处理完成的任务 - 流式处理，完成一个立即保存和打开
                 for future in as_completed(future_to_endpoint):
                     endpoint_name, success, result, elapsed = future.result()
                     results[endpoint_name] = {
@@ -590,51 +599,49 @@ if concurrent_transcribe_clicked:
                     }
                     
                     completed_count += 1
+                    
+                    # 如果成功，立即保存并打开文件
+                    if success:
+                        success_count += 1
+                        # 为每个端点添加序号，避免时间戳冲突
+                        ts = f"{base_ts}_{completed_count}"
+                        safe_endpoint = endpoint_name.replace("/", "_").replace(" ", "_").replace(":", "_")
+                        local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                        
+                        # 保存文件
+                        with open(local_md_path, "w", encoding="utf-8") as f:
+                            f.write(result)
+                        
+                        # 保存历史
+                        save_transcribe_history(selected_channel, "concurrent", input_content, result, 
+                                               extra={"endpoint": endpoint_name, "elapsed": elapsed})
+                        
+                        # 立即打开文件，不等待其他端点
+                        try:
+                            subprocess.Popen(["open", local_md_path])
+                            status_text.text(f"✅ {endpoint_name} 完成并已打开 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
+                        except Exception as e:
+                            status_text.text(f"✅ {endpoint_name} 完成 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
+                        
+                        saved_files.append((endpoint_name, local_md_path))
+                    else:
+                        failed_count += 1
+                        status_text.text(f"❌ {endpoint_name} 失败 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
+                    
+                    # 更新进度条
                     progress = completed_count / len(endpoint_configs)
                     progress_bar.progress(progress)
-                    status_text.text(f"已完成: {completed_count}/{len(endpoint_configs)} 个端点")
+                    
+                    # 短暂延迟，让用户看到状态更新
+                    time.sleep(0.3)
             
             # 完成后清除进度显示
             progress_bar.empty()
             status_text.empty()
             
-            # 统计结果
-            success_count = sum(1 for r in results.values() if r["success"])
-            failed_count = len(results) - success_count
-            
-            # 自动保存所有成功的结果到工作目录
-            saved_files = []
-            base_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            for idx, (ep_name, result_data) in enumerate(results.items()):
-                if result_data["success"]:
-                    safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
-                    # 为每个端点添加序号，避免时间戳冲突
-                    ts = f"{base_ts}_{idx+1}"
-                    md_review_dir = get_md_review_dir()
-                    os.makedirs(md_review_dir, exist_ok=True)
-                    safe_endpoint = ep_name.replace("/", "_").replace(" ", "_").replace(":", "_")
-                    local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
-                    
-                    # 保存文件
-                    with open(local_md_path, "w", encoding="utf-8") as f:
-                        f.write(result_data["result"])
-                    
-                    # 保存历史
-                    save_transcribe_history(selected_channel, "concurrent", input_content, result_data["result"], 
-                                           extra={"endpoint": ep_name, "elapsed": result_data["elapsed"]})
-                    
-                    saved_files.append((ep_name, local_md_path))
-            
-            # 如果有保存的文件，显示提示信息并自动打开
+            # 显示最终统计
             if saved_files:
-                st.info(f"📁 已自动保存 {len(saved_files)} 个成功的转写结果到工作目录")
-                
-                # 自动用默认应用打开所有保存的文件
-                for ep_name, file_path in saved_files:
-                    try:
-                        subprocess.Popen(["open", file_path])
-                    except Exception as e:
-                        st.warning(f"无法自动打开 {ep_name} 的文件: {e}")
+                st.success(f"🎉 并发转写完成！已自动保存并打开 {len(saved_files)} 个成功的结果")
             
             # 显示统计信息
             col_stat1, col_stat2, col_stat3 = st.columns(3)
