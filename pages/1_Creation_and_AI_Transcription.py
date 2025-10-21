@@ -616,9 +616,11 @@ if transcribe_clicked:
                 st.success(get_text("success"))
                 
                 # 自动切换到新生成的文章预览
-                new_article_name = f"{ts}_{safe_channel}.md"
+                # 文件名应该是 {ts}_{safe_channel}_{safe_endpoint}.md
+                new_article_name = f"{ts}_{safe_channel}_{safe_endpoint}.md"
                 st.session_state["current_md_file"] = new_article_name
                 st.session_state["current_md_path"] = local_md_path
+                st.session_state["auto_select_triggered"] = True  # 标记已触发自动选择
                 
                 # 显示成功信息和预览提示
                 st.success(f"✅ 转写成功！文章已保存为: {new_article_name}")
@@ -881,7 +883,7 @@ has_history = len(history_list) > 0
 # 如果有当前结果或历史记录，显示对比区
 if has_current_results or has_history:
     st.markdown("---")
-    st.markdown("## 📊 并发结果对比区")
+    st.markdown("## 并发结果对比区")
     
     # 决定默认显示哪个Tab（如果刚执行完并发转写，显示当前结果；否则显示历史）
     if has_current_results and st.session_state.get("show_concurrent_compare", False):
@@ -1162,8 +1164,29 @@ with col_divider:
 # 左侧：选择/编辑/预览Markdown
 with col1:
     if md_files:
-        selected = st.selectbox("选择Markdown文件：", md_files)
-        if selected:
+        # 添加默认选项，避免自动加载第一个文件
+        file_options = ["--- 请选择Markdown文件 ---"] + md_files
+        
+        # 如果 session_state 中有指定的文件，自动选中（来自转写操作）
+        default_index = 0
+        if "current_md_file" in st.session_state and st.session_state["current_md_file"] in md_files:
+            # 只在首次触发时自动选中，用户手动选择后清除
+            if st.session_state.get("auto_select_triggered", False):
+                default_index = md_files.index(st.session_state["current_md_file"]) + 1
+        
+        selected = st.selectbox("选择Markdown文件：", file_options, index=default_index)
+        
+        # 如果用户手动选择了文件（非默认选项），清除自动选择标记
+        if selected != "--- 请选择Markdown文件 ---":
+            if "auto_select_triggered" in st.session_state:
+                # 如果当前选择的不是自动触发的文件，清除标记
+                if selected != st.session_state.get("current_md_file"):
+                    del st.session_state["auto_select_triggered"]
+                    if "current_md_file" in st.session_state:
+                        del st.session_state["current_md_file"]
+        
+        # 只有用户选择了具体文件才加载
+        if selected and selected != "--- 请选择Markdown文件 ---":
             # 找到对应的文件数据
             selected_file_data = next((f for f in md_files_data if f['name'] == selected), None)
         
@@ -1183,6 +1206,10 @@ with col1:
             else:
                 st.error("无法找到选中的文件")
                 edited = ""
+        else:
+            # 显示提示信息
+            st.info("👆 请从上方下拉框选择一个Markdown文件进行审核和预览")
+            edited = ""
     else:
         st.info("暂无Markdown文件")
 
@@ -1190,6 +1217,8 @@ with col1:
 with col2:
     if not md_files:
         st.info("请先在左侧选择Markdown文件")
+    elif not selected or selected == "--- 请选择Markdown文件 ---":
+        st.info("👈 请先在左侧选择Markdown文件")
     else:
         template_files = [f for f in os.listdir(TEMPLATE_DIR) if f.endswith('.html')]
         
