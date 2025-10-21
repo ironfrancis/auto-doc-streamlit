@@ -255,190 +255,27 @@ with col_btn2:
 # 按钮下方添加留白
 st.markdown("<br>", unsafe_allow_html=True)
 
-if transcribe_clicked:
-    if not (md_input.strip() or text_input.strip() or link_input.strip()):
-        st.warning("请至少输入一项内容！" if get_language()=="zh" else "Please input at least one field!")
-    else:
-        # 根据有值的输入框拼接内容
-        input_parts = []
-        if md_input.strip():
-            input_parts.append(f"采集到的文章:{md_input.strip()}\n")
-        if text_input.strip():
-            input_parts.append(f"用户的想法或灵感:{text_input.strip()}\n")
-        if link_input.strip():
-            try:
-                from gzh_url2md import fetch_and_convert_to_md
-                md_content = fetch_and_convert_to_md(link_input.strip())
-                if md_content:
-                    input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析后的Markdown内容:\n{md_content}")
-                else:
-                    input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析失败，请检查链接是否正确")
-            except Exception as e:
-                input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析网页内容时出错: {str(e)}")
-        input_content = "\n\n".join(input_parts)
-        
-        # 获取频道描述（现在统一使用扁平结构）
-        channel_description = channel_obj.get("description", "") if channel_obj else ""
+# ============================================================================
+# 核心抽象函数：统一的 LLM 端点调用
+# ============================================================================
 
-        # 构建完整的提示词
-        prompt_parts = [f"# 频道信息\n频道：{selected_channel}"]
-
-        # 添加频道描述（角色定义）
-        if channel_description:
-            prompt_parts.append(f"# 频道描述\n{channel_description}")
-
-        # 添加当前时间说明
-        current_time = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
-        prompt_parts.append(f"# 当前时间\n现在是：{current_time}")
-
-        # 添加内容规则（提示词要求）
-        if channel_obj:
-            content_rules = channel_obj.get("content_rules", {})
-            if content_rules:
-                prompt_parts.append("# 内容规范要求")
-
-                # 目标受众
-                target_audience = content_rules.get("target_audience", "")
-                if target_audience:
-                    prompt_parts.append(f"**目标受众:** {target_audience}")
-
-                # 写作风格
-                writing_style = content_rules.get("writing_style", {})
-                if writing_style:
-                    prompt_parts.append("**写作风格要求:**")
-                    if writing_style.get("title"):
-                        prompt_parts.append(f"- 标题风格: {writing_style['title']}")
-                    if writing_style.get("tone"):
-                        prompt_parts.append(f"- 写作语气: {writing_style['tone']}")
-                    if writing_style.get("depth"):
-                        prompt_parts.append(f"- 内容深度: {writing_style['depth']}")
-
-                # 技术规则
-                technical_rules = content_rules.get("technical_rules", [])
-                if technical_rules:
-                    prompt_parts.append("**技术要求:**")
-                    for rule in technical_rules:
-                        prompt_parts.append(f"- {rule}")
-        
-        # 添加输入内容
-        prompt_parts.append(f"# 处理内容\n{input_content}")
-        
-        # 组合最终提示词
-        full_prompt = "\n\n".join(prompt_parts)
-        # 读取端点配置
-        ep = next((e for e in endpoints if e["name"] == selected_endpoint), None)
-        if not ep:
-            st.error("未找到所选LLM端点配置！")
-        else:
-            api_type = ep.get("api_type", "")
-            api_url = ep.get("api_url", "").strip()
-            api_key = ep.get("api_key", "")
-            model = ep.get("model", "")
-            is_openai = ep.get("is_openai_compatible", False)
-            temperature = ep.get("temperature", 0.7)
-            try:
-                # 设置合理的超时时间，支持慢速模型
-                timeout = 180  # 延长到180秒，支持慢速模型推理
-                
-                # 显示请求状态
-                with st.spinner(f"正在请求 {selected_endpoint}...（最长等待180秒）"):
-                    if is_openai:
-                        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-                        data = {"model": model, "messages": [{"role": "user", "content": full_prompt}], "temperature": temperature}
-                        resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
-                    elif api_type == "Magic":
-                        # 优化Magic API请求格式
-                        if "api/chat" in api_url:
-                            # 新版本Magic API
-                            headers = {"api-key": api_key, "Content-Type": "application/json"}
-                            data = {
-                                "message": full_prompt,
-                                "conversation_id": "",
-                                "model": model if model else "magic-chat"
-                            }
-                        else:
-                            # 旧版本Magic API (OpenAI兼容)
-                            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-                            data = {
-                                "model": model if model else "magic-chat",
-                                "messages": [
-                                    {"role": "system", "content": "你是一个专业的AI写作助手。"},
-                                    {"role": "user", "content": full_prompt}
-                                ],
-                                "temperature": temperature,
-                                "stream": False,
-                                "max_tokens": 4000  # 限制token数量提高速度
-                            }
-                        
-                        resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
-                    else:
-                        st.error("暂不支持该API类型")
-                        resp = None
-                if resp is not None:
-                    if resp.status_code == 200:
-                        try:
-                            result = resp.json()
-                            if "data" in result and "messages" in result["data"] and result["data"]["messages"]:
-                                md_result = result["data"]["messages"][0]["message"]["content"]
-                            else:
-                                md_result = result["choices"][0]["message"]["content"]
-                        except Exception:
-                            md_result = resp.text
-                        st.session_state["ai_md_result"] = md_result
-                        md_path = os.path.join(STATIC_DIR, "preview.md")
-                        with open(md_path, "w", encoding="utf-8") as f:
-                            f.write(md_result)
-                        # 保存历史
-                        save_transcribe_history(selected_channel, "multi", input_content, md_result)
-                        # 额外保存到本地md_review目录
-                        from datetime import datetime
-                        safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
-                        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        md_review_dir = get_md_review_dir()  # 使用统一的路径管理
-                        os.makedirs(md_review_dir, exist_ok=True)
-                        # 在文件名中加入模型端点名
-                        safe_endpoint = selected_endpoint.replace("/", "_").replace(" ", "_").replace(":", "_")
-                        local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
-                        with open(local_md_path, "w", encoding="utf-8") as f:
-                            f.write(md_result)
-                        # 用Typora打开
-                        try:
-                            subprocess.Popen(["open", "-a", "Typora", local_md_path])
-                        except Exception as e:
-                            st.info(f"无法自动打开Typora: {e}")
-                        st.success(get_text("success"))
-                        
-                        # 自动切换到新生成的文章预览
-                        new_article_name = f"{ts}_{safe_channel}.md"
-                        st.session_state["current_md_file"] = new_article_name
-                        st.session_state["current_md_path"] = local_md_path
-                        
-                        # 显示成功信息和预览提示
-                        st.success(f"转写成功！文章已保存为: {new_article_name}")
-                        st.info(f"正在切换到新文章预览...")
-                        
-                        # 延迟一下再刷新，确保文件写入完成
-                        import time
-                        time.sleep(0.5)
-                        st.rerun()
-                    else:
-                        st.error(f"AI转写失败: {resp.text}")
-            except requests.exceptions.Timeout:
-                st.error(f"⏰ 请求超时！{selected_endpoint} 在180秒内没有响应。建议：\n1. 检查网络连接\n2. 尝试其他LLM端点\n3. 减少输入内容长度\n4. 考虑使用更快的模型")
-            except requests.exceptions.ConnectionError:
-                st.error(f"🔌 连接失败！无法连接到 {selected_endpoint}。请检查：\n1. API地址是否正确\n2. 网络是否正常\n3. 服务是否可用")
-            except requests.exceptions.RequestException as e:
-                st.error(f"请求异常：{str(e)}")
-            except Exception as e:
-                st.error(f"未知错误：{str(e)}")
-
-# 并发转写函数
-def call_llm_endpoint(endpoint_name, endpoint_config, prompt, timeout=180):
+def call_single_llm_endpoint(endpoint_config, prompt, timeout=180):
     """
-    调用单个LLM端点
-    返回: (endpoint_name, success, result_or_error, elapsed_time)
+    统一的 LLM 端点调用函数
+    
+    参数:
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        timeout: 超时时间（秒）
+    
+    返回:
+        (success: bool, result: str, elapsed_time: float)
+        - success: 是否成功
+        - result: 成功时返回 markdown 内容，失败时返回错误信息
+        - elapsed_time: 请求耗时（秒）
     """
     start_time = time.time()
+    
     try:
         api_type = endpoint_config.get("api_type", "")
         api_url = endpoint_config.get("api_url", "").strip()
@@ -447,12 +284,20 @@ def call_llm_endpoint(endpoint_name, endpoint_config, prompt, timeout=180):
         is_openai = endpoint_config.get("is_openai_compatible", False)
         temperature = endpoint_config.get("temperature", 0.7)
         
+        # 根据 API 类型构建请求
         if is_openai:
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-            data = {"model": model, "messages": [{"role": "user", "content": prompt}], "temperature": temperature}
+            data = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature
+            }
             resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
+            
         elif api_type == "Magic":
+            # Magic API 支持两种格式
             if "api/chat" in api_url:
+                # 新版本 Magic API
                 headers = {"api-key": api_key, "Content-Type": "application/json"}
                 data = {
                     "message": prompt,
@@ -460,6 +305,7 @@ def call_llm_endpoint(endpoint_name, endpoint_config, prompt, timeout=180):
                     "model": model if model else "magic-chat"
                 }
             else:
+                # 旧版本 Magic API (OpenAI 兼容)
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 data = {
                     "model": model if model else "magic-chat",
@@ -473,34 +319,224 @@ def call_llm_endpoint(endpoint_name, endpoint_config, prompt, timeout=180):
                 }
             resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
         else:
-            return (endpoint_name, False, f"不支持的API类型: {api_type}", 0)
+            elapsed = time.time() - start_time
+            return (False, f"不支持的 API 类型: {api_type}", elapsed)
         
         elapsed = time.time() - start_time
         
+        # 解析响应
         if resp.status_code == 200:
             try:
                 result = resp.json()
+                # 尝试解析 Magic API 格式
                 if "data" in result and "messages" in result["data"] and result["data"]["messages"]:
                     md_result = result["data"]["messages"][0]["message"]["content"]
+                # 尝试解析 OpenAI 格式
                 else:
                     md_result = result["choices"][0]["message"]["content"]
-                return (endpoint_name, True, md_result, elapsed)
+                return (True, md_result, elapsed)
             except Exception as e:
-                return (endpoint_name, False, f"解析响应失败: {str(e)}", elapsed)
+                return (False, f"解析响应失败: {str(e)}\n响应内容: {resp.text[:200]}", elapsed)
         else:
-            return (endpoint_name, False, f"HTTP {resp.status_code}: {resp.text[:200]}", elapsed)
-            
+            return (False, f"HTTP {resp.status_code}: {resp.text[:200]}", elapsed)
+    
     except requests.exceptions.Timeout:
         elapsed = time.time() - start_time
-        return (endpoint_name, False, f"请求超时（{timeout}秒）", elapsed)
+        return (False, f"请求超时（{timeout}秒）", elapsed)
     except requests.exceptions.ConnectionError:
         elapsed = time.time() - start_time
-        return (endpoint_name, False, "连接失败，请检查网络或API地址", elapsed)
+        return (False, "连接失败，请检查网络或 API 地址", elapsed)
+    except requests.exceptions.RequestException as e:
+        elapsed = time.time() - start_time
+        return (False, f"请求异常: {str(e)}", elapsed)
     except Exception as e:
         elapsed = time.time() - start_time
-        return (endpoint_name, False, f"未知错误: {str(e)}", elapsed)
+        return (False, f"未知错误: {str(e)}", elapsed)
 
-# 并发转写逻辑
+
+def extract_input_content(md_input, text_input, link_input):
+    """
+    从输入框提取和整合内容
+    
+    参数:
+        md_input: Markdown 输入
+        text_input: 文本输入
+        link_input: 链接输入
+    
+    返回:
+        整合后的输入内容字符串
+    """
+    input_parts = []
+    if md_input.strip():
+        input_parts.append(f"采集到的文章:{md_input.strip()}\n")
+    if text_input.strip():
+        input_parts.append(f"用户的想法或灵感:{text_input.strip()}\n")
+    if link_input.strip():
+        try:
+            from gzh_url2md import fetch_and_convert_to_md
+            md_content = fetch_and_convert_to_md(link_input.strip())
+            if md_content:
+                input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析后的Markdown内容:\n{md_content}")
+            else:
+                input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析失败，请检查链接是否正确")
+        except Exception as e:
+            input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析网页内容时出错: {str(e)}")
+    return "\n\n".join(input_parts)
+
+
+def build_full_prompt(channel_obj, selected_channel, input_content):
+    """
+    构建完整的提示词
+    
+    参数:
+        channel_obj: 频道对象
+        selected_channel: 选中的频道名称
+        input_content: 输入内容
+    
+    返回:
+        完整的提示词字符串
+    """
+    prompt_parts = [f"# 频道信息\n频道：{selected_channel}"]
+    
+    # 添加频道描述
+    channel_description = channel_obj.get("description", "") if channel_obj else ""
+    if channel_description:
+        prompt_parts.append(f"# 频道描述\n{channel_description}")
+    
+    # 添加当前时间
+    current_time = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
+    prompt_parts.append(f"# 当前时间\n现在是：{current_time}")
+    
+    # 添加内容规则
+    if channel_obj:
+        content_rules = channel_obj.get("content_rules", {})
+        if content_rules:
+            prompt_parts.append("# 内容规范要求")
+            
+            # 目标受众
+            target_audience = content_rules.get("target_audience", "")
+            if target_audience:
+                prompt_parts.append(f"**目标受众:** {target_audience}")
+            
+            # 写作风格
+            writing_style = content_rules.get("writing_style", {})
+            if writing_style:
+                prompt_parts.append("**写作风格要求:**")
+                if writing_style.get("title"):
+                    prompt_parts.append(f"- 标题风格: {writing_style['title']}")
+                if writing_style.get("tone"):
+                    prompt_parts.append(f"- 写作语气: {writing_style['tone']}")
+                if writing_style.get("depth"):
+                    prompt_parts.append(f"- 内容深度: {writing_style['depth']}")
+            
+            # 技术规则
+            technical_rules = content_rules.get("technical_rules", [])
+            if technical_rules:
+                prompt_parts.append("**技术要求:**")
+                for rule in technical_rules:
+                    prompt_parts.append(f"- {rule}")
+    
+    # 添加处理内容
+    prompt_parts.append(f"# 处理内容\n{input_content}")
+    
+    return "\n\n".join(prompt_parts)
+
+# ============================================================================
+# 普通转写逻辑（使用抽象函数）
+# ============================================================================
+
+if transcribe_clicked:
+    if not (md_input.strip() or text_input.strip() or link_input.strip()):
+        st.warning("请至少输入一项内容！" if get_language()=="zh" else "Please input at least one field!")
+    else:
+        # 提取输入内容（使用抽象函数）
+        input_content = extract_input_content(md_input, text_input, link_input)
+        
+        # 构建完整的提示词（使用抽象函数）
+        full_prompt = build_full_prompt(channel_obj, selected_channel, input_content)
+        
+        # 读取端点配置
+        ep = next((e for e in endpoints if e["name"] == selected_endpoint), None)
+        if not ep:
+            st.error("未找到所选LLM端点配置！")
+        else:
+            # 显示请求状态
+            with st.spinner(f"正在请求 {selected_endpoint}...（最长等待180秒）"):
+                # 调用统一的端点函数
+                success, result, elapsed = call_single_llm_endpoint(ep, full_prompt, timeout=180)
+            
+            if success:
+                # 转写成功
+                md_result = result
+                st.session_state["ai_md_result"] = md_result
+                md_path = os.path.join(STATIC_DIR, "preview.md")
+                with open(md_path, "w", encoding="utf-8") as f:
+                    f.write(md_result)
+                
+                # 保存历史
+                save_transcribe_history(selected_channel, "single", input_content, md_result, 
+                                      extra={"endpoint": selected_endpoint, "elapsed": elapsed})
+                
+                # 保存到本地md_review目录
+                from datetime import datetime
+                safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                md_review_dir = get_md_review_dir()
+                os.makedirs(md_review_dir, exist_ok=True)
+                safe_endpoint = selected_endpoint.replace("/", "_").replace(" ", "_").replace(":", "_")
+                local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                with open(local_md_path, "w", encoding="utf-8") as f:
+                    f.write(md_result)
+                
+                # 用Typora打开
+                try:
+                    subprocess.Popen(["open", "-a", "Typora", local_md_path])
+                except Exception as e:
+                    st.info(f"无法自动打开Typora: {e}")
+                
+                st.success(get_text("success"))
+                
+                # 自动切换到新生成的文章预览
+                new_article_name = f"{ts}_{safe_channel}.md"
+                st.session_state["current_md_file"] = new_article_name
+                st.session_state["current_md_path"] = local_md_path
+                
+                # 显示成功信息和预览提示
+                st.success(f"✅ 转写成功！文章已保存为: {new_article_name}")
+                st.info(f"⏱️ 耗时: {elapsed:.2f}秒")
+                
+                # 延迟一下再刷新，确保文件写入完成
+                time.sleep(0.5)
+                st.rerun()
+            else:
+                # 转写失败
+                st.error(f"❌ AI转写失败\n\n**错误信息:** {result}\n\n**端点:** {selected_endpoint}\n**耗时:** {elapsed:.2f}秒")
+
+# ============================================================================
+# 并发转写包装器函数
+# ============================================================================
+
+def concurrent_call_wrapper(endpoint_name, endpoint_config, prompt, timeout=180):
+    """
+    并发调用的包装器函数
+    调用核心的 call_single_llm_endpoint 函数，并返回带端点名称的结果
+    
+    参数:
+        endpoint_name: 端点名称
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        timeout: 超时时间（秒）
+    
+    返回:
+        (endpoint_name, success, result, elapsed_time)
+    """
+    success, result, elapsed = call_single_llm_endpoint(endpoint_config, prompt, timeout)
+    return (endpoint_name, success, result, elapsed)
+
+# ============================================================================
+# 并发转写逻辑（使用抽象函数）
+# ============================================================================
+
 if concurrent_transcribe_clicked:
     if not (md_input.strip() or text_input.strip() or link_input.strip()):
         st.warning("请至少输入一项内容！" if get_language()=="zh" else "Please input at least one field!")
@@ -509,62 +545,11 @@ if concurrent_transcribe_clicked:
     else:
         st.markdown("### ⚡ 并发转写进行中...")
         
-        # 准备输入内容（与普通转写相同的逻辑）
-        input_parts = []
-        if md_input.strip():
-            input_parts.append(f"采集到的文章:{md_input.strip()}\n")
-        if text_input.strip():
-            input_parts.append(f"用户的想法或灵感:{text_input.strip()}\n")
-        if link_input.strip():
-            try:
-                from gzh_url2md import fetch_and_convert_to_md
-                md_content = fetch_and_convert_to_md(link_input.strip())
-                if md_content:
-                    input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析后的Markdown内容:\n{md_content}")
-                else:
-                    input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析失败，请检查链接是否正确")
-            except Exception as e:
-                input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析网页内容时出错: {str(e)}")
-        input_content = "\n\n".join(input_parts)
+        # 提取输入内容（使用抽象函数）
+        input_content = extract_input_content(md_input, text_input, link_input)
         
-        # 获取频道描述
-        channel_description = channel_obj.get("description", "") if channel_obj else ""
-        
-        # 构建完整的提示词
-        prompt_parts = [f"# 频道信息\n频道：{selected_channel}"]
-        
-        if channel_description:
-            prompt_parts.append(f"# 频道描述\n{channel_description}")
-        
-        current_time = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
-        prompt_parts.append(f"# 当前时间\n现在是：{current_time}")
-        
-        if channel_obj:
-            content_rules = channel_obj.get("content_rules", {})
-            if content_rules:
-                prompt_parts.append("# 内容规范要求")
-                target_audience = content_rules.get("target_audience", "")
-                if target_audience:
-                    prompt_parts.append(f"**目标受众:** {target_audience}")
-                
-                writing_style = content_rules.get("writing_style", {})
-                if writing_style:
-                    prompt_parts.append("**写作风格要求:**")
-                    if writing_style.get("title"):
-                        prompt_parts.append(f"- 标题风格: {writing_style['title']}")
-                    if writing_style.get("tone"):
-                        prompt_parts.append(f"- 写作语气: {writing_style['tone']}")
-                    if writing_style.get("depth"):
-                        prompt_parts.append(f"- 内容深度: {writing_style['depth']}")
-                
-                technical_rules = content_rules.get("technical_rules", [])
-                if technical_rules:
-                    prompt_parts.append("**技术要求:**")
-                    for rule in technical_rules:
-                        prompt_parts.append(f"- {rule}")
-        
-        prompt_parts.append(f"# 处理内容\n{input_content}")
-        full_prompt = "\n\n".join(prompt_parts)
+        # 构建完整的提示词（使用抽象函数）
+        full_prompt = build_full_prompt(channel_obj, selected_channel, input_content)
         
         # 准备端点配置
         endpoint_configs = {}
@@ -591,7 +576,7 @@ if concurrent_transcribe_clicked:
             with ThreadPoolExecutor(max_workers=len(endpoint_configs)) as executor:
                 # 提交所有任务
                 future_to_endpoint = {
-                    executor.submit(call_llm_endpoint, ep_name, ep_config, full_prompt): ep_name
+                    executor.submit(concurrent_call_wrapper, ep_name, ep_config, full_prompt): ep_name
                     for ep_name, ep_config in endpoint_configs.items()
                 }
                 
