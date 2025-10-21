@@ -1,0 +1,469 @@
+/* 
+ * Anthropic 风格主题
+ * 温暖的大地色系设计，适用于整个应用
+ * 灵感来源：Anthropic & OpenAI 官网
+ */
+
+/* ==================== 全局样式 ==================== */
+
+/* 全局背景 - 温暖的报纸色 */
+.stApp {
+    background-color: #F5F1E8;
+}
+
+/* 主容器样式 */
+.main .block-container {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    max-width: 1200px;
+}
+
+/* 侧边栏样式优化 */
+[data-testid="stSidebar"] {
+    background-color: #FAFAF8;
+}
+
+/* ==================== 排版样式 ==================== */
+
+/* 主标题样式 - 优雅的深色 */
+.main-title {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #2B2B2B;
+    margin-bottom: 0.5rem;
+    padding: 2rem 0 0.5rem 0;
+    letter-spacing: -0.02em;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* 副标题 */
+.subtitle {
+    text-align: center;
+    font-size: 1.15rem;
+    color: #6B6B6B;
+    margin-bottom: 3.5rem;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+/* 分类标题 - 简约风格 */
+.category-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2B2B2B;
+    margin: 3rem 0 1.8rem 0;
+    padding-bottom: 0;
+    border-bottom: none;
+    display: inline-block;
+    width: 100%;
+    letter-spacing: -0.01em;
+}
+
+/* 页面标题 */
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2B2B2B;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.02em;
+}
+
+/* 章节标题 */
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #2B2B2B;
+    margin: 2rem 0 1rem 0;
+    letter-spacing: -0.01em;
+}
+
+/* ==================== 卡片样式 ==================== */
+
+/* 卡片容器 - Anthropic风格 */
+.card-container {
+    padding: 2rem 1.8rem;
+    border-radius: 16px;
+    background: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 1rem;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    cursor: pointer;
+    position: relative;
+}
+
+.card-container:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* 不同类型卡片的温暖大地色系 */
+.card-gradient-1 { 
+    background: linear-gradient(135deg, #E8957B 0%, #D97A5E 100%);
+    border: 1px solid rgba(217, 122, 94, 0.3);
+}
+
+.card-gradient-2 { 
+    background: linear-gradient(135deg, #D4C5B0 0%, #C4B19D 100%);
+    border: 1px solid rgba(196, 177, 157, 0.3);
+}
+
+.card-gradient-3 { 
+    background: linear-gradient(135deg, #C8B8A8 0%, #B5A393 100%);
+    border: 1px solid rgba(181, 163, 147, 0.3);
+}
+
+.card-gradient-4 { 
+    background: linear-gradient(135deg, #A3957F 0%, #8F8169 100%);
+    border: 1px solid rgba(143, 129, 105, 0.3);
+}
+
+.card-gradient-5 { 
+    background: linear-gradient(135deg, #D9B89A 0%, #C9A282 100%);
+    border: 1px solid rgba(201, 162, 130, 0.3);
+}
+
+.card-gradient-6 { 
+    background: linear-gradient(135deg, #E5D4C1 0%, #D4C2AD 100%);
+    border: 1px solid rgba(212, 194, 173, 0.3);
+}
+
+.card-gradient-7 { 
+    background: linear-gradient(135deg, #B8A89A 0%, #A89688 100%);
+    border: 1px solid rgba(168, 150, 136, 0.3);
+}
+
+.card-gradient-8 { 
+    background: linear-gradient(135deg, #CEB5A0 0%, #BDA38C 100%);
+    border: 1px solid rgba(189, 163, 140, 0.3);
+}
+
+/* 卡片图标样式 */
+.card-icon {
+    position: absolute;
+    top: 2rem;
+    left: 1.8rem;
+    width: 45px;
+    height: 45px;
+    color: #2B2B2B;
+    opacity: 0.85;
+}
+
+.card-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* 卡片标题 */
+.card-title {
+    color: #2B2B2B;
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: left;
+    margin-bottom: 0.6rem;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+}
+
+/* 卡片描述 */
+.card-description {
+    color: #5A5A5A;
+    font-size: 0.92rem;
+    text-align: left;
+    line-height: 1.6;
+    font-weight: 400;
+}
+
+/* 卡片内容区域 */
+.card-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    margin-top: auto;
+}
+
+/* ==================== 面板样式 ==================== */
+
+/* 信息面板 - 温暖风格 */
+.info-panel {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 2.5rem;
+    margin-top: 3.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.info-panel h3 {
+    color: #2B2B2B;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+
+.info-panel ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.info-panel li {
+    padding: 0.6rem 0;
+    color: #5A5A5A;
+    line-height: 1.6;
+}
+
+.info-panel li:before {
+    content: "✓ ";
+    color: #D97A5E;
+    font-weight: bold;
+    margin-right: 0.8rem;
+}
+
+/* 内容面板 */
+.content-panel {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* 警告面板 */
+.warning-panel {
+    background: linear-gradient(135deg, #FFF4E6 0%, #FFE8CC 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 152, 0, 0.2);
+}
+
+/* 成功面板 */
+.success-panel {
+    background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+/* 错误面板 */
+.error-panel {
+    background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(244, 67, 54, 0.2);
+}
+
+/* ==================== 统计信息 ==================== */
+
+/* 统计信息盒子 - 大地色系 */
+.stats-box {
+    background: linear-gradient(135deg, #E8957B 0%, #D97A5E 100%);
+    color: #2B2B2B;
+    padding: 1.8rem;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(217, 122, 94, 0.3);
+}
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #2B2B2B;
+}
+
+.stats-label {
+    font-size: 1rem;
+    opacity: 0.85;
+    color: #2B2B2B;
+    font-weight: 500;
+}
+
+/* ==================== 按钮样式 ==================== */
+
+/* 主要按钮 */
+.primary-button {
+    background: linear-gradient(135deg, #E8957B 0%, #D97A5E 100%);
+    color: #2B2B2B;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* 次要按钮 */
+.secondary-button {
+    background: #FFFFFF;
+    color: #2B2B2B;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: #F5F1E8;
+    border-color: rgba(0, 0, 0, 0.25);
+}
+
+/* 透明覆盖按钮（用于卡片点击） */
+.stButton {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+}
+
+.stButton > button {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent !important;
+    padding: 0;
+    color: transparent;
+    cursor: pointer;
+    box-shadow: none !important;
+    border-radius: 16px;
+}
+
+.stButton > button:hover,
+.stButton > button:focus,
+.stButton > button:active {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* ==================== 表单元素 ==================== */
+
+/* 输入框样式 */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stSelectbox > div > div > select {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    color: #2B2B2B;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus,
+.stSelectbox > div > div > select:focus {
+    border-color: #D97A5E;
+    box-shadow: 0 0 0 2px rgba(217, 122, 94, 0.2);
+}
+
+/* ==================== 分隔线 ==================== */
+
+hr {
+    border: none;
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.08);
+    margin: 2rem 0;
+}
+
+/* ==================== 响应式设计 ==================== */
+
+@media (max-width: 768px) {
+    .main-title { 
+        font-size: 2rem; 
+    }
+    
+    .subtitle { 
+        font-size: 1rem; 
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+    }
+    
+    .card-title { 
+        font-size: 1.1rem; 
+    }
+    
+    .category-title { 
+        font-size: 1.3rem; 
+    }
+    
+    .card-icon { 
+        width: 36px; 
+        height: 36px; 
+    }
+    
+    .info-panel,
+    .content-panel {
+        padding: 1.5rem;
+    }
+}
+
+/* ==================== 隐藏默认元素 ==================== */
+
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+/* ==================== 交互效果 ==================== */
+
+/* 让容器可以接收hover效果 */
+div[data-testid="column"] > div {
+    position: relative;
+}
+
+div[data-testid="column"]:has(.stButton:hover) .card-container {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ==================== 颜色变量（用于参考） ==================== */
+
+/*
+主色系：
+- 背景色: #F5F1E8 (米黄色)
+- 侧边栏: #FAFAF8 (浅米色)
+- 主标题: #2B2B2B (深灰黑)
+- 副标题: #6B6B6B (中灰)
+- 正文: #5A5A5A (柔和灰)
+- 强调色: #D97A5E (赤陶橙)
+
+大地色系渐变：
+1. #E8957B → #D97A5E (赤陶橙)
+2. #D4C5B0 → #C4B19D (温暖米)
+3. #C8B8A8 → #B5A393 (浅棕)
+4. #A3957F → #8F8169 (橄榄棕)
+5. #D9B89A → #C9A282 (暖沙)
+6. #E5D4C1 → #D4C2AD (奶油)
+7. #B8A89A → #A89688 (灰褐)
+8. #CEB5A0 → #BDA38C (肉桂)
+*/
+

@@ -9,6 +9,9 @@ import sys
 # 使用简化路径管理
 from simple_paths import *
 
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
+
 try:
     from utils.channel_update_manager import ChannelUpdateManager
 except ImportError as e:
@@ -221,6 +224,9 @@ def calculate_update_reminders(df):
 
 
 def visualize_publish_calendar():
+    # 加载主题
+    load_anthropic_theme()
+    
     df = load_csv_data()
     
     if df.empty:
@@ -238,7 +244,7 @@ def visualize_publish_calendar():
     
     with col_update1:
         # 一键更新按钮
-        if st.button("🚀 一键更新所有频道", type="primary", use_container_width=True):
+        if st.button(f"一键更新所有频道", type="primary", use_container_width=True):
             try:
                 # 初始化频道更新管理器
                 update_manager = ChannelUpdateManager()
@@ -252,13 +258,13 @@ def visualize_publish_calendar():
                 st.session_state.last_update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
                 # 显示更新完成提示
-                st.success("✅ 频道更新完成！")
+                st.success(f"频道更新完成！")
                 
                 # 自动刷新页面数据
                 st.rerun()
                 
             except Exception as e:
-                st.error(f"❌ 更新过程中发生错误: {str(e)}")
+                st.error(f"更新过程中发生错误: {str(e)}")
                 st.exception(e)
     
     with col_update2:
@@ -284,14 +290,14 @@ def visualize_publish_calendar():
                 st.caption(f"最后更新: {st.session_state.last_update_time}")
             
             # 展开显示详细结果
-            with st.expander("📋 查看详细更新结果"):
+            with st.expander(f"查看详细更新结果"):
                 for channel_name, result in st.session_state.update_results.items():
                     status_icon = "✅" if result['status'] == 'success' else "❌"
                     st.write(f"{status_icon} **{channel_name}**: {result['message']}")
                     st.caption(f"更新时间: {result['timestamp']}")
                     st.write("---")
         else:
-            st.info("💡 点击左侧按钮开始更新所有频道")
+            st.info(f"点击左侧按钮开始更新所有频道")
     
     st.write("---")
 
@@ -918,7 +924,7 @@ def visualize_publish_calendar():
             most_urgent = min(update_reminders.items(), key=lambda x: x[1]['ratio'])
             st.error(f"🚨 最需要更新：**{most_urgent[0]}**")
         else:
-            st.success("✅ 所有账号更新频率正常（基于工作日计算）")
+            st.success(f"所有账号更新频率正常（基于工作日计算）")
             
     else:
         st.info("暂无足够的历史数据进行分析")
@@ -927,7 +933,7 @@ def visualize_publish_calendar():
     st.write("---")
     st.write("### 🔐 Cookie状态检查")
     
-    if st.button("🔍 检查所有频道Cookie状态", use_container_width=True):
+    if st.button(f"检查所有频道Cookie状态", use_container_width=True):
         try:
             # 初始化频道更新管理器
             update_manager = ChannelUpdateManager()
@@ -954,7 +960,7 @@ def visualize_publish_calendar():
                     st.metric("Cookie失效", expired_count, delta=f"-{expired_count}" if expired_count > 0 else None)
                 
                 # 显示详细状态
-                with st.expander("🔍 查看详细Cookie状态"):
+                with st.expander(f"查看详细Cookie状态"):
                     for channel_name, status in cookie_status.items():
                         status_icon = "✅" if status == 'valid' else "❌"
                         status_text = "有效" if status == 'valid' else "失效"
@@ -963,7 +969,7 @@ def visualize_publish_calendar():
                         st.markdown(f"{status_icon} **{channel_name}**: <span style='color: {status_color};'>{status_text}</span>", unsafe_allow_html=True)
                         
                         if status == 'expired':
-                            st.warning(f"⚠️ {channel_name} 的Cookie已失效，需要重新登录")
+                            st.warning(f"{channel_name} 的Cookie已失效，需要重新登录")
                         
                         st.write("---")
                 
@@ -978,7 +984,7 @@ def visualize_publish_calendar():
                 st.warning("无法获取Cookie状态信息")
                 
         except Exception as e:
-            st.error(f"❌ Cookie状态检查失败: {str(e)}")
+            st.error(f"Cookie状态检查失败: {str(e)}")
             st.exception(e)
 
 

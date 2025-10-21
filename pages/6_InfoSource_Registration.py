@@ -8,8 +8,13 @@ from simple_paths import *
 
 from language_manager import init_language, get_text
 import requests
+from core.utils.theme_loader import load_anthropic_theme
 
 st.set_page_config(page_title="信息源注册", layout="wide")
+
+# 加载主题
+load_anthropic_theme()
+
 st.title("信息源注册与管理")
 
 INFO_PATH = "config/info_sources.json"

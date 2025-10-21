@@ -9,6 +9,8 @@ from simple_paths import *
 
 from language_manager import init_language, get_text, get_language
 # Using simple_paths for path management - get_json_data_dir is already imported
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
 
 # 多语言文本定义
 T = {
@@ -45,8 +47,11 @@ T = {
 
 st.set_page_config(page_title="LLM端点管理", layout="wide")
 
+# 加载主题
+load_anthropic_theme()
+
 # 创建标签页
-tab1, tab2 = st.tabs(["🔧 端点管理", "🧪 端点测试"])
+tab1, tab2 = st.tabs(["端点管理", "端点测试"])
 
 # 第一个标签页：端点管理
 with tab1:
@@ -64,13 +69,13 @@ def load_endpoints():
                 endpoints = json.load(f)
                 return endpoints
         except json.JSONDecodeError as e:
-            st.error(f"❌ 端点配置文件格式错误: {e}")
+            st.error(f"端点配置文件格式错误: {e}")
             return []
         except Exception as e:
-            st.error(f"❌ 加载端点配置失败: {e}")
+            st.error(f"加载端点配置失败: {e}")
             return []
     else:
-        st.error(f"❌ 端点配置文件不存在: {ENDPOINTS_PATH}")
+        st.error(f"端点配置文件不存在: {ENDPOINTS_PATH}")
         return []
 
 def save_endpoints(endpoints):

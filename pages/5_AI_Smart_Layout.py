@@ -8,8 +8,13 @@ from simple_paths import *
 
 # 移除未使用的导入
 import requests
+from core.utils.theme_loader import load_anthropic_theme
 
 st.set_page_config(page_title="AI智能布局", layout="wide")
+
+# 加载主题
+load_anthropic_theme()
+
 st.title("AI智能排版（实验功能）")
 
 # 使用简化路径管理

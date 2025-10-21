@@ -60,12 +60,27 @@
 
 ### 📈 项目总结 (summaries/)
 项目开发总结和功能实现报告：
+
+#### 最新更新
+- [🆕 2025-10-21 AI转写功能重大更新](./summaries/2025-10-21_AI_Transcription_Updates.md) - 并发转写、结果对比、UI优化
+
+#### 历史总结
 - [功能总结](./summaries/FEATURE_SUMMARY.md) - 新功能实现总结
 - [CSV数据迁移总结](./summaries/CSV_MIGRATION_SUMMARY.md) - 数据格式迁移报告
 - [河流图可视化总结](./summaries/RIVER_FLOW_VISUALIZATION_SUMMARY.md) - 可视化功能开发总结
 - [Token管理器总结](./summaries/TOKEN_MANAGER_SUMMARY.md) - Token管理系统实现总结
 - [微信收集器总结](./zh-CN/summaries/WECHAT_COLLECTOR_SUMMARY.md) - 微信功能开发总结
 - [项目改进建议](./summaries/2025-08-05改进建议.md) - 技术优化建议
+
+### 📦 归档文档 (archived/)
+不再活跃维护的历史文档：
+- [按钮重设计](./archived/BUTTON_REDESIGN.md)
+- [图标系统文档](./archived/ICONS_*.md) - 图标迁移、对比、指南、实现
+- [主题使用指南](./archived/THEME_USAGE_GUIDE.md)
+- [主页重设计](./archived/README_HOMEPAGE_REDESIGN.md)
+- [快速开始](./archived/QUICK_START.md)
+- [设计指南](./archived/DESIGN_GUIDE.md)
+- [开源准备分析](./archived/开源准备分析报告.md)
 
 ## 🚀 快速开始
 
@@ -114,6 +129,7 @@ docs/
 
 ---
 
-**最后更新**: 2025年9月13日
-**文档数量**: 31个
-**维护状态**: 🟢 良好
+**最后更新**: 2025年10月21日  
+**文档数量**: 32个  
+**维护状态**: 🟢 良好  
+**最新功能**: AI并发转写、结果持久化、UI优化

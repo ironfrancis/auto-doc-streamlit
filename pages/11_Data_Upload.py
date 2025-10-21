@@ -15,6 +15,11 @@ import re
 from datetime import datetime, timedelta
 from core.wechat.cookie_manager import CookieManager
 from core.utils.token_manager import TokenManager
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
+
+# 加载主题
+load_anthropic_theme()
 
 st.title("数据上传与管理")
 
@@ -57,10 +62,10 @@ with tab2:
     
     # 显示当前时间信息
     current_time = datetime.now()
-    st.info(f"🕐 当前时间：{current_time.strftime('%Y年%m月%d日 %H:%M:%S')}")
+    st.info(f"当前时间：{current_time.strftime('%Y年%m月%d日 %H:%M:%S')}")
     
     # 显示默认设置信息
-    st.success("📅 默认设置：开始日期为2025年6月9日，结束日期为当前日期")
+    st.success(f"默认设置：开始日期为2025年6月9日，结束日期为当前日期")
     
     # 开始日期：设置为2025年6月9日
     default_begin_date = "20250609"
@@ -167,16 +172,16 @@ with tab2:
             days_diff = (end_dt - begin_dt).days
             
             if begin_dt > end_dt:
-                st.error("❌ 开始日期不能晚于结束日期！")
+                st.error(f"开始日期不能晚于结束日期！")
             elif days_diff > 365:
-                st.warning("⚠️ 日期范围超过一年，可能需要较长时间获取")
+                st.warning(f"日期范围超过一年，可能需要较长时间获取")
             else:
-                st.success(f"✅ 参数有效，将获取 {days_diff + 1} 天的数据")
+                st.success(f"参数有效，将获取 {days_diff + 1} 天的数据")
                 
         except ValueError:
-            st.error("❌ 日期格式错误")
+            st.error(f"日期格式错误")
     else:
-        st.warning("⚠️ 请填写完整的参数信息")
+        st.warning(f"请填写完整的参数信息")
     
     # 动态获取Cookie配置
     st.subheader("Cookie配置")
@@ -198,15 +203,15 @@ with tab2:
         
         # 显示Cookie状态
         if cookie_info["status"] == "fresh":
-            cookie_status = f"✅ 新鲜 (更新于 {cookie_info['last_updated'].strftime('%H:%M')})"
+            cookie_status = f"{""} 新鲜 (更新于 {cookie_info["last_updated'].strftime('%H:%M')})"
         elif cookie_info["status"] == "warning":
-            cookie_status = f"⚠️ 建议更新 (更新于 {cookie_info['last_updated'].strftime('%H:%M')})"
+            cookie_status = f"{""} 建议更新 (更新于 {cookie_info["last_updated'].strftime('%H:%M')})"
         elif cookie_info["status"] == "expired":
-            cookie_status = f"❌ 已过期 (更新于 {cookie_info['last_updated'].strftime('%H:%M')})"
+            cookie_status = f"{""} 已过期 (更新于 {cookie_info["last_updated'].strftime('%H:%M')})"
         elif cookie_info["status"] == "inactive":
-            cookie_status = "🔄 未配置"
+            cookie_status = f"{""} 未配置"
         else:
-            cookie_status = "🔄 未知状态"
+            cookie_status = f"{""} 未知状态"
     
     # 显示Cookie输入框
     selected_cookies = st.text_area(
@@ -259,7 +264,7 @@ with tab2:
                     st.info(f"准备获取数据：{account_name}，时间范围：{begin_date} 到 {end_date}")
                     
                     # 显示详细参数信息（调试用）
-                    with st.expander("🔍 查看传递的参数"):
+                    with st.expander(f"查看传递的参数"):
                         st.write(f"**账号名称:** {account_name}")
                         st.write(f"**开始日期:** {begin_date}")
                         st.write(f"**结束日期:** {end_date}")
@@ -289,13 +294,13 @@ with tab2:
                         st.success("Token时间已自动更新！")
                     
                     # 显示获取到的数据
-                    st.subheader("📊 获取到的数据预览")
+                    st.subheader(f"获取到的数据预览")
                     
                     # 尝试读取生成的Excel文件
                     try:
                         if os.path.exists("result.xls"):
                             df = pd.read_excel("result.xls")
-                            st.write(f"✅ 成功获取到 {len(df)} 行数据")
+                            st.write(f"{""} 成功获取到 {len(df)} 行数据")
                             
                             # 显示数据统计
                             col1, col2, col3 = st.columns(3)
@@ -331,7 +336,7 @@ with tab2:
                             # 提供下载链接
                             with open("result.xls", "rb") as file:
                                 st.download_button(
-                                    label="📥 下载Excel文件",
+                                    label=f"下载Excel文件",
                                     data=file.read(),
                                     file_name=f"{account_name}_{begin_date}_{end_date}.xls",
                                     mime="application/vnd.ms-excel"
@@ -460,15 +465,15 @@ with tab3:
             status = cookie_manager.get_cookie_status(account_name)
             
             if status["status"] == "fresh":
-                st.success(f"✅ 最后更新: {status['last_updated'].strftime('%Y-%m-%d %H:%M')} (新鲜)")
+                st.success(f"{""} 最后更新: {status["last_updated'].strftime('%Y-%m-%d %H:%M')} (新鲜)")
             elif status["status"] == "warning":
-                st.warning(f"⚠️ 最后更新: {status['last_updated'].strftime('%Y-%m-%d %H:%M')} (建议更新)")
+                st.warning(f"{""} 最后更新: {status["last_updated'].strftime('%Y-%m-%d %H:%M')} (建议更新)")
             elif status["status"] == "expired":
-                st.error(f"❌ 最后更新: {status['last_updated'].strftime('%Y-%m-%d %H:%M')} (已过期)")
+                st.error(f"{""} 最后更新: {status["last_updated'].strftime('%Y-%m-%d %H:%M')} (已过期)")
             elif status["status"] == "inactive":
-                st.info("🔄 未配置Cookie")
+                st.info(f"{""} 未配置Cookie")
             else:
-                st.info("🔄 未知状态")
+                st.info(f"{""} 未知状态")
         
         st.write("**Token状态：**")
         for account_name in accounts_list[:mid_point]:
@@ -476,11 +481,11 @@ with tab3:
             status = token_manager.get_token_status(account_name)
             
             if status["status"] == "active":
-                st.success(f"✅ 已配置 (更新于 {status['last_updated']})")
+                st.success(f"{""} 已配置 (更新于 {status["last_updated']})")
             elif status["status"] == "inactive":
-                st.info("🔄 未配置Token")
+                st.info(f"{""} 未配置Token")
             else:
-                st.info("🔄 未知状态")
+                st.info(f"{""} 未知状态")
     
     with col2:
         st.write("**Cookie状态：**")
@@ -489,15 +494,15 @@ with tab3:
             status = cookie_manager.get_cookie_status(account_name)
             
             if status["status"] == "fresh":
-                st.success(f"✅ 最后更新: {status['last_updated'].strftime('%Y-%m-%d %H:%M')} (新鲜)")
+                st.success(f"{""} 最后更新: {status["last_updated'].strftime('%Y-%m-%d %H:%M')} (新鲜)")
             elif status["status"] == "warning":
-                st.warning(f"⚠️ 最后更新: {status['last_updated'].strftime('%Y-%m-%d %H:%M')} (建议更新)")
+                st.warning(f"{""} 最后更新: {status["last_updated'].strftime('%Y-%m-%d %H:%M')} (建议更新)")
             elif status["status"] == "expired":
-                st.error(f"❌ 最后更新: {status['last_updated'].strftime('%Y-%m-%d %H:%M')} (已过期)")
+                st.error(f"{""} 最后更新: {status["last_updated'].strftime('%Y-%m-%d %H:%M')} (已过期)")
             elif status["status"] == "inactive":
-                st.info("🔄 未配置Cookie")
+                st.info(f"{""} 未配置Cookie")
             else:
-                st.info("🔄 未知状态")
+                st.info(f"{""} 未知状态")
         
         st.write("**Token状态：**")
         for account_name in accounts_list[mid_point:]:
@@ -505,9 +510,9 @@ with tab3:
             status = token_manager.get_token_status(account_name)
             
             if status["status"] == "active":
-                st.success(f"✅ 已配置 (更新于 {status['last_updated']})")
+                st.success(f"{""} 已配置 (更新于 {status["last_updated']})")
             else:
-                st.info("🔄 未配置Token")
+                st.info(f"{""} 未配置Token")
     
 
 
@@ -602,10 +607,10 @@ with tab5:
     # 显示识别结果
     if user_cookie.strip():
         detected_account = extract_account_from_cookie(user_cookie)
-        st.success(f"🔍 识别到的账号: {detected_account}")
+        st.success(f"识别到的账号: {detected_account}")
         
         # 显示Cookie解析信息
-        with st.expander("🔍 Cookie解析详情"):
+        with st.expander(f"Cookie解析详情"):
             try:
                 # 提取微信公众号关键字段
                 slave_user_match = re.search(r'slave_user=([^;]+)', user_cookie)
@@ -651,7 +656,7 @@ with tab5:
     
     # 日期选择
     st.subheader("日期范围选择")
-    st.info("📅 开始日期默认为2025年6月9日（项目运营开始时间），结束日期为当前日期")
+    st.info(f"开始日期默认为2025年6月9日（项目运营开始时间），结束日期为当前日期")
     col1, col2 = st.columns(2)
     
     with col1:
@@ -673,12 +678,12 @@ with tab5:
     # 显示日期范围
     days_diff = (end_date - begin_date).days
     if days_diff >= 0:
-        st.info(f"📅 将获取 {days_diff + 1} 天的数据")
+        st.info(f"将获取 {days_diff + 1} 天的数据")
     else:
-        st.error("❌ 开始日期不能晚于结束日期！")
+        st.error(f"{""} 开始日期不能晚于结束日期！")
     
     # 获取数据按钮
-    if st.button("🚀 开始获取数据", type="primary"):
+    if st.button(f"开始获取数据", type="primary"):
         if not user_cookie.strip():
             st.error("请先输入Cookie")
         elif days_diff < 0:
@@ -688,18 +693,18 @@ with tab5:
                 try:
                     # 根据平台类型调用不同的数据获取函数
                     if detected_account.startswith("头条号"):
-                        st.info("🔍 检测到今日头条Cookie，正在获取头条号数据...")
+                        st.info(f"检测到今日头条Cookie，正在获取头条号数据...")
                         
                         # 获取今日头条数据
                         df = fetch_article_by_site(user_cookie)
                         if df is not None and not df.empty:
                             # 保存到CSV
                             update_toutiao_publish_history(user_cookie)
-                            st.success(f"✅ {detected_account} 数据获取成功！")
+                            st.success(f"{""} {detected_account} 数据获取成功！")
                             
                             # 显示获取到的数据
-                            st.subheader("📊 获取到的数据预览")
-                            st.write(f"✅ 成功获取到 {len(df)} 行数据")
+                            st.subheader(f"获取到的数据预览")
+                            st.write(f"{""} 成功获取到 {len(df)} 行数据")
                             
                             # 显示数据统计
                             col1, col2, col3 = st.columns(3)
@@ -720,10 +725,10 @@ with tab5:
                             st.info("📁 数据已保存到: workspace/data/publish_history_for_calendar.csv")
                             
                         else:
-                            st.warning(f"⚠️ {detected_account} 数据获取完成，但没有获取到新数据")
+                            st.warning(f"{""} {detected_account} 数据获取完成，但没有获取到新数据")
                     
                     elif detected_account.startswith("公众号"):
-                        st.info("🔍 检测到微信公众号Cookie，正在获取公众号数据...")
+                        st.info(f"检测到微信公众号Cookie，正在获取公众号数据...")
                         
                         # 调用微信公众号数据获取函数
                         result = update_wechat_data_from_excel(
@@ -735,15 +740,15 @@ with tab5:
                         )
                         
                         if result:
-                            st.success(f"✅ {detected_account} 数据获取成功！")
+                            st.success(f"{""} {detected_account} 数据获取成功！")
                             
                             # 显示获取到的数据
-                            st.subheader("📊 获取到的数据预览")
+                            st.subheader(f"获取到的数据预览")
                             
                             # 尝试读取生成的Excel文件
                             if os.path.exists("result.xls"):
                                 df = pd.read_excel("result.xls")
-                                st.write(f"✅ 成功获取到 {len(df)} 行数据")
+                                st.write(f"{""} 成功获取到 {len(df)} 行数据")
                                 
                                 # 显示数据统计
                                 col1, col2, col3 = st.columns(3)
@@ -763,7 +768,7 @@ with tab5:
                                 # 提供下载链接
                                 with open("result.xls", "rb") as file:
                                     st.download_button(
-                                        label="📥 下载Excel文件",
+                                        label=f"下载Excel文件",
                                         data=file.read(),
                                         file_name=f"{detected_account}_{begin_date_str}_{end_date_str}.xls",
                                         mime="application/vnd.ms-excel"
@@ -772,10 +777,10 @@ with tab5:
                                 st.warning("未找到生成的Excel文件，可能数据获取失败")
                                 
                         else:
-                            st.warning(f"⚠️ {detected_account} 数据获取完成，但可能没有新数据")
+                            st.warning(f"{""} {detected_account} 数据获取完成，但可能没有新数据")
                     
                     else:
-                        st.error(f"❌ 不支持的平台类型: {detected_account}")
+                        st.error(f"{""} 不支持的平台类型: {detected_account}")
                         st.info("目前支持：微信公众号、今日头条")
                         
                 except Exception as e:
@@ -824,7 +829,7 @@ with tab5:
         """)
     
     # 注意事项
-    st.subheader("⚠️ 注意事项")
+    st.subheader(f"{""} 注意事项")
     st.info("""
     - **多平台支持**: 目前支持微信公众号和今日头条两个平台
     - **Cookie有效期**: Cookie通常有24-48小时的有效期，过期后需要重新获取

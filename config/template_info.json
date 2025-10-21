@@ -4,27 +4,27 @@
     "description": "HTML模板",
     "category": "General",
     "created": "2025-08-28T16:07:24.829218",
-    "modified": "2025-07-21T10:22:57.075116",
+    "modified": "2025-09-16T15:52:42.126372",
     "variables": [],
-    "file_size": 1912,
-    "lines_count": 31
+    "file_size": 2268,
+    "lines_count": 48
   },
   "02_creative_vibrant.html": {
     "name": "02 Creative Vibrant",
     "description": "HTML模板",
     "category": "General",
     "created": "2025-08-28T16:07:24.829793",
-    "modified": "2025-08-22T17:11:03.776143",
+    "modified": "2025-09-16T15:52:42.126619",
     "variables": [],
-    "file_size": 9046,
-    "lines_count": 238
+    "file_size": 10426,
+    "lines_count": 282
   },
   "03_minimalist_white.html": {
     "name": "03 Minimalist White",
     "description": "HTML模板",
     "category": "General",
     "created": "2025-08-28T16:07:24.830194",
-    "modified": "2025-08-23T08:23:05.704508",
+    "modified": "2025-09-12T17:23:15.375268",
     "variables": [],
     "file_size": 15565,
     "lines_count": 537
@@ -34,20 +34,20 @@
     "description": "HTML模板",
     "category": "General",
     "created": "2025-08-28T16:07:24.830528",
-    "modified": "2025-07-21T10:23:13.424346",
+    "modified": "2025-09-16T15:52:42.126743",
     "variables": [],
-    "file_size": 1980,
-    "lines_count": 31
+    "file_size": 2339,
+    "lines_count": 48
   },
   "05_academic_research.html": {
     "name": "05 Academic Research",
     "description": "HTML模板",
     "category": "General",
     "created": "2025-08-28T16:07:24.830679",
-    "modified": "2025-07-21T10:23:19.113913",
+    "modified": "2025-09-16T15:52:42.126848",
     "variables": [],
-    "file_size": 2269,
-    "lines_count": 34
+    "file_size": 2625,
+    "lines_count": 51
   },
   "06_agi-observation-room-article-template.html": {
     "name": "06 Agi-Observation-Room-Article-Template",
@@ -64,17 +64,17 @@
     "description": "HTML模板",
     "category": "General",
     "created": "2025-08-28T16:07:24.831034",
-    "modified": "2025-08-14T11:09:00.796585",
+    "modified": "2025-10-21T10:17:31.729185",
     "variables": [],
-    "file_size": 8222,
-    "lines_count": 275
+    "file_size": 27018,
+    "lines_count": 782
   },
   "08-yeluzi.html": {
     "name": "08-Yeluzi",
     "description": "HTML模板",
     "category": "General",
     "created": "2025-08-28T16:07:24.831473",
-    "modified": "2025-08-26T18:32:35.923281",
+    "modified": "2025-09-12T17:23:15.375748",
     "variables": [],
     "file_size": 161,
     "lines_count": 1
@@ -105,6 +105,24 @@
     "category": "General",
     "created": "2025-08-28T16:07:24.832295",
     "modified": "2025-08-28T16:07:24.832296",
+    "variables": []
+  },
+  "AGI观察室模板.html": {
+    "name": "Agi观察室模板",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-10-21T11:35:38.681021",
+    "modified": "2025-10-21T10:17:31.729308",
+    "variables": [],
+    "file_size": 25534,
+    "lines_count": 797
+  },
+  "agi-observation-room-article-template.html": {
+    "name": "Agi-Observation-Room-Article-Template",
+    "description": "HTML模板",
+    "category": "General",
+    "created": "2025-10-21T11:35:38.682462",
+    "modified": "2025-10-21T11:35:38.682465",
     "variables": []
   }
 }

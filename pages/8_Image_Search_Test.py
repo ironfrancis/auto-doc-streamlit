@@ -13,6 +13,8 @@ from typing import List, Dict
 import pandas as pd
 from PIL import Image
 import io
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
 
 T = {
     "zh": {
@@ -96,14 +98,14 @@ class ImageSearchTester:
     
     def search(self, query: str, count: int = 10) -> Dict:
         """搜索Unsplash API"""
-        st.write(f"🔍 正在搜索 Unsplash...")
+        st.write(f"正在搜索 Unsplash...")
         result = self.search_unsplash(query, count)
         
         # 显示结果
         if result["success"]:
-            st.success(f"✅ Unsplash: 找到 {len(result['results'])} 张图片")
+            st.success(f"Unsplash: 找到 {len(result['results'])} 张图片")
         else:
-            st.error(f"❌ Unsplash: {result['error']}")
+            st.error(f"Unsplash: {result['error']}")
         
         return result
 
@@ -119,7 +121,11 @@ def main():
         
         
     st.set_page_config(page_title="图片搜索测试", layout="wide")
-    st.title("🔍 " + get_text("page_title"))
+    
+    # 加载主题
+    load_anthropic_theme()
+    
+    st.title(get_text("page_title"))
     st.markdown("---")
     
     # 初始化搜索器
@@ -149,7 +155,7 @@ def main():
     
     # 添加清除结果按钮
     if st.session_state["search_results"] is not None:
-        if st.button("🗑️ 清除结果", key="clear_results"):
+        if st.button(f"清除结果", key="clear_results"):
             st.session_state["search_results"] = None
             st.session_state["last_search_query"] = ""
             st.rerun()
@@ -177,14 +183,14 @@ def main():
                 "API": "Unsplash",
                 get_text("results_count"): all_results["total_results"],
                 get_text("response_time"): f"{all_results['response_time']:.2f}s",
-                get_text("api_status"): "✅ 成功"
+                get_text("api_status"): f"成功"
             })
         else:
             comparison_data.append({
                 "API": "Unsplash",
                 get_text("results_count"): 0,
                 get_text("response_time"): f"{all_results['response_time']:.2f}s",
-                get_text("api_status"): f"❌ {all_results['error']}"
+                get_text("api_status"): f"{all_results['error']}"
             })
         
         df = pd.DataFrame(comparison_data)
@@ -194,7 +200,7 @@ def main():
         st.markdown("### 🖼️ 搜索结果")
         
         if all_results["success"] and all_results["results"]:
-            with st.expander(f"📸 Unsplash ({len(all_results['results'])} 张图片)", expanded=True):
+            with st.expander(f"Unsplash ({len(all_results['results'])} 张图片)", expanded=True):
                 # 创建网格布局
                 cols = st.columns(3)
                 
@@ -228,7 +234,7 @@ def main():
                         
                         with col_next:
                             download_key = f"download_unsplash_{i}"
-                            if st.button(f"⬇️ 下载", key=download_key):
+                            if st.button(f"下载", key=download_key):
                                 # 下载图片
                                 try:
                                     with st.spinner("正在下载图片..."):
@@ -242,7 +248,7 @@ def main():
                                             with open(filepath, 'wb') as f:
                                                 f.write(response.content)
                                             
-                                            st.success(f"✅ 已下载: {filename}")
+                                            st.success(f"已下载: {filename}")
                                         else:
                                             st.error("下载失败")
                                 except Exception as e:

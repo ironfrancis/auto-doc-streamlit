@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
+from core.utils.icon_library import get_icon
 import numpy as np
 from datetime import datetime, timedelta
 import calendar
@@ -1063,12 +1064,12 @@ def create_timeline_view(records, selected_channels):
     return fig
 
 st.set_page_config(page_title="频道发布历史", layout="wide")
-st.title("📊 频道发布历史 - 数据可视化分析")
+st.title(f"频道发布历史 - 数据可视化分析")
 
 # 添加刷新按钮
 col1, col2, col3 = st.columns([1, 1, 1])
 with col1:
-    if st.button("🔄 刷新数据", help="从CSV文件重新加载最新数据"):
+    if st.button(f"刷新数据", help="从CSV文件重新加载最新数据"):
         st.rerun()
 with col2:
     # 显示数据文件信息
@@ -1077,11 +1078,11 @@ with col2:
         file_time = datetime.fromtimestamp(os.path.getmtime(CSV_PATH))
         st.info(f"📁 数据文件: {file_size:,} 字节 | 更新时间: {file_time.strftime('%Y-%m-%d %H:%M:%S')}")
     else:
-        st.warning("⚠️ 数据文件不存在")
+        st.warning(f"数据文件不存在")
 with col3:
     # 显示数据统计
     all_records_temp = load_csv_data()
-    st.metric("📊 总记录数", len(all_records_temp))
+    st.metric(f"总记录数", len(all_records_temp))
 
 def get_all_records():
     """获取所有发布记录"""
@@ -1100,14 +1101,14 @@ if all_records:
 
 # 侧边栏过滤器
 with st.sidebar:
-    st.subheader("🔍 频道筛选")
+    st.subheader(f"频道筛选")
     selected_channels = st.multiselect(
         "选择频道",
         all_channels,
         default=all_channels
     )
     
-    st.subheader("📅 日期范围")
+    st.subheader(f"日期范围")
     # 获取数据中的日期范围
     if all_records:
         dates = []
@@ -1147,18 +1148,18 @@ for record in all_records:
 
 # 创建标签页
 tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
-    "📊 概览仪表板", 
-    "📈 趋势分析", 
-    "🎯 参与度分析",
-    "📅 时间分析",
-    "📅 发布日历",
-    "📋 详细记录",
-    "🔍 高级分析",
-    "🌊 河流图可视化"
+    f"概览仪表板", 
+    "趋势分析", 
+    "参与度分析",
+    f"时间分析",
+    f"发布日历",
+    f"详细记录",
+    f"高级分析",
+    "河流图可视化"
 ])
 
 with tab1:
-    st.subheader("📊 概览仪表板")
+    st.subheader(f"概览仪表板")
     
     if filtered_records:
         # 计算总体统计
@@ -1171,13 +1172,13 @@ with tab1:
         # 显示统计卡片
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("📝 总发布数", total_published)
+            st.metric(f"总发布数", total_published)
         with col2:
             st.metric("👀 总阅读人数", f"{total_views:,}")
         with col3:
             st.metric("📤 总分享人数", f"{total_shares:,}")
         with col4:
-            st.metric("📊 平均阅读完成率", f"{avg_read_completion:.1f}%")
+            st.metric(f"平均阅读完成率", f"{avg_read_completion:.1f}%")
         
         # 频道表现仪表板
         dashboard_fig, channel_stats = create_channel_performance_dashboard(filtered_records)
@@ -1186,7 +1187,7 @@ with tab1:
         
         # 显示频道统计表格
         if channel_stats is not None:
-            st.subheader("📊 频道详细统计")
+            st.subheader(f"频道详细统计")
             st.dataframe(channel_stats, use_container_width=True)
         
         # 热门文章
@@ -1220,7 +1221,7 @@ with tab2:
             st.plotly_chart(trend_fig, use_container_width=True)
         
         # 月度统计
-        st.subheader("📅 月度统计")
+        st.subheader(f"月度统计")
         df_monthly = pd.DataFrame(filtered_records)
         df_monthly['publish_date'] = pd.to_datetime(df_monthly['publish_date'])
         df_monthly['month'] = df_monthly['publish_date'].dt.to_period('M')
@@ -1296,7 +1297,7 @@ with tab3:
         st.info("暂无数据")
 
 with tab4:
-    st.subheader("📅 时间分析")
+    st.subheader(f"时间分析")
     
     if filtered_records:
         # 发布时间热力图
@@ -1305,7 +1306,7 @@ with tab4:
             st.plotly_chart(heatmap_fig, use_container_width=True)
         
         # 星期发布频率
-        st.subheader("📊 星期发布频率")
+        st.subheader(f"星期发布频率")
         df_weekday = pd.DataFrame(filtered_records)
         df_weekday['publish_date'] = pd.to_datetime(df_weekday['publish_date'])
         df_weekday['weekday'] = df_weekday['publish_date'].dt.day_name()
@@ -1329,7 +1330,7 @@ with tab4:
         st.info("暂无数据")
 
 with tab5:
-    st.subheader("📅 发布日历")
+    st.subheader(f"发布日历")
     
     if filtered_records:
         # 选择日历视图类型
@@ -1340,7 +1341,7 @@ with tab5:
         )
         
         if calendar_type == "月度日历":
-            st.subheader("📅 月度发布日历")
+            st.subheader(f"月度发布日历")
             
             # 获取数据中的年份范围
             if filtered_records:
@@ -1401,7 +1402,7 @@ with tab5:
         st.info("暂无数据")
 
 with tab6:
-    st.subheader("📋 详细记录")
+    st.subheader(f"详细记录")
     
     if filtered_records:
         # 创建数据表格
@@ -1424,7 +1425,7 @@ with tab6:
         )
         
         # 导出功能
-        if st.button("📥 导出数据"):
+        if st.button(f"导出数据"):
             csv = df_records.to_csv(index=False)
             st.download_button(
                 label="下载CSV文件",
@@ -1436,11 +1437,11 @@ with tab6:
         st.info("暂无数据")
 
 with tab7:
-    st.subheader("🔍 高级分析")
+    st.subheader(f"高级分析")
     
     if filtered_records:
         # 相关性分析
-        st.subheader("📊 指标相关性分析")
+        st.subheader(f"指标相关性分析")
         df_corr = pd.DataFrame(filtered_records)
         
         # 选择数值列进行相关性分析
@@ -1492,7 +1493,7 @@ with tab7:
                 st.plotly_chart(fig_dist, use_container_width=True)
         
         # 异常值检测
-        st.subheader("🔍 异常值检测")
+        st.subheader(f"异常值检测")
         if filtered_records:
             df_outlier = pd.DataFrame(filtered_records)
             
@@ -1554,7 +1555,7 @@ with tab8:
             
             # 高级选项
             if chart_category == "高级图表":
-                st.header("🔧 高级选项")
+                st.header(f"高级选项")
                 smoothing = st.checkbox("启用平滑曲线", value=True)
             
             # 河流图类型选择
@@ -1572,7 +1573,7 @@ with tab8:
                 )
         
         # 图表类型选择
-        st.header("📊 可视化图表")
+        st.header(f"可视化图表")
         
         # 根据图表类别显示不同的选项
         if chart_category == "基础图表":
@@ -1675,7 +1676,7 @@ with tab8:
                     st.warning("无法生成山脊流图，请检查数据")
         
         # 使用说明
-        with st.expander("💡 使用说明"):
+        with st.expander(f"使用说明"):
             st.markdown("""
             ### 图表类别说明
             

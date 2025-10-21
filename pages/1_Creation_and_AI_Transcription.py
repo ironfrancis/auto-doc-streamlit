@@ -140,10 +140,7 @@ with sel_col3:
             key="concurrent_endpoints_selector",
             help="选择多个端点进行并发转写"
         )
-        
-        # 显示已选择数量
-        if selected_concurrent_endpoints:
-            st.caption(f"已选择 {len(selected_concurrent_endpoints)} 个端点")
+
     else:
         selected_concurrent_endpoints = []
 
