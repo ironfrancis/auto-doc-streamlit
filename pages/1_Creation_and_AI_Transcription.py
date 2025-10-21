@@ -625,9 +625,16 @@ if concurrent_transcribe_clicked:
                     
                     saved_files.append((ep_name, local_md_path))
             
-            # 如果有保存的文件，显示提示信息
+            # 如果有保存的文件，显示提示信息并自动打开
             if saved_files:
                 st.info(f"📁 已自动保存 {len(saved_files)} 个成功的转写结果到工作目录")
+                
+                # 自动用默认应用打开所有保存的文件
+                for ep_name, file_path in saved_files:
+                    try:
+                        subprocess.Popen(["open", file_path])
+                    except Exception as e:
+                        st.warning(f"无法自动打开 {ep_name} 的文件: {e}")
             
             # 显示统计信息
             col_stat1, col_stat2, col_stat3 = st.columns(3)
@@ -679,26 +686,13 @@ if concurrent_transcribe_clicked:
                     """, unsafe_allow_html=True)
                     
                     if result_data["success"]:
-                        # 显示成功的转写结果（使用滚动容器）
+                        # 显示成功的转写结果
                         with st.container():
-                            # 使用expander来节省空间
+                            # 使用expander查看完整内容
                             with st.expander("📄 查看完整内容", expanded=False):
                                 st.markdown(result_data["result"])
                             
-                            # 显示预览（前500字符）
-                            preview_text = result_data["result"][:500]
-                            if len(result_data["result"]) > 500:
-                                preview_text += "..."
-                            st.markdown("**预览:**")
-                            st.text_area(
-                                "内容预览",
-                                value=preview_text,
-                                height=200,
-                                key=f"preview_{ep_name}",
-                                label_visibility="collapsed"
-                            )
-                            
-                            # 添加用Typora打开按钮
+                            # 添加打开按钮
                             # 找到该端点对应的已保存文件
                             saved_file_path = None
                             for saved_ep, saved_path in saved_files:
@@ -707,13 +701,13 @@ if concurrent_transcribe_clicked:
                                     break
                             
                             if saved_file_path:
-                                if st.button(f"📝 用 Typora 打开", key=f"open_{ep_name}", use_container_width=True):
-                                    # 用Typora打开已保存的文件
+                                if st.button(f"📂 打开文件", key=f"open_{ep_name}", use_container_width=True):
+                                    # 用系统默认应用打开已保存的文件
                                     try:
-                                        subprocess.Popen(["open", "-a", "Typora", saved_file_path])
-                                        st.success(f"✅ 已打开 Typora！")
+                                        subprocess.Popen(["open", saved_file_path])
+                                        st.success(f"✅ 已打开文件！")
                                     except Exception as e:
-                                        st.error(f"无法打开 Typora: {e}")
+                                        st.error(f"无法打开文件: {e}")
                     else:
                         # 显示错误信息
                         st.error(f"**错误:**\n{result_data['result']}")
