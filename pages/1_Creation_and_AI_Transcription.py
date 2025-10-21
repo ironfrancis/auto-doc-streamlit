@@ -147,6 +147,125 @@ with sel_col3:
     else:
         selected_concurrent_endpoints = []
 
+# ============================================================================
+# 并发历史管理函数
+# ============================================================================
+
+def get_concurrent_history_dir():
+    """获取并发历史目录"""
+    history_dir = os.path.join(get_workspace_dir(), "concurrent_history")
+    os.makedirs(history_dir, exist_ok=True)
+    return history_dir
+
+
+def save_concurrent_history(task_id, channel, results, saved_files):
+    """
+    保存并发转写历史到 JSON 文件
+    
+    参数:
+        task_id: 任务ID（时间戳）
+        channel: 频道名称
+        results: 结果字典
+        saved_files: 保存的文件列表
+    """
+    history_dir = get_concurrent_history_dir()
+    
+    # 构建元数据
+    metadata = {
+        "id": task_id,
+        "channel": channel,
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "results": []
+    }
+    
+    # 添加每个端点的结果信息（只保存必要信息，不保存内容）
+    for ep_name, result_data in results.items():
+        result_info = {
+            "endpoint": ep_name,
+            "success": result_data["success"],
+            "elapsed": result_data["elapsed"],
+            "file_path": None  # 初始化为 None
+        }
+        
+        # 如果成功，找到对应的文件路径
+        if result_data["success"]:
+            for saved_ep, saved_path in saved_files:
+                if saved_ep == ep_name:
+                    result_info["file_path"] = saved_path
+                    break
+        else:
+            # 失败时保存错误信息
+            result_info["error"] = result_data["result"]
+        
+        metadata["results"].append(result_info)
+    
+    # 统计信息
+    success_count = sum(1 for r in results.values() if r["success"])
+    metadata["statistics"] = {
+        "total": len(results),
+        "success": success_count,
+        "failed": len(results) - success_count,
+        "avg_time": sum(r["elapsed"] for r in results.values()) / len(results) if results else 0
+    }
+    
+    # 保存到 JSON 文件
+    json_path = os.path.join(history_dir, f"{task_id}_{channel.replace('/', '_').replace(' ', '_')}.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
+    
+    return json_path
+
+
+def load_concurrent_history_list():
+    """
+    加载并发历史记录列表
+    
+    返回:
+        列表，每项包含 (display_name, file_path, metadata)
+    """
+    history_dir = get_concurrent_history_dir()
+    history_files = sorted(
+        [f for f in os.listdir(history_dir) if f.endswith('.json')],
+        reverse=True  # 最新的在前
+    )
+    
+    history_list = []
+    for filename in history_files:
+        file_path = os.path.join(history_dir, filename)
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                metadata = json.load(f)
+            
+            # 构建显示名称
+            timestamp = metadata.get("timestamp", "未知时间")
+            channel = metadata.get("channel", "未知频道")
+            stats = metadata.get("statistics", {})
+            total = stats.get("total", 0)
+            success = stats.get("success", 0)
+            
+            display_name = f"{timestamp} | {channel} | {success}/{total} 成功"
+            history_list.append((display_name, file_path, metadata))
+        except Exception as e:
+            # 忽略损坏的文件
+            continue
+    
+    return history_list
+
+
+def load_concurrent_history(file_path):
+    """
+    从 JSON 文件加载并发历史
+    
+    返回:
+        metadata 字典
+    """
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+# ============================================================================
+# 输入区
+# ============================================================================
+
 # 输入区堆叠
 md_input = st.text_area("Markdown", height=200, key="md_input_1_Creation")
 text_input = st.text_area("Text", height=100, key="text_input_1_Creation")
@@ -639,6 +758,23 @@ if concurrent_transcribe_clicked:
             progress_bar.empty()
             status_text.empty()
             
+            # 保存并发历史到 JSON 文件
+            save_concurrent_history(base_ts, selected_channel, results, saved_files)
+            
+            # 保存到 session_state 以便在对比区显示
+            st.session_state["current_concurrent_results"] = {
+                "task_id": base_ts,
+                "channel": selected_channel,
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "results": results,
+                "saved_files": saved_files,
+                "statistics": {
+                    "total": len(results),
+                    "success": success_count,
+                    "failed": failed_count
+                }
+            }
+            
             # 显示最终统计
             if saved_files:
                 st.success(f"🎉 并发转写完成！已自动保存并打开 {len(saved_files)} 个成功的结果")
@@ -652,79 +788,203 @@ if concurrent_transcribe_clicked:
             with col_stat3:
                 st.metric("失败", failed_count, delta=failed_count if failed_count > 0 else None, delta_color="inverse")
             
-            st.markdown("---")
+            # 并发转写完成后，自动切换到对比区
+            st.session_state["show_concurrent_compare"] = True
+
+# ============================================================================
+# 并发结果对比区（独立、可折叠）
+# ============================================================================
+
+def render_concurrent_results(results_data, key_prefix="current"):
+    """
+    渲染并发结果对比
+    
+    参数:
+        results_data: 包含 results 和 saved_files 的字典
+        key_prefix: 按钮key的前缀，避免重复
+    """
+    results = results_data.get("results", {})
+    saved_files = results_data.get("saved_files", [])
+    
+    if not results:
+        st.info("暂无并发结果")
+        return
+    
+    # 根据端点数量决定列数（最多4列，最少2列）
+    num_endpoints = len(results)
+    num_columns = min(max(2, num_endpoints), 4)
+    
+    # 创建并排的列布局
+    result_columns = st.columns(num_columns)
+    
+    # 将结果分配到各列中
+    for idx, (ep_name, result_data) in enumerate(results.items()):
+        col_idx = idx % num_columns
+        
+        with result_columns[col_idx]:
+            # 卡片样式的容器
+            status_icon = "✅" if result_data["success"] else "❌"
+            status_color = "#28a745" if result_data["success"] else "#dc3545"
+            elapsed_time = f"{result_data['elapsed']:.2f}秒"
             
-            # 显示结果对比（并排布局）
-            st.markdown("### 📊 转写结果对比")
+            # 使用自定义样式的容器
+            st.markdown(f"""
+            <div style="
+                border: 2px solid {status_color};
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 20px;
+                background-color: rgba(255, 255, 255, 0.05);
+            ">
+                <h4 style="margin: 0 0 10px 0; color: {status_color};">
+                    {status_icon} {ep_name}
+                </h4>
+                <p style="margin: 0; font-size: 0.9em; color: #888;">
+                    ⏱️ {elapsed_time}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
             
-            # 根据端点数量决定列数（最多4列，最少2列）
-            num_endpoints = len(results)
-            num_columns = min(max(2, num_endpoints), 4)
-            
-            # 创建并排的列布局
-            result_columns = st.columns(num_columns)
-            
-            # 将结果分配到各列中
-            for idx, (ep_name, result_data) in enumerate(results.items()):
-                col_idx = idx % num_columns
-                
-                with result_columns[col_idx]:
-                    # 卡片样式的容器
-                    status_icon = "✅" if result_data["success"] else "❌"
-                    status_color = "#28a745" if result_data["success"] else "#dc3545"
-                    elapsed_time = f"{result_data['elapsed']:.2f}秒"
+            if result_data["success"]:
+                # 显示成功的转写结果
+                with st.container():
+                    # 使用expander查看完整内容
+                    with st.expander("📄 查看完整内容", expanded=False):
+                        st.markdown(result_data["result"])
                     
-                    # 使用自定义样式的容器
-                    st.markdown(f"""
-                    <div style="
-                        border: 2px solid {status_color};
-                        border-radius: 10px;
-                        padding: 15px;
-                        margin-bottom: 20px;
-                        background-color: rgba(255, 255, 255, 0.05);
-                    ">
-                        <h4 style="margin: 0 0 10px 0; color: {status_color};">
-                            {status_icon} {ep_name}
-                        </h4>
-                        <p style="margin: 0; font-size: 0.9em; color: #888;">
-                            ⏱️ {elapsed_time}
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # 添加打开按钮
+                    # 找到该端点对应的已保存文件
+                    saved_file_path = None
+                    for saved_ep, saved_path in saved_files:
+                        if saved_ep == ep_name:
+                            saved_file_path = saved_path
+                            break
                     
-                    if result_data["success"]:
-                        # 显示成功的转写结果
-                        with st.container():
-                            # 使用expander查看完整内容
-                            with st.expander("📄 查看完整内容", expanded=False):
-                                st.markdown(result_data["result"])
-                            
-                            # 添加打开按钮
-                            # 找到该端点对应的已保存文件
-                            saved_file_path = None
-                            for saved_ep, saved_path in saved_files:
-                                if saved_ep == ep_name:
-                                    saved_file_path = saved_path
-                                    break
-                            
-                            if saved_file_path:
-                                if st.button(f"📂 打开文件", key=f"open_{ep_name}", use_container_width=True):
-                                    # 用系统默认应用打开已保存的文件
-                                    try:
-                                        subprocess.Popen(["open", saved_file_path])
-                                        st.success(f"✅ 已打开文件！")
-                                    except Exception as e:
-                                        st.error(f"无法打开文件: {e}")
-                    else:
-                        # 显示错误信息
-                        st.error(f"**错误:**\n{result_data['result']}")
-            
-            # 如果有成功的结果，显示总结
-            st.markdown("---")
-            if success_count > 0:
-                st.success(f"🎉 并发转写完成！{success_count} 个端点成功，{failed_count} 个失败。")
+                    if saved_file_path:
+                        if st.button(f"📂 打开文件", key=f"{key_prefix}_open_{ep_name}_{idx}", use_container_width=True):
+                            # 用系统默认应用打开已保存的文件
+                            try:
+                                subprocess.Popen(["open", saved_file_path])
+                                st.success(f"✅ 已打开文件！")
+                            except Exception as e:
+                                st.error(f"无法打开文件: {e}")
             else:
-                st.error("😞 所有端点都失败了，请检查配置和网络连接。")
+                # 显示错误信息
+                st.error(f"**错误:**\n{result_data['result']}")
+
+
+# 检查是否有并发结果需要显示
+if "current_concurrent_results" in st.session_state or "show_concurrent_compare" in st.session_state:
+    st.markdown("---")
+    st.markdown("## 📊 并发结果对比区")
+    
+    # 创建标签页
+    tab1, tab2 = st.tabs(["🎯 当前结果", "📚 历史对比"])
+    
+    with tab1:
+        # 显示当前并发结果
+        if "current_concurrent_results" in st.session_state:
+            current_data = st.session_state["current_concurrent_results"]
+            
+            # 显示信息
+            col_info1, col_info2, col_info3 = st.columns(3)
+            with col_info1:
+                st.info(f"**频道:** {current_data['channel']}")
+            with col_info2:
+                st.info(f"**时间:** {current_data['timestamp']}")
+            with col_info3:
+                stats = current_data['statistics']
+                st.info(f"**结果:** {stats['success']}/{stats['total']} 成功")
+            
+            st.markdown("---")
+            
+            # 渲染结果
+            render_concurrent_results(current_data, key_prefix="current")
+        else:
+            st.info("暂无当前并发结果，请先执行并发转写")
+    
+    with tab2:
+        # 显示历史对比
+        st.markdown("### 选择历史记录")
+        
+        # 加载历史列表
+        history_list = load_concurrent_history_list()
+        
+        if history_list:
+            # 创建下拉选择框
+            history_options = ["请选择历史记录..."] + [item[0] for item in history_list]
+            selected_history = st.selectbox(
+                "历史并发结果",
+                history_options,
+                key="history_selector"
+            )
+            
+            if selected_history and selected_history != "请选择历史记录...":
+                # 找到对应的历史记录
+                selected_idx = history_options.index(selected_history) - 1
+                history_file_path = history_list[selected_idx][1]
+                history_metadata = history_list[selected_idx][2]
+                
+                # 显示历史信息
+                col_h1, col_h2, col_h3 = st.columns(3)
+                with col_h1:
+                    st.info(f"**频道:** {history_metadata['channel']}")
+                with col_h2:
+                    st.info(f"**时间:** {history_metadata['timestamp']}")
+                with col_h3:
+                    stats = history_metadata['statistics']
+                    st.info(f"**结果:** {stats['success']}/{stats['total']} 成功")
+                
+                st.markdown("---")
+                
+                # 从历史元数据重建结果数据结构
+                history_results = {}
+                history_saved_files = []
+                
+                for result_info in history_metadata['results']:
+                    ep_name = result_info['endpoint']
+                    
+                    if result_info['success']:
+                        # 成功的结果 - 从文件读取内容
+                        file_path = result_info.get('file_path')
+                        if file_path and os.path.exists(file_path):
+                            try:
+                                with open(file_path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                history_results[ep_name] = {
+                                    "success": True,
+                                    "result": content,
+                                    "elapsed": result_info['elapsed']
+                                }
+                                history_saved_files.append((ep_name, file_path))
+                            except Exception as e:
+                                history_results[ep_name] = {
+                                    "success": False,
+                                    "result": f"无法读取文件: {e}",
+                                    "elapsed": result_info['elapsed']
+                                }
+                        else:
+                            history_results[ep_name] = {
+                                "success": False,
+                                "result": "文件不存在或已被删除",
+                                "elapsed": result_info['elapsed']
+                            }
+                    else:
+                        # 失败的结果
+                        history_results[ep_name] = {
+                            "success": False,
+                            "result": result_info.get('error', '未知错误'),
+                            "elapsed": result_info['elapsed']
+                        }
+                
+                # 渲染历史结果
+                history_data = {
+                    "results": history_results,
+                    "saved_files": history_saved_files
+                }
+                render_concurrent_results(history_data, key_prefix=f"history_{selected_idx}")
+        else:
+            st.info("暂无历史记录，执行并发转写后会自动保存")
 
 # ============================================================================
 # 板块分隔：MD审核与HTML预览
