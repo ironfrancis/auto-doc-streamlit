@@ -32,6 +32,11 @@ frontend/
 # 其他
 *.bak
 
+# 环境变量文件
+.env
+.env.local
+.env.production
+
 # 保留模板和页面、配置、说明等
 !app/html_templates/
 !app/pages/

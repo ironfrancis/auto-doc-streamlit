@@ -1,0 +1,60 @@
+{
+  "$schema": "./channels_schema.json",
+  "version": "3.1",
+  "metadata": {
+    "description": "频道配置文件示例",
+    "fields_guide": {
+      "id": "频道唯一标识（小写+下划线）",
+      "name": "频道名称",
+      "template": "留空则使用系统默认模板",
+      "content_rules": "内容规范要求"
+    },
+    "last_updated": "2025-01-15T00:00:00Z"
+  },
+  "channels": [
+    {
+      "id": "example_channel_1",
+      "created": "2025-01-15T10:00:00Z",
+      "updated": "2025-01-15T10:00:00Z",
+      "name": "示例频道1",
+      "description": "这是一个示例频道，用于演示配置格式",
+      "template": "01_modern_news.html",
+      "llm_endpoint": "OpenAI GPT-3.5 Turbo",
+      "content_rules": {
+        "target_audience": "通用受众",
+        "writing_style": {
+          "title": "吸引读者的标题",
+          "tone": "专业且易懂",
+          "depth": "适度深入"
+        },
+        "technical_rules": [
+          "根据输入内容进行专业转写",
+          "保持内容的准确性和可读性",
+          "适当添加个人观点和分析"
+        ]
+      }
+    },
+    {
+      "id": "example_channel_2",
+      "created": "2025-01-15T10:00:00Z",
+      "updated": "2025-01-15T10:00:00Z",
+      "name": "示例频道2",
+      "description": "另一个示例频道，展示不同的配置选项",
+      "template": "02_tech_article.html",
+      "llm_endpoint": "OpenAI GPT-4",
+      "content_rules": {
+        "target_audience": "技术爱好者",
+        "writing_style": {
+          "title": "技术导向的标题",
+          "tone": "专业且详细",
+          "depth": "深度技术分析"
+        },
+        "technical_rules": [
+          "技术内容必须准确",
+          "提供详细的代码示例",
+          "包含实际应用场景"
+        ]
+      }
+    }
+  ]
+}

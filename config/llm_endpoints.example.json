@@ -1,0 +1,46 @@
+[
+  {
+    "name": "OpenAI GPT-3.5 Turbo",
+    "api_type": "OpenAI",
+    "is_openai_compatible": true,
+    "api_url": "https://api.openai.com/v1/chat/completions",
+    "api_key": "your_openai_api_key_here",
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+    "remark": "OpenAI GPT-3.5 Turbo模型",
+    "default": true
+  },
+  {
+    "name": "OpenAI GPT-4",
+    "api_type": "OpenAI",
+    "is_openai_compatible": true,
+    "api_url": "https://api.openai.com/v1/chat/completions",
+    "api_key": "your_openai_api_key_here",
+    "model": "gpt-4",
+    "temperature": 0.7,
+    "remark": "OpenAI GPT-4模型",
+    "default": false
+  },
+  {
+    "name": "Anthropic Claude 3",
+    "api_type": "OpenAI",
+    "is_openai_compatible": true,
+    "api_url": "https://api.anthropic.com/v1/messages",
+    "api_key": "your_anthropic_api_key_here",
+    "model": "claude-3-sonnet-20240229",
+    "temperature": 0.7,
+    "remark": "Anthropic Claude 3 Sonnet模型",
+    "default": false
+  },
+  {
+    "name": "本地模型 (LM Studio)",
+    "api_type": "OpenAI",
+    "is_openai_compatible": true,
+    "api_url": "http://localhost:1234/v1/chat/completions",
+    "api_key": "lm-studio",
+    "model": "local-model",
+    "temperature": 0.7,
+    "remark": "本地部署的模型",
+    "default": false
+  }
+]

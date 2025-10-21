@@ -24,14 +24,67 @@ if not os.path.exists(TEMPLATE_DIR):
 
 # 常用class到style的映射（可扩展）
 CLASS_STYLE_MAP = {
-    "magic-list-item": "margin-bottom:6px;position:relative;padding-left:15px;display:block;padding-right:5px;",
+    # 基础容器样式
     "magic-article-container": "max-width:700px;margin:0 auto;background-color:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,102,255,0.1);padding:30px;",
-    "magic-indent-level-1": "padding-left:25px;position:relative;margin-bottom:6px;padding-right:5px;",
-    "magic-indent-level-2": "padding-left:40px;position:relative;margin-bottom:6px;padding-right:5px;",
-    "magic-article-h2-section-title": "position:relative;color:#0066FF;font-size:22px;line-height:1.4;margin-top:36px;margin-bottom:16px;padding:8px 0 8px 16px;font-weight:700;border-left:5px solid #0066FF;background-color:rgba(0,102,255,0.05);border-radius:0 6px 6px 6px 0;padding-left:16px;display:flex;align-items:center;",
+    "magic-article-header": "text-align:center;margin-bottom:24px;",
+    "magic-article-main-title": "font-size:26px;color:#0066FF;text-align:center;margin-top:30px;margin-bottom:24px;font-weight:700;letter-spacing:-0.01em;line-height:1.3;",
+    "magic-article-meta": "color:#5A6B7D;font-size:14px;text-align:center;margin-bottom:30px;",
+    
+    # 标题样式
+    "magic-article-h2-section-title": "position:relative;color:#0066FF;font-size:22px;line-height:1.4;margin-top:36px;margin-bottom:16px;padding:8px 0 8px 16px;font-weight:700;border-left:5px solid #0066FF;background-color:rgba(0,102,255,0.05);border-radius:0 6px 6px 0;padding-left:16px;display:flex;align-items:center;",
     "magic-article-h3-custom": "position:relative;color:#00A3FF;font-size:19px;font-weight:700;margin-top:22px;margin-bottom:6px;padding:4px 0;letter-spacing:0.01em;display:block;border-bottom:2px solid rgba(0,163,255,0.15);",
     
-    # 列表相关样式
+    # 列表样式
+    "magic-list-item": "margin-bottom:6px;position:relative;padding-left:15px;display:block;padding-right:5px;",
+    "magic-indent-level-1": "padding-left:25px;position:relative;margin-bottom:6px;padding-right:5px;",
+    "magic-indent-level-2": "padding-left:40px;position:relative;margin-bottom:6px;padding-right:5px;",
+    "magic-list-item-number": "margin-bottom:14px;position:relative;padding-left:25px;display:block;",
+    "magic-list-item-main": "margin-bottom:14px;position:relative;padding-left:15px;list-style-type:none;",
+    "magic-list-item-req": "margin-bottom:14px;position:relative;padding-left:20px;list-style-type:none;",
+    "magic-list-item-guide": "margin-bottom:18px;position:relative;padding-left:20px;list-style-type:none;",
+    "magic-list-item-nested": "margin-top:10px;margin-bottom:10px;",
+    "magic-article-list-main": "padding-left:20px;color:#1A2332;line-height:1.8;",
+    "magic-article-sublist": "padding-left:20px;margin-top:10px;",
+    "magic-article-sublist-item": "margin-bottom:10px;position:relative;padding-left:20px;list-style-type:none;",
+    
+    # 自定义项目符号
+    "magic-article-custom-bullet-square": "position:absolute;left:0;top:9px;width:8px;height:8px;background:linear-gradient(135deg,#0066FF,#00A3FF);border-radius:2px;transform:rotate(45deg);display:inline-block;margin-right:8px;",
+    "magic-article-custom-bullet-circle": "position:absolute;left:0;top:9px;width:7px;height:7px;background:linear-gradient(135deg,#0066FF,#00A3FF);border-radius:50%;display:inline-block;margin-right:8px;",
+    
+    # 代码块样式
+    "magic-code-table": "width:100%;margin:20px 0;border-collapse:collapse;border:none;background-color:#F0F6FF;border-radius:8px;overflow:hidden;box-shadow:0 3px 10px rgba(0,102,255,0.1);",
+    "magic-code-header": "background:linear-gradient(135deg,#0066FF,#00A3FF);color:white;padding:8px 14px;font-size:13px;text-align:left;font-weight:normal;",
+    "magic-code-header-icon": "display:inline;margin-right:0;font-weight:bold;white-space:nowrap;",
+    "magic-code-copy-tip": "float:right;font-size:10px;font-weight:normal;line-height:2;color:rgba(255,255,255,0.85);",
+    "magic-code-content": "font-family:SFMono-Regular,Consolas,Liberation Mono,Menlo,monospace;font-size:14px;color:#1A2332;line-height:0.2;padding:14px 18px;white-space:pre-wrap;word-break:break-word;word-wrap:break-word;background-color:#F0F6FF;overflow-x:auto;position:relative;",
+    
+    # 代码高亮样式
+    "code-keyword": "color:#d73a49;font-weight:bold;",
+    "code-comment": "color:#6a737d;font-style:italic;",
+    "code-string": "color:#032f62;",
+    "code-function": "color:#6f42c1;",
+    "code-variable": "color:#e36209;",
+    "code-number": "color:#005cc5;",
+    "code-command": "color:#bc0000;font-weight:bold;",
+    "code-tag": "color:#22863a;",
+    "code-attribute": "color:#6f42c1;",
+    "code-parameter": "color:#2d21b2;",
+    "code-option": "color:#7d1f1f;",
+    
+    # 链接样式
+    "magic-link": "color:#00A3FF;text-decoration:none;transition:all 0.2s ease;border-bottom:1px dotted #00A3FF;padding-bottom:1px;cursor:default;font-weight:500;",
+    
+    # 提示框样式
+    "magic-article-script-tip": "color:#5A6B7D;font-size:14px;margin-top:8px;background-color:#F7FAFF;padding:8px 12px;border-radius:1px;border-left:3px solid #00A3FF;",
+    
+    # 分隔线样式
+    "magic-article-divider-large-margin": "margin:32px 0;height:1px;background:linear-gradient(90deg,transparent,rgba(227,242,253,1) 15%,rgba(227,242,253,1) 85%,transparent);border:none;",
+    
+    # 其他样式
+    "mac-window-buttons": "height:13px;width:43px;vertical-align:middle;margin-right:6px;margin-bottom:3px;position:relative;top:-1px;",
+    "bullet-with-text": "display:inline-block;width:100%;white-space:normal;position:relative;padding-left:20px;",
+    
+    # 原有的列表相关样式
     "enhanced-list": "margin: 20px 0; padding: 0;",
     "unordered-list": "list-style-type: disc; margin-left: 20px;",
     "ordered-list": "list-style-type: decimal; margin-left: 20px;",
@@ -42,8 +95,6 @@ CLASS_STYLE_MAP = {
     "table-header": "background-color: #f6f8fa; font-weight: bold; border: 1px solid #ddd; padding: 12px 8px; text-align: left;",
     "table-cell": "border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top;",
     "table-row": "border-bottom: 1px solid #eee;",
-    
-    # ...可继续补充...
 }
 
 def convert_class_to_inline_style(html):
@@ -626,20 +677,60 @@ def add_language_classes(html_content):
     return html_content
 
 def enhance_list_styling(html_content):
-    """增强列表的HTML样式"""
-    # 使用正则表达式来增强列表样式，避免BeautifulSoup解析问题
+    """增强列表的HTML样式，转换为AGI观察室模板格式"""
     import re
+    from bs4 import BeautifulSoup
     
-    # 为ul标签添加类
-    html_content = re.sub(r'<ul([^>]*)>', r'<ul\1 class="enhanced-list unordered-list">', html_content)
+    soup = BeautifulSoup(html_content, "html.parser")
     
-    # 为ol标签添加类
-    html_content = re.sub(r'<ol([^>]*)>', r'<ol\1 class="enhanced-list ordered-list">', html_content)
+    # 处理无序列表
+    for ul in soup.find_all('ul'):
+        # 为ul添加类
+        ul['class'] = ul.get('class', []) + ['enhanced-list', 'unordered-list']
+        
+        # 将li转换为p标签
+        for li in ul.find_all('li'):
+            # 创建新的p标签
+            p_tag = soup.new_tag('p', **{'class': 'magic-list-item'})
+            
+            # 添加自定义项目符号
+            bullet_span = soup.new_tag('span', **{'class': 'magic-article-custom-bullet-square'})
+            p_tag.append(bullet_span)
+            p_tag.append(' ')
+            
+            # 移动li的内容到p标签
+            for content in li.contents:
+                if content.name != 'ul':  # 避免处理嵌套列表
+                    p_tag.append(content)
+            
+            # 替换li标签
+            li.replace_with(p_tag)
     
-    # 为li标签添加类
-    html_content = re.sub(r'<li([^>]*)>', r'<li\1 class="list-item">', html_content)
+    # 处理有序列表
+    for ol in soup.find_all('ol'):
+        # 为ol添加类
+        ol['class'] = ol.get('class', []) + ['enhanced-list', 'ordered-list']
+        
+        # 将li转换为p标签
+        for i, li in enumerate(ol.find_all('li'), 1):
+            # 创建新的p标签
+            p_tag = soup.new_tag('p', **{'class': 'magic-list-item-number'})
+            
+            # 添加数字
+            number_span = soup.new_tag('span', **{'style': 'font-weight: bold; margin-right: 8px;'})
+            number_span.string = f"{i}."
+            p_tag.append(number_span)
+            p_tag.append(' ')
+            
+            # 移动li的内容到p标签
+            for content in li.contents:
+                if content.name != 'ol':  # 避免处理嵌套列表
+                    p_tag.append(content)
+            
+            # 替换li标签
+            li.replace_with(p_tag)
     
-    return html_content
+    return str(soup)
 
 def enhance_table_styling(html_content):
     """增强表格的HTML样式"""
@@ -664,16 +755,43 @@ def add_header_classes(html_content):
     import re
     
     # 为各级标题添加对应的CSS类
-    html_content = re.sub(r'<h1([^>]*)>', r'<h1\1 class="magic-article-h1">', html_content)
-    html_content = re.sub(r'<h2([^>]*)>', r'<h2\1 class="magic-article-h2">', html_content)
-    html_content = re.sub(r'<h3([^>]*)>', r'<h3\1 class="magic-article-h3">', html_content)
-    html_content = re.sub(r'<h4([^>]*)>', r'<h4\1 class="magic-article-h4">', html_content)
-    html_content = re.sub(r'<h5([^>]*)>', r'<h5\1 class="magic-article-h5">', html_content)
-    html_content = re.sub(r'<h6([^>]*)>', r'<h6\1 class="magic-article-h6">', html_content)
+    # 使用AGI观察室模板的特殊类名
+    html_content = re.sub(r'<h1([^>]*)>', r'<h1\1 class="magic-article-main-title">', html_content)
+    html_content = re.sub(r'<h2([^>]*)>', r'<h2\1 class="magic-article-h2-section-title">', html_content)
+    html_content = re.sub(r'<h3([^>]*)>', r'<h3\1 class="magic-article-h3-custom">', html_content)
+    html_content = re.sub(r'<h4([^>]*)>', r'<h4\1 class="magic-article-h3-custom">', html_content)  # h4也使用h3样式
+    html_content = re.sub(r'<h5([^>]*)>', r'<h5\1 class="magic-article-h3-custom">', html_content)  # h5也使用h3样式
+    html_content = re.sub(r'<h6([^>]*)>', r'<h6\1 class="magic-article-h3-custom">', html_content)  # h6也使用h3样式
     
     return html_content
 
-def md_to_html(md_text: str, template_name: str = 'magic-article-template.html', static_dir: str = None, **kwargs) -> str:
+def wrap_in_section_for_rich_editor(html_content):
+    """为富文本编辑器包装HTML内容，添加适合微信公众号的section标签"""
+    from bs4 import BeautifulSoup
+    
+    soup = BeautifulSoup(html_content, "html.parser")
+    
+    # 查找body标签
+    body = soup.find('body')
+    if body:
+        # 提取body内的所有内容
+        body_content = ''.join(str(child) for child in body.children)
+        
+        # 创建适合富文本编辑器的section标签
+        section_html = f'''<section id="nice" data-tool="mdnice编辑器" data-website="https://www.mdnice.com" style="margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; padding-top: 0px; padding-bottom: 0px; padding-left: 10px; padding-right: 10px; background-attachment: scroll; background-clip: border-box; background-color: rgba(0, 0, 0, 0); background-image: none; background-origin: padding-box; background-position-x: left; background-position-y: top; background-repeat: no-repeat; background-size: auto; width: auto; font-family: Optima, 'Microsoft YaHei', PingFangSC-regular, serif; font-size: 16px; color: rgb(0, 0, 0); line-height: 1.5em; word-spacing: 0em; letter-spacing: 0em; word-break: break-word; overflow-wrap: break-word; text-align: left;">
+{body_content}
+</section>'''
+        
+        return section_html
+    else:
+        # 如果没有body标签，直接包装整个内容
+        section_html = f'''<section id="nice" data-tool="mdnice编辑器" data-website="https://www.mdnice.com" style="margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; padding-top: 0px; padding-bottom: 0px; padding-left: 10px; padding-right: 10px; background-attachment: scroll; background-clip: border-box; background-color: rgba(0, 0, 0, 0); background-image: none; background-origin: padding-box; background-position-x: left; background-position-y: top; background-repeat: no-repeat; background-size: auto; width: auto; font-family: Optima, 'Microsoft YaHei', PingFangSC-regular, serif; font-size: 16px; color: rgb(0, 0, 0); line-height: 1.5em; word-spacing: 0em; letter-spacing: 0em; word-break: break-word; overflow-wrap: break-word; text-align: left;">
+{html_content}
+</section>'''
+        
+        return section_html
+
+def md_to_html(md_text: str, template_name: str = 'magic-article-template.html', static_dir: str = None, inline_css: bool = False, **kwargs) -> str:
     # 如果没有指定static_dir，使用simple_paths中的配置
     if static_dir is None:
         try:
@@ -729,13 +847,24 @@ def md_to_html(md_text: str, template_name: str = 'magic-article-template.html',
     template = env.get_template(template_name)
     html = template.render(content=html_body, **kwargs)
     
-    # 转换class到inline style（但保留代码高亮相关的类）
-    html = convert_class_to_inline_style_preserve_code(html)
-    
-    # 处理HTML中的绝对路径图片
-    html = convert_absolute_paths_to_web_paths(html, static_dir)
-    
-    # 将图片转换为base64编码（用于Streamlit HTML组件）
-    html = convert_images_to_base64(html, static_dir)
+    # 根据inline_css参数决定是否转换class到inline style
+    if inline_css:
+        # 转换class到inline style（但保留代码高亮相关的类）
+        html = convert_class_to_inline_style_preserve_code(html)
+        
+        # 处理HTML中的绝对路径图片
+        html = convert_absolute_paths_to_web_paths(html, static_dir)
+        
+        # 将图片转换为base64编码（用于富文本编辑器）
+        html = convert_images_to_base64(html, static_dir)
+        
+        # 为富文本编辑器优化：包装在section标签中
+        html = wrap_in_section_for_rich_editor(html)
+    else:
+        # 处理HTML中的绝对路径图片
+        html = convert_absolute_paths_to_web_paths(html, static_dir)
+        
+        # 将图片转换为base64编码（用于Streamlit HTML组件）
+        html = convert_images_to_base64(html, static_dir)
     
     return html 

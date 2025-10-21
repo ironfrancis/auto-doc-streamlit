@@ -1,0 +1,28 @@
+{
+  "cookies": {
+    "示例公众号1": {
+      "cookie_string": "your_wechat_cookie_string_here_1",
+      "last_updated": "2025-01-15T10:00:00.000000",
+      "status": "active",
+      "description": "示例公众号1的登录cookie"
+    },
+    "示例公众号2": {
+      "cookie_string": "your_wechat_cookie_string_here_2",
+      "last_updated": "2025-01-15T10:00:00.000000",
+      "status": "active",
+      "description": "示例公众号2的登录cookie"
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2025-01-15T10:00:00.000000",
+    "last_modified": "2025-01-15T10:00:00.000000",
+    "description": "微信公众号登录Cookie配置文件示例",
+    "notes": [
+      "Cookie有效期通常为24小时",
+      "建议每12小时更新一次",
+      "如果获取数据失败，请检查Cookie是否过期",
+      "请将示例数据替换为您的实际配置"
+    ]
+  }
+}

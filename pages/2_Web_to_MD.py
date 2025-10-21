@@ -134,7 +134,7 @@ if submitted and url:
         try:
             # 处理要移除的选择器
             selectors_to_remove = None
-            if 'remove_selectors' in locals() and remove_selectors:
+            if remove_selectors and remove_selectors.strip():
                 selectors_to_remove = [s.strip() for s in remove_selectors.split(',') if s.strip()]
 
             # 提取Markdown内容
@@ -142,12 +142,12 @@ if submitted and url:
                 url=url,
                 scope=scope,
                 wait_time=wait_time,
-                scroll=enable_scroll if 'enable_scroll' in locals() else True,
-                scroll_pause=scroll_pause if 'scroll_pause' in locals() else 1.0,
-                viewport_height=viewport_height if 'viewport_height' in locals() else 1080,
+                scroll=enable_scroll,
+                scroll_pause=scroll_pause,
+                viewport_height=viewport_height,
                 remove_selectors=selectors_to_remove,
-                image_handling=image_handling if 'image_handling' in locals() else "Download to Local",
-                show_image_errors=show_image_errors if 'show_image_errors' in locals() else False
+                image_handling=image_handling,
+                show_image_errors=show_image_errors
             )
 
             # 解析返回结果
@@ -161,27 +161,27 @@ if submitted and url:
                 st.success("Content extracted successfully!")
 
                 # 显示图片处理信息
-                if 'image_handling' in locals():
-                    if image_handling == "Download to Local":
-                        # 检查本地图片目录
-                        try:
-                            from simple_paths import get_images_dir
-                            images_dir = get_images_dir()
-                        except ImportError:
-                            images_dir = project_root / "workspace" / "images"
+                if image_handling == "Download to Local":
+                    # 检查本地图片目录
+                    try:
+                        from simple_paths import get_images_dir
+                        images_dir_str = get_images_dir()
+                        images_dir = Path(images_dir_str)
+                    except ImportError:
+                        images_dir = project_root / "workspace" / "images"
 
-                        if images_dir.exists():
-                            image_files = [f for f in images_dir.iterdir() if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.gif', '.webp')]
-                            if image_files:
-                                st.info(f"✅ Downloaded {len(image_files)} images to local directory")
-                                with st.expander("View downloaded images", expanded=False):
-                                    for img_file in sorted(image_files):
-                                        file_size = img_file.stat().st_size
-                                        st.markdown(f"- {img_file.name} ({file_size:,} bytes)")
-                    elif image_handling == "Upload to Image Bed":
-                        st.info("✅ Images uploaded to image hosting service")
-                    elif image_handling == "Keep Original URLs":
-                        st.info("ℹ️ Original image URLs preserved")
+                    if images_dir.exists():
+                        image_files = [f for f in images_dir.iterdir() if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.gif', '.webp')]
+                        if image_files:
+                            st.info(f"✅ Downloaded {len(image_files)} images to local directory")
+                            with st.expander("View downloaded images", expanded=False):
+                                for img_file in sorted(image_files):
+                                    file_size = img_file.stat().st_size
+                                    st.markdown(f"- {img_file.name} ({file_size:,} bytes)")
+                elif image_handling == "Upload to Image Bed":
+                    st.info("✅ Images uploaded to image hosting service")
+                elif image_handling == "Keep Original URLs":
+                    st.info("ℹ️ Original image URLs preserved")
 
                 # 创建两列布局
                 col1, col2 = st.columns([3, 1])
@@ -209,7 +209,7 @@ if submitted and url:
                         st.info(f"Automatically saved to: `{saved_file_path}`")
 
                         # 如果用户选择了自动打开文件
-                        if 'auto_open' in locals() and auto_open:
+                        if auto_open:
                             try:
                                 # 跨平台文件打开
                                 if sys.platform == "darwin":  # macOS
@@ -218,7 +218,7 @@ if submitted and url:
                                     subprocess.run(['start', str(saved_file_path)], shell=True, check=True)
                                 else:  # Linux
                                     subprocess.run(['xdg-open', str(saved_file_path)], check=True)
-                                
+
                                 st.success(f"✅ 文件已使用默认应用打开：{os.path.basename(saved_file_path)}")
                             except subprocess.CalledProcessError as e:
                                 st.warning(f"⚠️ 无法自动打开文件：{str(e)}")

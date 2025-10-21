@@ -71,14 +71,14 @@ if st.button(get_text("convert"), key="convert_button"):
     else:
         # 显示处理进度
         with st.spinner("正在处理Markdown内容和图片..."):
-            # 根据用户选择决定是否生成内联CSS
+        # 根据用户选择决定是否生成内联CSS
             if inline_css_option:
-                # 生成带有内联CSS的HTML
-                html_result = md_to_html(md_text, template_name=template_choice, static_dir=STATIC_DIR)
+                # 生成带有内联CSS的HTML（适合富文本编辑器）
+                html_result = md_to_html(md_text, template_name=template_choice, static_dir=STATIC_DIR, inline_css=True)
             else:
-                # 生成普通HTML（保留CSS类）
-                html_result = md_to_html(md_text, template_name=template_choice, static_dir=STATIC_DIR)
-        
+                # 生成普通HTML（保留CSS类，适合网页显示）
+                html_result = md_to_html(md_text, template_name=template_choice, static_dir=STATIC_DIR, inline_css=False)
+            
         html_path = os.path.join(STATIC_DIR, "md2html_preview.html")
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(html_result)
@@ -193,7 +193,8 @@ if st.button(get_text("convert"), key="convert_button"):
                         cursor: pointer;
                         font-size: 0.875rem;
                         margin-top: 0.5rem;
-                    ">
+                        transition: background-color 0.3s ease;
+                    " onmouseover="this.style.backgroundColor='#e63939'" onmouseout="this.style.backgroundColor='#ff4b4b'">
                         {button_text}
                     </button>
                 </div>
@@ -201,9 +202,10 @@ if st.button(get_text("convert"), key="convert_button"):
                 function copyHtmlToClipboard() {{
                     const htmlContent = {escaped_html};
                     
+                    // 尝试使用现代Clipboard API
                     if (navigator.clipboard && window.isSecureContext) {{
                         navigator.clipboard.writeText(htmlContent).then(function() {{
-                            alert('{copy_success_msg}');
+                            showCopySuccess('{copy_success_msg}');
                         }}).catch(function(err) {{
                             console.error('复制失败:', err);
                             fallbackCopyTextToClipboard(htmlContent);
@@ -219,6 +221,7 @@ if st.button(get_text("convert"), key="convert_button"):
                     textArea.style.position = "fixed";
                     textArea.style.left = "-999999px";
                     textArea.style.top = "-999999px";
+                    textArea.style.opacity = "0";
                     document.body.appendChild(textArea);
                     textArea.focus();
                     textArea.select();
@@ -226,16 +229,72 @@ if st.button(get_text("convert"), key="convert_button"):
                     try {{
                         const successful = document.execCommand('copy');
                         if (successful) {{
-                            alert('{copy_success_msg}');
+                            showCopySuccess('{copy_success_msg}');
                         }} else {{
-                            alert('{copy_fail_msg}');
+                            showCopyError('{copy_fail_msg}');
                         }}
                     }} catch (err) {{
                         console.error('Fallback: 复制失败', err);
-                        alert('{copy_fail_msg}');
+                        showCopyError('{copy_fail_msg}');
                     }}
                     
                     document.body.removeChild(textArea);
+                }}
+
+                function showCopySuccess(message) {{
+                    // 创建成功提示
+                    const successDiv = document.createElement('div');
+                    successDiv.innerHTML = '✅ ' + message;
+                    successDiv.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background-color: #4CAF50;
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 4px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 10000;
+                        font-size: 14px;
+                        max-width: 300px;
+                        word-wrap: break-word;
+                    `;
+                    document.body.appendChild(successDiv);
+                    
+                    // 3秒后自动移除
+                    setTimeout(() => {{
+                        if (successDiv.parentNode) {{
+                            successDiv.parentNode.removeChild(successDiv);
+                        }}
+                    }}, 3000);
+                }}
+
+                function showCopyError(message) {{
+                    // 创建错误提示
+                    const errorDiv = document.createElement('div');
+                    errorDiv.innerHTML = '❌ ' + message;
+                    errorDiv.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background-color: #f44336;
+                        color: white;
+                        padding: 12px 20px;
+                        border-radius: 4px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 10000;
+                        font-size: 14px;
+                        max-width: 300px;
+                        word-wrap: break-word;
+                    `;
+                    document.body.appendChild(errorDiv);
+                    
+                    // 5秒后自动移除
+                    setTimeout(() => {{
+                        if (errorDiv.parentNode) {{
+                            errorDiv.parentNode.removeChild(errorDiv);
+                        }}
+                    }}, 5000);
                 }}
                 </script>
                 """, unsafe_allow_html=True) 

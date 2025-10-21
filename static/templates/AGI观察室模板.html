@@ -1,0 +1,797 @@
+<!--
+注意：此网页专门为微信公众号设计，其唯一用途是复制到微信公众号编辑器中。
+在维护和修改此文件时请注意保持样式兼容性，特别是：
+1. 微信公众号对CSS的支持有限，部分样式可能会被过滤或修改
+2. 公众号中图片和文本的对齐方式与普通网页不同
+3. 代码块、列表等特殊元素需要特殊处理以确保在公众号中正确显示：
+   - 代码块：使用表格结构 <table class="magic-code-table"> 替代传统的 <pre>/<code> 标签，
+     以实现更好的代码块边框、标题和语法高亮显示
+   - 列表项：使用 <p class="magic-list-item"> 和 <p class="magic-indent-level-1/2"> 替代传统的 <ul>/<li> 结构，
+     并用 <span class="magic-article-custom-bullet-square/circle"> 实现自定义项目符号
+   - 间距控制：特别调整了列表项、段落间距，确保微信公众号中显示正常
+   - 响应式处理：为移动设备添加了特殊样式，确保在小屏幕上正常显示
+4. 每一行文本必须使用 <p> 标签包裹，微信公众号不识别没有标签包裹的纯文本内容
+5. 空格处理必须使用 HTML 实体 &nbsp; 而非普通空格，尤其是在代码块和需要保持格式的地方，
+   因为微信公众号会压缩连续的普通空格为一个
+6. 本文件不应作为普通网页使用，仅供复制内容到公众号编辑器
+7. 微信公众号不支持超链接，因此所有链接均使用 <span class="magic-link"> 替代 <a> 标签，
+   但保持超链接的样式效果，这样在公众号中仍能让读者识别出这是"链接"样式的文本
+8. 特殊元素的布局和样式都经过测试，以确保在公众号中的渲染效果，不要轻易修改结构
+
+相关样式已针对微信公众号环境进行了优化，请勿随意更改可能影响兼容性的部分。
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGI观察室文章模板</title>
+    <style>
+        /* 基础样式 - 重新设计配色方案，更精致现代 */
+        :root {
+            --magic-primary: #0066FF;          /* 主色调：科技蓝 */
+            --magic-secondary: #00A3FF;        /* 次要色：亮蓝色 */
+            --magic-accent: #00D4FF;           /* 强调色：电光蓝 */
+            --magic-gradient-start: #0066FF;   /* 渐变起始色 */
+            --magic-gradient-end: #00A3FF;     /* 渐变结束色 */
+            --magic-text-primary: #1A2332;     /* 主要文本色：深蓝灰 */
+            --magic-text-secondary: #2A3441;   /* 次要文本色：中蓝灰 */
+            --magic-text-light: #5A6B7D;       /* 浅色文本：浅蓝灰 */
+            --magic-bg-primary: #FFFFFF;       /* 主背景色：纯白 */
+            --magic-bg-secondary: #F7FAFF;     /* 次要背景色：微蓝白 */
+            --magic-bg-code: #F0F6FF;          /* 代码背景色：浅蓝白 */
+            --magic-border-light: #E3F2FD;     /* 浅色边框 */
+            --magic-shadow: rgba(0, 102, 255, 0.1); /* 阴影颜色 */
+        }
+
+        body {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--magic-text-primary);
+            font-family: 'IBM Plex Sans', 'Roboto Mono', 'Consolas', 'Arial', 'sans-serif';
+            font-weight: 400;
+            letter-spacing: 0.01em;
+            margin: 0;
+            padding: 16px;
+            background-color: var(--magic-bg-primary);
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--magic-primary);
+            font-family: 'IBM Plex Sans', 'Roboto Mono', 'Consolas', 'Arial', 'sans-serif';
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--magic-border-light);
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-top: 36px;
+            margin-bottom: 18px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--magic-border-light);
+            color: var(--magic-primary);
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-top: 28px;
+            margin-bottom: 14px;
+            color: var(--magic-secondary);
+        }
+
+        p {
+            margin: 16px 0;
+            color: var(--magic-text-primary);
+        }
+
+        code {
+            background-color: var(--magic-bg-code);
+            border-radius: 4px;
+            font-family: 'Roboto Mono', 'IBM Plex Mono', 'Consolas', 'Menlo', monospace;
+            padding: 2px 6px;
+            color: var(--magic-primary);
+            font-size: 14px;
+        }
+
+        pre {
+            background-color: var(--magic-bg-code);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            border: 1px solid var(--magic-border-light);
+            overflow-x: auto;
+            font-family: 'Roboto Mono', 'IBM Plex Mono', 'Consolas', 'Menlo', monospace;
+            font-size: 14px;
+            box-shadow: 0 2px 8px var(--magic-shadow);
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--magic-text-primary);
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* 内容图片样式 */
+        .magic-article-container > p > img,
+        .magic-article-container > img {
+            margin: 20px auto;
+            display: block;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px var(--magic-shadow);
+        }
+
+        blockquote {
+            margin: 20px 0;
+            padding: 12px 20px;
+            background-color: var(--magic-bg-secondary);
+            border-left: 4px solid var(--magic-accent);
+            color: var(--magic-text-secondary);
+            border-radius: 0 6px 6px 0;
+        }
+
+        a {
+            color: var(--magic-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-bottom: 1px dotted var(--magic-secondary);
+            padding-bottom: 1px;
+        }
+
+        a:hover {
+            color: var(--magic-accent);
+            border-bottom: 1px solid var(--magic-accent);
+        }
+
+        /* 用于替代超链接的样式类，在微信公众号中保持链接外观 */
+        .magic-link {
+            color: var(--magic-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-bottom: 1px dotted var(--magic-secondary);
+            padding-bottom: 1px;
+            cursor: default; /* 普通文本不会有手型指针 */
+            font-weight: 500; /* 稍微加粗，在公众号中更明显 */
+        }
+
+        strong {
+            color: var(--magic-primary);
+            font-weight: 600;
+        }
+
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 30px;
+            color: var(--magic-text-primary);
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        hr {
+            height: 1px;
+            background-color: var(--magic-border-light);
+            border: none;
+            margin: 24px 0;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px var(--magic-shadow);
+        }
+
+        table th, table td {
+            border: 1px solid var(--magic-border-light);
+            padding: 10px 14px;
+        }
+
+        table th {
+            background-color: var(--magic-bg-secondary);
+            font-weight: 600;
+            color: var(--magic-primary);
+        }
+
+        .magic-article-container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: var(--magic-bg-primary);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px var(--magic-shadow);
+            padding: 30px;
+        }
+
+        .magic-article-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+
+
+        .magic-article-main-title {
+            font-size: 26px;
+            color: var(--magic-primary);
+            text-align: center;
+            margin-top: 30px;
+            margin-bottom: 24px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            line-height: 1.3;
+        }
+
+        .magic-article-meta {
+            color: var(--magic-text-light);
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .magic-article-h2-section-title {
+            position: relative;
+            color: var(--magic-primary);
+            font-size: 22px;
+            line-height: 1.4;
+            margin-top: 36px;
+            margin-bottom: 16px;
+            padding: 8px 0 8px 16px;
+            font-weight: 700;
+            border-left: 5px solid var(--magic-primary);
+            background-color: rgba(0, 102, 255, 0.05);
+            border-radius: 0 6px 6px 0;
+            padding-left: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .magic-article-h2-section-title:before {
+            display: none;
+        }
+
+        .magic-article-h2-section-title .section-logo {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            margin: 0 10px 3px 0; /* 微信公众号垂直居中 */
+            flex-shrink: 0;
+            object-fit: contain;
+            object-position: center;
+            vertical-align: middle;
+            position: relative;
+        }
+
+        /* 专门为微信公众号环境添加的样式 */
+        .wechat-mp .magic-article-h2-section-title .section-logo {
+            height: 1em !important;
+            line-height: inherit !important;
+            display: inline-block !important;
+            vertical-align: text-bottom !important;
+        }
+
+        /* 移除之前添加的不同图标的类 */
+        .magic-article-h2-section-title.icon-what::after,
+        .magic-article-h2-section-title.icon-install::after,
+        .magic-article-h2-section-title.icon-system::after,
+        .magic-article-h2-section-title.icon-steps::after,
+        .magic-article-h2-section-title.icon-run::after,
+        .magic-article-h2-section-title.icon-enjoy::after,
+        .magic-article-h2-section-title.icon-tips::after {
+            display: none;
+        }
+
+        .magic-article-h2-section-title::after {
+            display: none;
+        }
+
+        .magic-article-h3-custom {
+            position: relative;
+            color: var(--magic-secondary);
+            font-size: 19px;
+            font-weight: 700;
+            margin-top: 22px;
+            margin-bottom: 6px;
+            padding: 4px 0;
+            letter-spacing: 0.01em;
+            display: block;
+            border-bottom: 2px solid rgba(0, 163, 255, 0.15);
+        }
+
+        .magic-article-h3-marker {
+            position: relative;
+            width: 17px;
+            height: 17px;
+            margin-right: 8px;
+            margin-bottom: 3px;  /* 微信公众号垂直居中 */
+            vertical-align: middle;
+            display: inline-block;
+            top: -2px;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+        }
+
+        .magic-article-list-main {
+            padding-left: 20px;
+            color: var(--magic-text-primary);
+            line-height: 1.8;
+        }
+
+        .magic-article-list-item-main {
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 15px;
+            list-style-type: none;
+        }
+
+        ul > li.magic-article-list-item-main {
+            list-style-type: none;
+        }
+
+        .magic-article-list-item-req {
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        .magic-article-custom-bullet-square {
+            position: absolute;
+            left: 0;
+            top: 9px;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, var(--magic-gradient-start), var(--magic-gradient-end));
+            border-radius: 2px;
+            transform: rotate(45deg);
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .magic-article-custom-bullet-circle {
+            position: absolute;
+            left: 0;
+            top: 9px;
+            width: 7px;
+            height: 7px;
+            background: linear-gradient(135deg, var(--magic-gradient-start), var(--magic-gradient-end));
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* 保证列表项内的内容在微信公众号中不会换行 */
+        .magic-article-list-item-main > *,
+        .magic-article-list-item-req > *,
+        .magic-article-list-item-guide > *,
+        .magic-article-sublist-item > * {
+            display: inline;
+        }
+
+        /* 保证列表项中的段落可以换行 */
+        .magic-article-list-item-main > p,
+        .magic-article-list-item-req > p,
+        .magic-article-list-item-guide > p,
+        .magic-article-sublist-item > p {
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* 保证嵌套列表在适当位置换行 */
+        .magic-article-list-item-main > ul,
+        .magic-article-list-item-req > ul,
+        .magic-article-list-item-guide > ul,
+        .magic-article-sublist-item > ul {
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* 解决具有style="padding-left: 0"的列表项中图标与文字重叠问题 */
+        li[style*="padding-left: 0"] {
+            padding-left: 20px !important; /* 强制添加左侧padding */
+        }
+
+        .magic-article-code-block-wrapper {
+            display: none; /* 不再使用旧样式 */
+        }
+
+        .magic-article-code-block-decorator {
+            display: none; /* 不再使用旧样式 */
+        }
+
+        .magic-article-code-block-content {
+            display: none; /* 不再使用旧样式 */
+        }
+
+        /* 新的代码块样式 - 使用表格结构 */
+        .magic-code-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            border: none;
+            background-color: var(--magic-bg-code);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px var(--magic-shadow);
+        }
+
+        .magic-code-header {
+            background: linear-gradient(135deg, var(--magic-gradient-start), var(--magic-gradient-end));
+            color: white;
+            padding: 8px 14px;
+            font-size: 13px;
+            text-align: left;
+            font-weight: normal;
+        }
+
+        .magic-code-header-icon {
+            display: inline;
+            margin-right: 0;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .magic-code-copy-tip {
+            float: right;
+            font-size: 10px;
+            font-weight: normal;
+            line-height: 2; /* 这样才会垂直居中 */
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .magic-code-content {
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 14px;
+            color: var(--magic-text-primary);
+            line-height: 0.2;
+            padding: 14px 18px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            word-wrap: break-word;
+            background-color: var(--magic-bg-code);
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* 代码高亮样式 - 优化后的GitHub风格 */
+        .code-keyword {
+            color: #d73a49; /* 关键字颜色 */
+            font-weight: bold;
+        }
+
+        .code-comment {
+            color: #6a737d; /* 注释颜色 */
+            font-style: italic;
+        }
+
+        .code-string {
+            color: #032f62; /* 字符串颜色 */
+        }
+
+        .code-function {
+            color: #6f42c1; /* 函数颜色 */
+        }
+
+        .code-variable {
+            color: #e36209; /* 变量颜色 */
+        }
+
+        .code-number {
+            color: #005cc5; /* 数字颜色 */
+        }
+
+        .code-command {
+            color: #bc0000; /* 命令颜色 */
+            font-weight: bold;
+        }
+
+        .code-tag {
+            color: #22863a; /* 标签颜色 */
+        }
+
+        .code-attribute {
+            color: #6f42c1; /* 属性颜色 */
+        }
+
+        .code-parameter {
+            color: #2d21b2; /* 参数颜色 */
+        }
+
+        .code-option {
+            color: #7d1f1f; /* 选项颜色 */
+        }
+
+        /* 命令行代码块优化 */
+
+        /* 代码块中的空行处理 */
+        .magic-code-content p:empty {
+            height: 0.5em;
+            line-height: 0.5em;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 调整代码块中段落的样式，减少行间距 */
+        .magic-code-content p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.3;
+        }
+
+        /* 确保微信公众号中代码块内的段落没有多余间距 */
+        .magic-code-content > p {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+        }
+
+        .magic-article-list-item-guide {
+            margin-bottom: 18px;
+            position: relative;
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        .magic-article-sublist {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        .magic-article-sublist-item {
+            margin-bottom: 10px;
+            position: relative;
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        .magic-article-script-tip {
+            color: var(--magic-text-light);
+            font-size: 14px;
+            margin-top: 8px;
+            background-color: var(--magic-bg-secondary);
+            padding: 8px 12px;
+            border-radius: 1px;
+            border-left: 3px solid var(--magic-secondary);
+        }
+
+        .magic-article-divider-large-margin {
+            margin: 32px 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--magic-border-light) 15%, var(--magic-border-light) 85%, transparent);
+            border: none;
+        }
+
+        /* Footer styles from magic-wechat-article.html (optional, can be removed if not needed for install guide) */
+        .magic-article-footer-signature {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--magic-border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .magic-article-footer-author-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .magic-article-footer-avatar-wrapper {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 12px;
+            border: 2px solid var(--magic-primary);
+            padding: 2px;
+            background: linear-gradient(135deg, var(--magic-gradient-start), var(--magic-gradient-end));
+        }
+
+        .magic-article-footer-avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+            margin: 0;
+            border: 2px solid white;
+        }
+
+        .magic-article-footer-text-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .magic-article-footer-author-name {
+            font-weight: 600;
+            color: var(--magic-primary);
+        }
+
+        .magic-article-footer-author-desc {
+            font-size: 12px;
+            color: var(--magic-text-light);
+        }
+
+        .magic-article-footer-button {
+            background: linear-gradient(135deg, var(--magic-gradient-start), var(--magic-gradient-end));
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(0, 102, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .magic-article-footer-button:hover {
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Styles specifically for Markdown content if needed */
+        .markdown-converted-list>li::before {
+            content: "•";
+            margin-right: 8px;
+            color: var(--magic-primary);
+        }
+
+        /* Ensuring blockquote has styling similar to the original HTML */
+        blockquote p {
+            margin: 0;
+        }
+
+        /* 保证列表项中的段落可以换行 */
+        .magic-article-list-item-main > p,
+        .magic-article-list-item-req > p,
+        .magic-article-list-item-guide > p,
+        .magic-article-sublist-item > p {
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* 保证嵌套列表在适当位置换行 */
+        .magic-article-list-item-main > ul,
+        .magic-article-list-item-req > ul,
+        .magic-article-list-item-guide > ul,
+        .magic-article-sublist-item > ul {
+            display: block;
+            margin-top: 5px;
+        }
+
+        /* 确保子弹点和文本在微信公众号中显示在同一行 */
+        .bullet-with-text {
+            display: inline-block;
+            width: 100%;
+            white-space: normal;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .bullet-with-text > .magic-article-custom-bullet-square,
+        .bullet-with-text > .magic-article-custom-bullet-circle {
+            left: 0;
+            position: absolute;
+        }
+
+        /* 微信公众号兼容的列表样式 */
+        .magic-list-item {
+            margin-bottom: 6px;  /* 减小列表项之间的间距，从14px改为6px */
+            position: relative;
+            padding-left: 15px;
+            display: block;
+            padding-right: 5px;  /* 添加轻微的右侧缩进 */
+        }
+
+        .magic-list-item-square::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 9px;
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(135deg, var(--magic-gradient-start), var(--magic-gradient-end));
+            border-radius: 2px;
+            transform: rotate(45deg);
+            display: inline-block;
+        }
+
+        .magic-list-item-circle::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 9px;
+            width: 7px;
+            height: 7px;
+            background: linear-gradient(135deg, var(--magic-gradient-start), var(--magic-gradient-end));
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .magic-list-item-number {
+            margin-bottom: 14px;
+            position: relative;
+            padding-left: 25px;
+            display: block;
+        }
+
+        .magic-indent-level-1 {
+            padding-left: 25px;
+            position: relative;
+            margin-bottom: 6px;  /* 减小缩进列表项之间的间距 */
+            padding-right: 5px;  /* 添加轻微的右侧缩进 */
+        }
+
+        .magic-indent-level-2 {
+            padding-left: 40px;
+            position: relative;
+            margin-bottom: 6px;  /* 减小缩进列表项之间的间距 */
+            padding-right: 5px;  /* 添加轻微的右侧缩进 */
+        }
+
+        .magic-list-item-nested {
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* 添加连续列表项之间更小的间距 */
+        .magic-list-item + .magic-list-item,
+        .magic-indent-level-1 + .magic-indent-level-1 {
+            margin-top: -3px;
+        }
+
+        /* 针对有序列表的样式调整 */
+        .magic-list-item span[style*="margin-right: 8px"] {
+            display: inline-block;
+            min-width: 15px;
+        }
+
+        /* 如果是连续的列表，增加整体的间距以便有明显的段落感 */
+        p:not(.magic-list-item):not(.magic-indent-level-1):not(.magic-indent-level-2) + .magic-list-item {
+            margin-top: 10px;
+        }
+
+        .magic-list-item:last-of-type,
+        .magic-indent-level-1:last-of-type {
+            margin-bottom: 10px;
+        }
+
+        /* macOS窗口按钮图片样式 */
+        .mac-window-buttons {
+            height: 13px;
+            width: 43px;
+            vertical-align: middle;
+            margin-right: 6px;
+            margin-bottom: 3px;
+            position: relative;
+            top: -1px;
+        }
+
+        /* 确保在微信公众号中图片正确显示 */
+        .wechat-mp .mac-window-buttons {
+            height: 16px !important;
+            width: auto !important;
+            display: inline-block !important;
+            vertical-align: text-bottom !important;
+            margin-right: 6px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="magic-article-container">
+        {{ content }}
+    </div>
+</body>
+</html>

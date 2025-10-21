@@ -60,8 +60,22 @@ def upload_image_from_url(image_url: str, base_url: Optional[str] = None) -> Opt
         response = requests.get(image_url, headers=headers, timeout=30, stream=True)
         response.raise_for_status()
 
+        # 根据Content-Type确定文件扩展名
+        content_type = response.headers.get('content-type', '').lower()
+        if 'jpeg' in content_type or 'jpg' in content_type:
+            suffix = '.jpg'
+        elif 'png' in content_type:
+            suffix = '.png'
+        elif 'webp' in content_type:
+            suffix = '.webp'
+        elif 'gif' in content_type:
+            suffix = '.gif'
+        else:
+            # 默认使用.jpg，大多数图床都支持
+            suffix = '.jpg'
+        
         # 创建临时文件
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.tmp') as tmp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
             for chunk in response.iter_content(chunk_size=8192):
                 tmp_file.write(chunk)
             tmp_file_path = tmp_file.name

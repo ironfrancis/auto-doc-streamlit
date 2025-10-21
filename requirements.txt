@@ -9,4 +9,5 @@ markdownify
 plotly
 pandas
 openpyxl
-xlrd 
+xlrd
+python-dotenv 

@@ -1,0 +1,28 @@
+{
+  "tokens": {
+    "示例公众号1": {
+      "token": "your_wechat_token_here_1",
+      "last_updated": "2025-01-15T10:00:00.000000",
+      "status": "active",
+      "description": "示例公众号1的token"
+    },
+    "示例公众号2": {
+      "token": "your_wechat_token_here_2",
+      "last_updated": "2025-01-15T10:00:00.000000",
+      "status": "active",
+      "description": "示例公众号2的token"
+    }
+  },
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2025-01-15T10:00:00.000000",
+    "last_modified": "2025-01-15T10:00:00.000000",
+    "description": "微信公众号Token配置文件示例",
+    "notes": [
+      "Token用于微信公众平台API调用",
+      "每个公众号都有唯一的token",
+      "如果token失效，请联系管理员更新",
+      "请将示例数据替换为您的实际配置"
+    ]
+  }
+}
