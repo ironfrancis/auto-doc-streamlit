@@ -613,50 +613,95 @@ if concurrent_transcribe_clicked:
             
             st.markdown("---")
             
-            # 显示结果对比
+            # 显示结果对比（并排布局）
             st.markdown("### 📊 转写结果对比")
             
-            # 为每个结果创建一个可展开的区域
-            for ep_name, result_data in results.items():
-                status_icon = "✅" if result_data["success"] else "❌"
-                elapsed_time = f"{result_data['elapsed']:.2f}秒"
+            # 根据端点数量决定列数（最多4列，最少2列）
+            num_endpoints = len(results)
+            num_columns = min(max(2, num_endpoints), 4)
+            
+            # 创建并排的列布局
+            result_columns = st.columns(num_columns)
+            
+            # 将结果分配到各列中
+            for idx, (ep_name, result_data) in enumerate(results.items()):
+                col_idx = idx % num_columns
                 
-                with st.expander(f"{status_icon} {ep_name} ({elapsed_time})", expanded=result_data["success"]):
+                with result_columns[col_idx]:
+                    # 卡片样式的容器
+                    status_icon = "✅" if result_data["success"] else "❌"
+                    status_color = "#28a745" if result_data["success"] else "#dc3545"
+                    elapsed_time = f"{result_data['elapsed']:.2f}秒"
+                    
+                    # 使用自定义样式的容器
+                    st.markdown(f"""
+                    <div style="
+                        border: 2px solid {status_color};
+                        border-radius: 10px;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                        background-color: rgba(255, 255, 255, 0.05);
+                    ">
+                        <h4 style="margin: 0 0 10px 0; color: {status_color};">
+                            {status_icon} {ep_name}
+                        </h4>
+                        <p style="margin: 0; font-size: 0.9em; color: #888;">
+                            ⏱️ {elapsed_time}
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
                     if result_data["success"]:
-                        # 显示成功的转写结果
-                        st.markdown("**转写结果:**")
-                        st.markdown(result_data["result"])
-                        
-                        # 添加保存按钮
-                        if st.button(f"💾 保存此结果", key=f"save_{ep_name}"):
-                            # 保存逻辑（与普通转写相同）
-                            safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
-                            ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                            md_review_dir = get_md_review_dir()
-                            os.makedirs(md_review_dir, exist_ok=True)
-                            safe_endpoint = ep_name.replace("/", "_").replace(" ", "_").replace(":", "_")
-                            local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                        # 显示成功的转写结果（使用滚动容器）
+                        with st.container():
+                            # 使用expander来节省空间
+                            with st.expander("📄 查看完整内容", expanded=False):
+                                st.markdown(result_data["result"])
                             
-                            with open(local_md_path, "w", encoding="utf-8") as f:
-                                f.write(result_data["result"])
+                            # 显示预览（前500字符）
+                            preview_text = result_data["result"][:500]
+                            if len(result_data["result"]) > 500:
+                                preview_text += "..."
+                            st.markdown("**预览:**")
+                            st.text_area(
+                                "内容预览",
+                                value=preview_text,
+                                height=200,
+                                key=f"preview_{ep_name}",
+                                label_visibility="collapsed"
+                            )
                             
-                            # 保存历史
-                            save_transcribe_history(selected_channel, "concurrent_multi", input_content, result_data["result"], 
-                                                   extra={"endpoint": ep_name, "elapsed": result_data["elapsed"]})
-                            
-                            # 尝试用Typora打开
-                            try:
-                                subprocess.Popen(["open", "-a", "Typora", local_md_path])
-                            except Exception:
-                                pass
-                            
-                            st.success(f"✅ 已保存 {ep_name} 的结果！")
-                            st.balloons()
+                            # 添加保存按钮
+                            if st.button(f"💾 保存此结果", key=f"save_{ep_name}", use_container_width=True):
+                                # 保存逻辑
+                                safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
+                                ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                                md_review_dir = get_md_review_dir()
+                                os.makedirs(md_review_dir, exist_ok=True)
+                                safe_endpoint = ep_name.replace("/", "_").replace(" ", "_").replace(":", "_")
+                                local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                                
+                                with open(local_md_path, "w", encoding="utf-8") as f:
+                                    f.write(result_data["result"])
+                                
+                                # 保存历史
+                                save_transcribe_history(selected_channel, "concurrent_multi", input_content, result_data["result"], 
+                                                       extra={"endpoint": ep_name, "elapsed": result_data["elapsed"]})
+                                
+                                # 尝试用Typora打开
+                                try:
+                                    subprocess.Popen(["open", "-a", "Typora", local_md_path])
+                                except Exception:
+                                    pass
+                                
+                                st.success(f"✅ 已保存！")
+                                st.balloons()
                     else:
                         # 显示错误信息
-                        st.error(f"**错误:** {result_data['result']}")
+                        st.error(f"**错误:**\n{result_data['result']}")
             
             # 如果有成功的结果，显示总结
+            st.markdown("---")
             if success_count > 0:
                 st.success(f"🎉 并发转写完成！{success_count} 个端点成功，{failed_count} 个失败。")
             else:
