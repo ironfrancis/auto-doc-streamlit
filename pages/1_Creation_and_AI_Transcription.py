@@ -602,6 +602,33 @@ if concurrent_transcribe_clicked:
             success_count = sum(1 for r in results.values() if r["success"])
             failed_count = len(results) - success_count
             
+            # 自动保存所有成功的结果到工作目录
+            saved_files = []
+            base_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            for idx, (ep_name, result_data) in enumerate(results.items()):
+                if result_data["success"]:
+                    safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
+                    # 为每个端点添加序号，避免时间戳冲突
+                    ts = f"{base_ts}_{idx+1}"
+                    md_review_dir = get_md_review_dir()
+                    os.makedirs(md_review_dir, exist_ok=True)
+                    safe_endpoint = ep_name.replace("/", "_").replace(" ", "_").replace(":", "_")
+                    local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                    
+                    # 保存文件
+                    with open(local_md_path, "w", encoding="utf-8") as f:
+                        f.write(result_data["result"])
+                    
+                    # 保存历史
+                    save_transcribe_history(selected_channel, "concurrent", input_content, result_data["result"], 
+                                           extra={"endpoint": ep_name, "elapsed": result_data["elapsed"]})
+                    
+                    saved_files.append((ep_name, local_md_path))
+            
+            # 如果有保存的文件，显示提示信息
+            if saved_files:
+                st.info(f"📁 已自动保存 {len(saved_files)} 个成功的转写结果到工作目录")
+            
             # 显示统计信息
             col_stat1, col_stat2, col_stat3 = st.columns(3)
             with col_stat1:
@@ -671,31 +698,22 @@ if concurrent_transcribe_clicked:
                                 label_visibility="collapsed"
                             )
                             
-                            # 添加保存按钮
-                            if st.button(f"💾 保存此结果", key=f"save_{ep_name}", use_container_width=True):
-                                # 保存逻辑
-                                safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
-                                ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                                md_review_dir = get_md_review_dir()
-                                os.makedirs(md_review_dir, exist_ok=True)
-                                safe_endpoint = ep_name.replace("/", "_").replace(" ", "_").replace(":", "_")
-                                local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
-                                
-                                with open(local_md_path, "w", encoding="utf-8") as f:
-                                    f.write(result_data["result"])
-                                
-                                # 保存历史
-                                save_transcribe_history(selected_channel, "concurrent_multi", input_content, result_data["result"], 
-                                                       extra={"endpoint": ep_name, "elapsed": result_data["elapsed"]})
-                                
-                                # 尝试用Typora打开
-                                try:
-                                    subprocess.Popen(["open", "-a", "Typora", local_md_path])
-                                except Exception:
-                                    pass
-                                
-                                st.success(f"✅ 已保存！")
-                                st.balloons()
+                            # 添加用Typora打开按钮
+                            # 找到该端点对应的已保存文件
+                            saved_file_path = None
+                            for saved_ep, saved_path in saved_files:
+                                if saved_ep == ep_name:
+                                    saved_file_path = saved_path
+                                    break
+                            
+                            if saved_file_path:
+                                if st.button(f"📝 用 Typora 打开", key=f"open_{ep_name}", use_container_width=True):
+                                    # 用Typora打开已保存的文件
+                                    try:
+                                        subprocess.Popen(["open", "-a", "Typora", saved_file_path])
+                                        st.success(f"✅ 已打开 Typora！")
+                                    except Exception as e:
+                                        st.error(f"无法打开 Typora: {e}")
                     else:
                         # 显示错误信息
                         st.error(f"**错误:**\n{result_data['result']}")
