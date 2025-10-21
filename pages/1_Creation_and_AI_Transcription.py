@@ -873,10 +873,26 @@ def render_concurrent_results(results_data, key_prefix="current"):
                 st.error(f"**错误:**\n{result_data['result']}")
 
 
-# 检查是否有并发结果需要显示
-if "current_concurrent_results" in st.session_state or "show_concurrent_compare" in st.session_state:
+# 检查是否有并发结果或历史记录
+history_list = load_concurrent_history_list()
+has_current_results = "current_concurrent_results" in st.session_state
+has_history = len(history_list) > 0
+
+# 如果有当前结果或历史记录，显示对比区
+if has_current_results or has_history:
     st.markdown("---")
     st.markdown("## 📊 并发结果对比区")
+    
+    # 决定默认显示哪个Tab（如果刚执行完并发转写，显示当前结果；否则显示历史）
+    if has_current_results and st.session_state.get("show_concurrent_compare", False):
+        # 刚执行完并发转写，默认显示当前结果
+        default_tab_index = 0
+        # 清除标记，避免下次刷新时还默认显示当前结果
+        if "show_concurrent_compare" in st.session_state:
+            del st.session_state["show_concurrent_compare"]
+    else:
+        # 否则默认显示历史对比
+        default_tab_index = 1 if has_history and not has_current_results else 0
     
     # 创建标签页
     tab1, tab2 = st.tabs(["🎯 当前结果", "📚 历史对比"])
@@ -907,9 +923,7 @@ if "current_concurrent_results" in st.session_state or "show_concurrent_compare"
         # 显示历史对比
         st.markdown("### 选择历史记录")
         
-        # 加载历史列表
-        history_list = load_concurrent_history_list()
-        
+        # 使用已加载的历史列表（避免重复加载）
         if history_list:
             # 创建下拉选择框
             history_options = ["请选择历史记录..."] + [item[0] for item in history_list]
