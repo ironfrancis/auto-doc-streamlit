@@ -1,22 +1,25 @@
 import pandas as pd
 import os
+import sys
 import streamlit as st
 import calendar
 from datetime import datetime, date, timedelta
 import random
-import sys
 
-# 使用简化路径管理
+# 使用简化路径管理 - 必须在导入core模块之前
 from simple_paths import *
 
+# 导入core模块
 from core.utils.theme_loader import load_anthropic_theme
 from core.utils.icon_library import get_icon
 
+# 尝试导入频道更新管理器
 try:
-    from utils.channel_update_manager import ChannelUpdateManager
+    from core.channel.channel_update_manager import ChannelUpdateManager
 except ImportError as e:
-    st.error(f"导入频道更新管理器失败: {e}")
-    st.info("请确保 utils/channel_update_manager.py 文件存在")
+    # 如果导入失败，在页面中显示错误（而不是在这里，避免阻止页面加载）
+    ChannelUpdateManager = None
+    channel_update_error = str(e)
 
 
 def load_csv_data():
@@ -35,6 +38,14 @@ def load_csv_data():
                 df['发布时间'] = pd.to_datetime(df['发布时间'], errors='coerce')
                 # 过滤掉无效的日期数据
                 df = df.dropna(subset=['发布时间'])
+                
+                # 清理账号名称列（如果存在）
+                if '账号名称' in df.columns:
+                    # 过滤掉空值和无效的账号名称
+                    df = df[df['账号名称'].notna()]
+                    df = df[df['账号名称'].astype(str).str.strip() != '']
+                    # 确保账号名称是字符串类型
+                    df['账号名称'] = df['账号名称'].astype(str)
                 
                 if not df.empty:
                     st.toast(f"成功加载 {len(df)} 条数据记录")
@@ -56,6 +67,12 @@ def load_csv_data():
                 df['发布时间'] = pd.to_datetime(df['发布时间'], errors='coerce')
                 df = df.dropna(subset=['发布时间'])
                 
+                # 清理账号名称列（如果存在）
+                if '账号名称' in df.columns:
+                    df = df[df['账号名称'].notna()]
+                    df = df[df['账号名称'].astype(str).str.strip() != '']
+                    df['账号名称'] = df['账号名称'].astype(str)
+                
                 if not df.empty:
                     st.toast(f"成功加载 {len(df)} 条数据记录")
                     return df
@@ -75,6 +92,12 @@ def load_csv_data():
             if '发布时间' in df.columns:
                 df['发布时间'] = pd.to_datetime(df['发布时间'], errors='coerce')
                 df = df.dropna(subset=['发布时间'])
+                
+                # 清理账号名称列（如果存在）
+                if '账号名称' in df.columns:
+                    df = df[df['账号名称'].notna()]
+                    df = df[df['账号名称'].astype(str).str.strip() != '']
+                    df['账号名称'] = df['账号名称'].astype(str)
                 
                 if not df.empty:
                     st.toast(f"成功加载 {len(df)} 条数据记录")
@@ -134,8 +157,14 @@ def get_account_colors(accounts):
         '#AED6F1',  # 浅蓝色
     ]
     
+    # 过滤掉无效的账号名称（NaN、None、空字符串等）
+    valid_accounts = []
+    for account in accounts:
+        if pd.notna(account) and account and str(account).strip():
+            valid_accounts.append(str(account))
+    
     # 为了确保颜色一致性，我们对账号名称进行排序
-    sorted_accounts = sorted(accounts)
+    sorted_accounts = sorted(valid_accounts)
     account_colors = {}
     for i, account in enumerate(sorted_accounts):
         account_colors[account] = colors[i % len(colors)]
@@ -245,27 +274,34 @@ def visualize_publish_calendar():
     with col_update1:
         # 一键更新按钮
         if st.button(f"一键更新所有频道", type="primary", use_container_width=True):
-            try:
-                # 初始化频道更新管理器
-                update_manager = ChannelUpdateManager()
-                
-                # 执行更新
-                with st.spinner("正在更新所有频道，请稍候..."):
-                    update_results = update_manager.update_all_channels()
-                
-                # 将更新结果存储到session state
-                st.session_state.update_results = update_results
-                st.session_state.last_update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
-                # 显示更新完成提示
-                st.success(f"频道更新完成！")
-                
-                # 自动刷新页面数据
-                st.rerun()
-                
-            except Exception as e:
-                st.error(f"更新过程中发生错误: {str(e)}")
-                st.exception(e)
+            # 检查ChannelUpdateManager是否可用
+            if ChannelUpdateManager is None:
+                st.error(f"频道更新管理器加载失败")
+                if 'channel_update_error' in globals():
+                    st.error(f"错误详情: {channel_update_error}")
+                st.info("请检查 core/channel/channel_update_manager.py 文件是否存在")
+            else:
+                try:
+                    # 初始化频道更新管理器
+                    update_manager = ChannelUpdateManager()
+                    
+                    # 执行更新
+                    with st.spinner("正在更新所有频道，请稍候..."):
+                        update_results = update_manager.update_all_channels()
+                    
+                    # 将更新结果存储到session state
+                    st.session_state.update_results = update_results
+                    st.session_state.last_update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    # 显示更新完成提示
+                    st.success(f"频道更新完成！")
+                    
+                    # 自动刷新页面数据
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"更新过程中发生错误: {str(e)}")
+                    st.exception(e)
     
     with col_update2:
         # 显示更新状态和结果
@@ -934,58 +970,65 @@ def visualize_publish_calendar():
     st.write("### 🔐 Cookie状态检查")
     
     if st.button(f"检查所有频道Cookie状态", use_container_width=True):
-        try:
-            # 初始化频道更新管理器
-            update_manager = ChannelUpdateManager()
-            
-            # 检查Cookie状态
-            with st.spinner("正在检查Cookie状态..."):
-                cookie_status = update_manager.check_cookie_status()
-            
-            # 显示Cookie状态
-            if cookie_status:
-                st.write("**📊 Cookie状态概览:**")
+        # 检查ChannelUpdateManager是否可用
+        if ChannelUpdateManager is None:
+            st.error(f"频道更新管理器加载失败")
+            if 'channel_update_error' in globals():
+                st.error(f"错误详情: {channel_update_error}")
+            st.info("请检查 core/channel/channel_update_manager.py 文件是否存在")
+        else:
+            try:
+                # 初始化频道更新管理器
+                update_manager = ChannelUpdateManager()
                 
-                # 统计有效和失效的Cookie
-                valid_count = len([s for s in cookie_status.values() if s == 'valid'])
-                expired_count = len([s for s in cookie_status.values() if s == 'expired'])
+                # 检查Cookie状态
+                with st.spinner("正在检查Cookie状态..."):
+                    cookie_status = update_manager.check_cookie_status()
                 
-                # 显示统计信息
-                col_cookie1, col_cookie2, col_cookie3 = st.columns(3)
-                with col_cookie1:
-                    st.metric("总频道数", len(cookie_status))
-                with col_cookie2:
-                    st.metric("Cookie有效", valid_count, delta=f"+{valid_count}")
-                with col_cookie3:
-                    st.metric("Cookie失效", expired_count, delta=f"-{expired_count}" if expired_count > 0 else None)
-                
-                # 显示详细状态
-                with st.expander(f"查看详细Cookie状态"):
-                    for channel_name, status in cookie_status.items():
-                        status_icon = "✅" if status == 'valid' else "❌"
-                        status_text = "有效" if status == 'valid' else "失效"
-                        status_color = "green" if status == 'valid' else "red"
-                        
-                        st.markdown(f"{status_icon} **{channel_name}**: <span style='color: {status_color};'>{status_text}</span>", unsafe_allow_html=True)
-                        
-                        if status == 'expired':
-                            st.warning(f"{channel_name} 的Cookie已失效，需要重新登录")
-                        
-                        st.write("---")
-                
-                # 如果有失效的Cookie，显示提醒
-                if expired_count > 0:
-                    st.error(f"🚨 发现 {expired_count} 个频道的Cookie已失效！")
-                    st.info("**建议操作:**")
-                    st.write("1. 重新登录相关平台账号")
-                    st.write("2. 更新Cookie配置")
-                    st.write("3. 检查账号权限是否正常")
-            else:
-                st.warning("无法获取Cookie状态信息")
-                
-        except Exception as e:
-            st.error(f"Cookie状态检查失败: {str(e)}")
-            st.exception(e)
+                # 显示Cookie状态
+                if cookie_status:
+                    st.write("**📊 Cookie状态概览:**")
+                    
+                    # 统计有效和失效的Cookie
+                    valid_count = len([s for s in cookie_status.values() if s == 'valid'])
+                    expired_count = len([s for s in cookie_status.values() if s == 'expired'])
+                    
+                    # 显示统计信息
+                    col_cookie1, col_cookie2, col_cookie3 = st.columns(3)
+                    with col_cookie1:
+                        st.metric("总频道数", len(cookie_status))
+                    with col_cookie2:
+                        st.metric("Cookie有效", valid_count, delta=f"+{valid_count}")
+                    with col_cookie3:
+                        st.metric("Cookie失效", expired_count, delta=f"-{expired_count}" if expired_count > 0 else None)
+                    
+                    # 显示详细状态
+                    with st.expander(f"查看详细Cookie状态"):
+                        for channel_name, status in cookie_status.items():
+                            status_icon = "✅" if status == 'valid' else "❌"
+                            status_text = "有效" if status == 'valid' else "失效"
+                            status_color = "green" if status == 'valid' else "red"
+                            
+                            st.markdown(f"{status_icon} **{channel_name}**: <span style='color: {status_color};'>{status_text}</span>", unsafe_allow_html=True)
+                            
+                            if status == 'expired':
+                                st.warning(f"{channel_name} 的Cookie已失效，需要重新登录")
+                            
+                            st.write("---")
+                    
+                    # 如果有失效的Cookie，显示提醒
+                    if expired_count > 0:
+                        st.error(f"🚨 发现 {expired_count} 个频道的Cookie已失效！")
+                        st.info("**建议操作:**")
+                        st.write("1. 重新登录相关平台账号")
+                        st.write("2. 更新Cookie配置")
+                        st.write("3. 检查账号权限是否正常")
+                else:
+                    st.warning("无法获取Cookie状态信息")
+                    
+            except Exception as e:
+                st.error(f"Cookie状态检查失败: {str(e)}")
+                st.exception(e)
 
 
 visualize_publish_calendar()

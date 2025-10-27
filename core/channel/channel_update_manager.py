@@ -14,13 +14,13 @@ from pathlib import Path
 
 # 添加项目根目录到路径
 current_dir = os.path.dirname(os.path.abspath(__file__))
-app_dir = os.path.join(current_dir, '..')
-sys.path.insert(0, app_dir)
+project_root = os.path.join(current_dir, '..', '..')
+sys.path.insert(0, project_root)
 
 try:
-    from utils.channel_management import ChannelManager
-    from core.cookie_manager import CookieManager
-    from path_manager import get_json_data_dir
+    from core.channel.channel_management import ChannelManager
+    from core.wechat.cookie_manager import CookieManager
+    from core.utils.path_manager import get_json_data_dir
 except ImportError as e:
     print(f"导入依赖模块失败: {e}")
 

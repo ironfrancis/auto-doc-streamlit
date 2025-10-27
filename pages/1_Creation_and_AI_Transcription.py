@@ -847,9 +847,8 @@ def render_concurrent_results(results_data, key_prefix="current"):
             if result_data["success"]:
                 # 显示成功的转写结果
                 with st.container():
-                    # 使用expander查看完整内容
-                    with st.expander("📄 查看完整内容", expanded=False):
-                        st.markdown(result_data["result"])
+                    # 直接显示完整内容，不再使用折叠块
+                    st.markdown(result_data["result"])
                     
                     # 添加打开按钮
                     # 找到该端点对应的已保存文件

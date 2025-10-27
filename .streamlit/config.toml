@@ -1,0 +1,27 @@
+# Streamlit 配置文件
+# 文档: https://docs.streamlit.io/library/advanced-features/configuration
+
+[theme]
+# 强制使用亮色主题，禁用暗黑模式
+base = "light"
+
+# 自定义主题颜色（可选，保持默认即可）
+# primaryColor = "#D97A5E"
+# backgroundColor = "#F5F1E8"
+# secondaryBackgroundColor = "#FAFAF8"
+# textColor = "#2B2B2B"
+# font = "sans serif"
+
+[client]
+# 显示工具栏（包括设置按钮）
+toolbarMode = "viewer"
+
+[browser]
+# 在浏览器标签页中显示的图标
+# gatherUsageStats = false
+
+[server]
+# 服务器配置
+# headless = true
+# port = 8501
+

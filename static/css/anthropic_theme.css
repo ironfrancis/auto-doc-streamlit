@@ -23,6 +23,28 @@
     background-color: #FAFAF8;
 }
 
+/* ==================== 暗黑模式支持 ==================== */
+
+/* 暗黑模式全局样式 - 兼容多种选择器 */
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .stApp {
+    background-color: #0E1117 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) [data-testid="stSidebar"] {
+    background-color: #161B22 !important;
+}
+
+/* 系统深色偏好作为兜底 */
+@media (prefers-color-scheme: dark) {
+    .stApp {
+        background-color: #0E1117 !important;
+    }
+    
+    [data-testid="stSidebar"] {
+        background-color: #161B22 !important;
+    }
+}
+
 /* ==================== 排版样式 ==================== */
 
 /* 主标题样式 - 优雅的深色 */
@@ -327,8 +349,8 @@
     border-color: rgba(0, 0, 0, 0.25);
 }
 
-/* 透明覆盖按钮（用于卡片点击） */
-.stButton {
+/* 透明覆盖按钮（用于卡片点击） - 仅应用于特定卡片 */
+.card-container .stButton {
     position: absolute;
     top: 0;
     left: 0;
@@ -337,7 +359,7 @@
     z-index: 10;
 }
 
-.stButton > button {
+.card-container .stButton > button {
     width: 100%;
     height: 100%;
     border: none;
@@ -349,9 +371,9 @@
     border-radius: 16px;
 }
 
-.stButton > button:hover,
-.stButton > button:focus,
-.stButton > button:active {
+.card-container .stButton > button:hover,
+.card-container .stButton > button:focus,
+.card-container .stButton > button:active {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -359,21 +381,103 @@
 
 /* ==================== 表单元素 ==================== */
 
-/* 输入框样式 */
+/* 强制所有输入元素使用亮色主题 - 所有状态 */
 .stTextInput > div > div > input,
+.stTextInput > div > div > input:hover,
+.stTextInput > div > div > input:focus,
+.stTextInput > div > div > input:active,
+.stTextInput > div > div > input:focus-visible,
 .stTextArea > div > div > textarea,
-.stSelectbox > div > div > select {
-    background-color: #FFFFFF;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    color: #2B2B2B;
+.stTextArea > div > div > textarea:hover,
+.stTextArea > div > div > textarea:focus,
+.stTextArea > div > div > textarea:active,
+.stSelectbox > div > div > select,
+.stSelectbox > div > div > select:hover,
+.stSelectbox > div > div > select:focus,
+.stNumberInput > div > div > input,
+.stNumberInput > div > div > input:hover,
+.stNumberInput > div > div > input:focus,
+.stNumberInput > div > div > input:active,
+.stDateInput > div > div > input,
+.stDateInput > div > div > input:hover,
+.stDateInput > div > div > input:focus,
+.stTimeInput > div > div > input,
+.stTimeInput > div > div > input:hover,
+.stTimeInput > div > div > input:focus,
+input[type="text"],
+input[type="text"]:hover,
+input[type="text"]:focus,
+input[type="text"]:active,
+input[type="number"],
+input[type="number"]:hover,
+input[type="number"]:focus,
+input[type="number"]:active,
+input[type="email"],
+input[type="email"]:hover,
+input[type="email"]:focus,
+input[type="password"],
+input[type="password"]:hover,
+input[type="password"]:focus,
+input[type="search"],
+input[type="search"]:hover,
+input[type="search"]:focus,
+input[type="tel"],
+input[type="tel"]:hover,
+input[type="tel"]:focus,
+input[type="url"],
+input[type="url"]:hover,
+input[type="url"]:focus,
+textarea,
+textarea:hover,
+textarea:focus,
+textarea:active,
+select,
+select:hover,
+select:focus {
+    background-color: #FFFFFF !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    border-radius: 8px !important;
+    color: #2B2B2B !important;
+    color-scheme: light !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
 }
 
+/* 焦点状态特殊边框 */
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus,
-.stSelectbox > div > div > select:focus {
-    border-color: #D97A5E;
-    box-shadow: 0 0 0 2px rgba(217, 122, 94, 0.2);
+.stSelectbox > div > div > select:focus,
+.stNumberInput > div > div > input:focus {
+    border-color: #D97A5E !important;
+    box-shadow: 0 0 0 2px rgba(217, 122, 94, 0.2) !important;
+    outline: none !important;
+}
+
+/* 强制输入框占位符文本颜色 */
+input::placeholder,
+textarea::placeholder {
+    color: #9CA3AF !important;
+    opacity: 1 !important;
+}
+
+/* 强制下拉选择框样式 */
+.stSelectbox [data-baseweb="select"] > div,
+.stSelectbox [data-baseweb="select"] > div:hover,
+.stSelectbox [data-baseweb="select"] > div:focus,
+[data-baseweb="select"] > div,
+[data-baseweb="select"] > div:hover,
+[data-baseweb="select"] > div:focus {
+    background-color: #FFFFFF !important;
+    color: #2B2B2B !important;
+}
+
+/* 强制多选框样式 */
+.stMultiSelect [data-baseweb="select"] > div,
+.stMultiSelect [data-baseweb="select"] > div:hover,
+.stMultiSelect [data-baseweb="select"] > div:focus {
+    background-color: #FFFFFF !important;
+    color: #2B2B2B !important;
 }
 
 /* ==================== 分隔线 ==================== */
@@ -423,11 +527,70 @@ hr {
     }
 }
 
+/* ==================== 强制亮色模式 - 精确控制不影响卡片样式 ==================== */
+
+/* 强制整个应用使用亮色配色方案 */
+:root,
+html,
+body {
+    color-scheme: light !important;
+}
+
+.stApp {
+    background-color: #F5F1E8 !important;
+    color-scheme: light !important;
+}
+
+[data-testid="stAppViewContainer"],
+[data-testid="stHeader"],
+.main {
+    color-scheme: light !important;
+}
+
+section[data-testid="stSidebar"] {
+    color-scheme: light !important;
+    background-color: #FAFAF8 !important;
+}
+
+/* 强制代码块亮色 */
+code:not(.card-container *),
+pre:not(.card-container *),
+.stCodeBlock,
+[data-testid="stCodeBlock"] {
+    background-color: #F8F9FA !important;
+    color: #2B2B2B !important;
+}
+
+/* 强制表格样式（不影响卡片） */
+.stDataFrame,
+[data-testid="stDataFrame"] {
+    background-color: #FFFFFF !important;
+    color: #2B2B2B !important;
+}
+
+/* 强制下拉选择框样式（不在卡片容器内的） */
+[data-baseweb="popover"]:not(.card-container [data-baseweb="popover"]),
+[data-baseweb="menu"]:not(.card-container [data-baseweb="menu"]) {
+    background-color: #FFFFFF !important;
+    color: #2B2B2B !important;
+}
+
+/* 强制侧边栏输入框 */
+section[data-testid="stSidebar"] input,
+section[data-testid="stSidebar"] textarea,
+section[data-testid="stSidebar"] select {
+    background-color: #FFFFFF !important;
+    color: #2B2B2B !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color-scheme: light !important;
+}
+
 /* ==================== 隐藏默认元素 ==================== */
 
-#MainMenu {
+/* 注意：不再隐藏主菜单，以便用户可以访问设置 */
+/* #MainMenu {
     visibility: hidden;
-}
+} */
 
 footer {
     visibility: hidden;
@@ -445,15 +608,223 @@ div[data-testid="column"]:has(.stButton:hover) .card-container {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
+/* ==================== 暗黑模式 - 文本样式 ==================== */
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .main-title,
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .page-title,
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .section-title,
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .category-title {
+    color: #E8E6E3 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .subtitle {
+    color: #9CA3AF !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-title {
+    color: #E8E6E3 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-description {
+    color: #B0B3B8 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .main-title, .page-title, .section-title, .category-title {
+        color: #E8E6E3 !important;
+    }
+    .subtitle {
+        color: #9CA3AF !important;
+    }
+    .card-title {
+        color: #E8E6E3 !important;
+    }
+    .card-description {
+        color: #B0B3B8 !important;
+    }
+}
+
+/* ==================== 暗黑模式 - 卡片样式 ==================== */
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-container {
+    background: #1C1F26 !important;
+    border: 1px solid #2D3139 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-container:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    border-color: #3D4149 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-icon {
+    color: #E8E6E3 !important;
+    opacity: 0.9 !important;
+}
+
+/* 暗黑模式下的卡片渐变色 - 深色调整 */
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-1 {
+    background: linear-gradient(135deg, #3A2822 0%, #2D1F1A 100%) !important;
+    border: 1px solid rgba(58, 40, 34, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-2 {
+    background: linear-gradient(135deg, #2D2821 0%, #25221C 100%) !important;
+    border: 1px solid rgba(45, 40, 33, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-3 {
+    background: linear-gradient(135deg, #2A2622 0%, #231F1C 100%) !important;
+    border: 1px solid rgba(42, 38, 34, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-4 {
+    background: linear-gradient(135deg, #26241F 0%, #1F1D19 100%) !important;
+    border: 1px solid rgba(38, 36, 31, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-5 {
+    background: linear-gradient(135deg, #2E2621 0%, #272118 100%) !important;
+    border: 1px solid rgba(46, 38, 33, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-6 {
+    background: linear-gradient(135deg, #2F2A24 0%, #282420 100%) !important;
+    border: 1px solid rgba(47, 42, 36, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-7 {
+    background: linear-gradient(135deg, #29251F 0%, #221E1A 100%) !important;
+    border: 1px solid rgba(41, 37, 31, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .card-gradient-8 {
+    background: linear-gradient(135deg, #2C2620 0%, #24201B 100%) !important;
+    border: 1px solid rgba(44, 38, 32, 0.5) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .card-container {
+        background: #1C1F26 !important;
+        border: 1px solid #2D3139 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+    .card-container:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+        border-color: #3D4149 !important;
+    }
+    .card-icon {
+        color: #E8E6E3 !important;
+        opacity: 0.9 !important;
+    }
+}
+
+/* ==================== 暗黑模式 - 面板样式 ==================== */
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .info-panel,
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .content-panel {
+    background: #1C1F26 !important;
+    border: 1px solid #2D3139 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .info-panel h3 {
+    color: #E8E6E3 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .info-panel li {
+    color: #B0B3B8 !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .info-panel li:before {
+    color: #D97A5E !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .info-panel, .content-panel {
+        background: #1C1F26 !important;
+        border: 1px solid #2D3139 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+    .info-panel h3 {
+        color: #E8E6E3 !important;
+    }
+    .info-panel li {
+        color: #B0B3B8 !important;
+    }
+}
+
+/* ==================== 暗黑模式 - 统计信息 ==================== */
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .stats-box {
+    background: linear-gradient(135deg, #3A2822 0%, #2D1F1A 100%) !important;
+    border: 1px solid rgba(58, 40, 34, 0.5) !important;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .stats-number,
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .stats-label {
+    color: #E8E6E3 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .stats-box {
+        background: linear-gradient(135deg, #3A2822 0%, #2D1F1A 100%) !important;
+        border: 1px solid rgba(58, 40, 34, 0.5) !important;
+    }
+    .stats-number, .stats-label {
+        color: #E8E6E3 !important;
+    }
+}
+
+/* ==================== 暗黑模式 - 表单元素 ==================== */
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .stTextInput > div > div > input,
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .stTextArea > div > div > textarea,
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) .stSelectbox > div > div > select {
+    background-color: #1C1F26 !important;
+    border: 1px solid #2D3139 !important;
+    color: #E8E6E3 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stSelectbox > div > div > select {
+        background-color: #1C1F26 !important;
+        border: 1px solid #2D3139 !important;
+        color: #E8E6E3 !important;
+    }
+}
+
+/* ==================== 暗黑模式 - 分隔线 ==================== */
+
+:is(html[data-theme="dark"], body[data-theme="dark"], .stApp[data-theme="dark"], [data-testid="stAppViewContainer"][data-theme="dark"], :root[data-theme="dark"]) hr {
+    background-color: #2D3139 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    hr {
+        background-color: #2D3139 !important;
+    }
+}
+
 /* ==================== 颜色变量（用于参考） ==================== */
 
 /*
-主色系：
+主色系（亮色模式）：
 - 背景色: #F5F1E8 (米黄色)
 - 侧边栏: #FAFAF8 (浅米色)
 - 主标题: #2B2B2B (深灰黑)
 - 副标题: #6B6B6B (中灰)
 - 正文: #5A5A5A (柔和灰)
+- 强调色: #D97A5E (赤陶橙)
+
+主色系（暗黑模式）：
+- 背景色: #0E1117 (深灰蓝)
+- 侧边栏: #161B22 (深灰)
+- 主标题: #E8E6E3 (浅灰白)
+- 副标题: #9CA3AF (中灰)
+- 正文: #B0B3B8 (柔和灰)
 - 强调色: #D97A5E (赤陶橙)
 
 大地色系渐变：
@@ -466,4 +837,118 @@ div[data-testid="column"]:has(.stButton:hover) .card-container {
 7. #B8A89A → #A89688 (灰褐)
 8. #CEB5A0 → #BDA38C (肉桂)
 */
+
+/* ==================== 最终覆盖层：禁用所有暗黑模式 ==================== */
+
+/* 覆盖系统暗黑模式偏好 - 强制使用亮色但保留卡片样式 */
+@media (prefers-color-scheme: dark) {
+    /* 强制根元素和主体 */
+    :root, html, body {
+        color-scheme: light !important;
+        background-color: #F5F1E8 !important;
+    }
+    
+    /* 强制Streamlit容器 */
+    .stApp, [data-testid="stAppViewContainer"] {
+        background-color: #F5F1E8 !important;
+        color-scheme: light !important;
+    }
+    
+    /* 强制侧边栏 */
+    section[data-testid="stSidebar"], [data-testid="stSidebar"] {
+        background-color: #FAFAF8 !important;
+    }
+    
+    /* 强制所有输入框白色背景 - 所有状态 */
+    input, 
+    input:hover,
+    input:focus,
+    input:active,
+    textarea, 
+    textarea:hover,
+    textarea:focus,
+    textarea:active,
+    select,
+    select:hover,
+    select:focus {
+        background-color: #FFFFFF !important;
+        color: #2B2B2B !important;
+        border: 1px solid rgba(0, 0, 0, 0.15) !important;
+        color-scheme: light !important;
+    }
+    
+    /* 不覆盖自定义类的标题和文本 - 保留卡片样式 */
+    .main-title:not(.card-container .main-title), 
+    .page-title:not(.card-container .page-title), 
+    .section-title:not(.card-container .section-title), 
+    .category-title:not(.card-container .category-title) {
+        color: #2B2B2B !important;
+    }
+    
+    .subtitle:not(.card-container .subtitle) {
+        color: #6B6B6B !important;
+    }
+    
+    /* 不覆盖卡片样式 - 让卡片保持原有的渐变色 */
+    /* .card-container 的样式由原始CSS控制 */
+    
+    /* 强制面板保持亮色 */
+    .info-panel, .content-panel {
+        background: #FFFFFF !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    }
+    
+    .info-panel h3 {
+        color: #2B2B2B !important;
+    }
+    
+    .info-panel li {
+        color: #5A5A5A !important;
+    }
+    
+    /* 强制普通按钮保持亮色（不在卡片内的） */
+    button:not(.card-container button), 
+    .stButton:not(.card-container .stButton) > button {
+        background-color: #FFFFFF !important;
+        color: #2B2B2B !important;
+        border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    /* 强制所有Streamlit组件保持亮色 */
+    [data-testid]:not(.card-container [data-testid]) {
+        color-scheme: light !important;
+    }
+}
+
+/* 覆盖任何可能的暗黑模式属性 - 但保留卡片样式 */
+[data-theme="dark"]:not(.card-container) {
+    color-scheme: light !important;
+}
+
+html[data-theme="dark"],
+body[data-theme="dark"],
+.stApp[data-theme="dark"],
+[data-testid="stAppViewContainer"][data-theme="dark"] {
+    background-color: #F5F1E8 !important;
+    color-scheme: light !important;
+}
+
+/* 强制输入框在暗黑模式下也使用亮色 - 所有状态 */
+[data-theme="dark"] input:not(.card-container input),
+[data-theme="dark"] input:not(.card-container input):hover,
+[data-theme="dark"] input:not(.card-container input):focus,
+[data-theme="dark"] input:not(.card-container input):active,
+[data-theme="dark"] textarea:not(.card-container textarea),
+[data-theme="dark"] textarea:not(.card-container textarea):hover,
+[data-theme="dark"] textarea:not(.card-container textarea):focus,
+[data-theme="dark"] textarea:not(.card-container textarea):active,
+[data-theme="dark"] select:not(.card-container select),
+[data-theme="dark"] select:not(.card-container select):hover,
+[data-theme="dark"] select:not(.card-container select):focus {
+    background-color: #FFFFFF !important;
+    color: #2B2B2B !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color-scheme: light !important;
+}
 

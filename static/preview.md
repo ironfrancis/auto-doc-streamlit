@@ -1,122 +1,147 @@
-# 云盘管理界的"政变"：AList被卖引发开源社区大逃亡，新王者OpenList强势崛起！
+# 三百年猜想被推翻：数学家终于找到了「穿不过自己」的形状
 
-你有没有这样的经历：
+**一个看似简单的赌局，引发了长达三个世纪的数学探索**
 
-手机里装了一堆云盘App——百度网盘、阿里云盘、夸克、OneDrive...每次找个文件都要挨个翻，像在玩"云盘大冒险"。
+你有没有想过这样一个问题：
 
-更崩溃的是，明明记得存了某个重要文件，但就是想不起来扔在哪个云盘里了。
+能不能在一个骰子上钻个洞，让另一个同样大小的骰子从中穿过？
 
-这种"云盘焦虑症"，相信用过多个网盘的朋友都深有体会。
+听起来不太可能对吧？但17世纪末，英王查理一世的侄子——鲁珀特亲王就用实际行动证明：**可以**。
 
-但最近，云盘管理工具界发生了一场堪比宫斗剧的"政变"，故事的转折比小说还精彩。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_gif/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtErBiaJ5eqMt5dxHF4BB8m0pbpb5nOJbcKAKv7MFjOW5ibuoeA1FSbgjw/640?wx_fmt=gif&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1#imgIndex=0)
 
-### 一场震惊开源圈的"背叛"
+这个反直觉的现象，开启了一段持续三百多年的数学冒险。而就在今年8月，这个故事迎来了一个意外的转折。
 
-故事要从今年6月说起。
+## 从一场赌局说起
 
-当时有个叫**AList**的开源项目，专门解决多云盘管理的痛点，能把30多种云存储服务整合到一个界面里，深受用户喜爱。
+故事要从温莎城堡说起。
 
-但突然有一天，社区炸锅了——原作者竟然**把项目卖了**！
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtuPAZXLqhZNSRvt40KUOIQMsItFwMfgNDrQrmibHae6xvyu3qTz74OZg/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1#imgIndex=1)
 
-![Alist被卖，社区集体叹息，新东家骚操作震惊全网_@Appinn_代码_用户](https://mmbiz.qpic.cn/mmbiz_jpg/TpAfliaLqyRL8K7ZJr9BAnMTawnaNRSK1w8Wfyhz1j6G12tKI5iaPWPH7x8w0z1EQQrzbwg7PT18qdG5EfKh5enw/640?wx_fmt=jpeg&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1#imgIndex=0)
+退休后的鲁珀特亲王在实验室里研究冶金和玻璃制造，有人跟他打赌：不可能在一个立方体上钻出通道，让另一个同样大小的立方体穿过。
 
-关键是，**事先完全没通知社区**！
+鲁珀特赢了。
 
-这就像你信任的朋友突然把你们的共同回忆打包卖给了陌生人，而且连招呼都不打一声。
+1693年，数学家John Wallis记录下这个故事，并给出了严格的数学证明：**如果沿着立方体的内对角线方向钻一条通道，确实可以让另一个相同大小的立方体穿过**。
 
-开源社区的信任感瞬间崩塌，用户们纷纷表示："我们被背叛了！"
+这个契合度有多紧密？如果第二个立方体只大4%，就卡住了。
 
-### 社区反击：24小时内的"复仇"
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtib9xRicptpu4PvUcpo4e0YHjk2tgHdsGvadXQ6Ctr6QvVBpwMibWpAF8w/640?wx_fmt=png&from=appmsg#imgIndex=2)
 
-但开源社区的反应速度超乎想象。
+## 一个看似普遍的性质
 
-**仅仅一天后**，社区就推出了全新的替代方案——**OpenList**。
+这种能让自己穿过自己的特性，被数学家称为「**鲁珀特性质**」。
 
-这是基于AList最后一个安全版本fork出来的分支，开发者向所有用户郑重承诺：**永远开源，永远透明**。
+一个自然的问题随之而来：还有哪些形状也有这种神奇的性质？
 
-结果呢？短短几个月时间，OpenList就暴涨了17000+ GitHub Star！
+谷歌工程师Tom Murphy在业余时间深入研究过这个问题。他说：「这个问题太经典了，它会被一遍又一遍地重新发现，**就算是外星人也会遇到它**。」
 
-![Star History Oct 18 2025](https://mmbiz.qpic.cn/mmbiz_png/TpAfliaLqyRL8K7ZJr9BAnMTawnaNRSK1VgAEBf1pTwpXvkXJADXYHVibWXQaZz8CFKE6xBr3WK0XccVwWFibQq5g/640?wx_fmt=png&from=appmsg#imgIndex=1)
+数学家们主要关注凸多面体——就是那些表面平整、没有凹陷的立体形状。
 
-这增长速度，简直是开源界的"复仇爽文"现实版。
+但进展异常缓慢：
+- **1693年**：立方体被证明具有鲁珀特性质
+- **1968年**：四面体和八面体也被证实
+- **过去十年**：十二面体、二十面体、足球形状陆续加入名单
 
-### OpenList到底有多强？一个界面统管30+网盘
+Statistics Austria的数学家Jakob Steininger感慨：「**几百年来，我们只知道立方体具备这种性质**。」
 
-OpenList继承了AList的所有核心功能，但做得更好。
+## 一个大胆的猜想
 
-**最核心的能力**：把各种云存储服务集中到一个界面里管理。
+随着越来越多的形状被证明具有鲁珀特性质，数学家们开始相信一个普遍规律：
 
-想象一下，以前你要在手机上切换N个App才能找到所有文件，现在只需要打开一个地方，所有云盘的内容一目了然。
+**每一个凸多面体都应该具有鲁珀特性质。**
 
-支持的云存储服务多到让人惊讶：
+这个猜想看起来如此自然，以至于几乎没人怀疑它的正确性。
 
-- **国内主流**：阿里云盘、百度网盘、夸克网盘、迅雷云盘、115网盘
-- **国外大厂**：OneDrive、Google Drive、Dropbox
-- **企业级**：腾讯云COS、阿里云OSS等
+直到今年8月。
 
-![image-20251018111402554](https://mmbiz.qpic.cn/mmbiz_png/TpAfliaLqyRL8K7ZJr9BAnMTawnaNRSK1ic48ARY1Dg8fP04WFFAjkgrA1eW8lNXJvmZicNibVlwCLgfCIb5xtrbGA/640?wx_fmt=png&from=appmsg#imgIndex=2)
+## 「诺珀特」的诞生
 
-官方支持列表显示，总共支持**30多种存储服务**。
+Jakob Steininger和Sergey Yurkevich是从少年时期就认识的老朋友。虽然两人都离开了学术界（一个拿了硕士，一个拿了博士），但他们从未停止探索数学难题。
 
-配置过程也很简单：进入后台管理页面，点"添加存储"，选择云盘类型，填写授权信息就搞定。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtiaSdNH1gZDJfFibOafAY61JsKnSUMgebkyFyE0z7c4vuWvu366gOLrew/640?wx_fmt=png&from=appmsg#imgIndex=7)
 
-![640](https://mmbiz.qpic.cn/mmbiz_png/TpAfliaLqyRL8K7ZJr9BAnMTawnaNRSK1ma8X5EibFPnicetHCDAkAH0xMwicmnFNoGN8iabXs9Cv57ic3ttqyfDh3Ew/640?wx_fmt=png&from=appmsg#imgIndex=3)
+「我们三小时前刚吃了披萨，几乎整顿饭都在谈数学，」Steininger说，「**这就是我们平常的样子**。」
 
-### 在线预览功能：告别下载-打开-删除的循环
+五年前，他们偶然看到一个「立方体穿过立方体」的视频，立刻被吸引了。他们开发了搜索鲁珀特通道的算法，并逐渐意识到：也许真的存在「穿不过去」的形状。
 
-OpenList的在线预览功能特别实用，彻底解放了"下载强迫症"患者。
+经过数年努力，他们构造出了一个拥有90个顶点、152个面的复杂形状。
 
-**视频音频**：直接在浏览器播放，还能加载字幕和歌词，体验堪比专业播放器。
+他们给它起了个名字：**诺珀特多面体（Noperthedron）**——结合了Rupert和nope（不）。
 
-**Office文档**：Word、Excel、PPT直接预览，不用装Office也能查看内容。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLttWwBwlhr1asPCHHBY8h0Tw2wAga3YfoMq6csQYMS8LHWMEGcicYVibZA/640?wx_fmt=png&from=appmsg#imgIndex=3)
 
-**代码文件**：语法高亮显示，程序员看代码再也不用下载到本地。
+这个形状看起来像一个圆润的水晶花瓶，底部和顶部都很宽。已经有网友用3D打印做了一个，当铅笔筒用。
 
-**图片浏览**：画廊模式查看，特别适合浏览大量照片，体验比原生云盘App还好。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtOnFX7FJXtpy4eVficgrpujuJVndynlM4ktLjzyTw2TkzZopMcJfHnibQ/640?wx_fmt=png&from=appmsg#imgIndex=9)
 
-![640](https://mmbiz.qpic.cn/mmbiz_png/TpAfliaLqyRL8K7ZJr9BAnMTawnaNRSK12EEsC25weYHBSwUhhx40RF9NYUzZcaBW2E4piaonSvH1MeTuqyNbbFg/640?wx_fmt=png&from=appmsg#imgIndex=4)
+## 证明的关键
 
-### 隐藏的强大功能
+要证明一个形状是「诺珀特」，必须排除**所有可能方向**上存在通道的可能性。
 
-除了基础的文件管理，OpenList还有一些让人眼前一亮的高级功能：
+这是个艰巨的任务。想象一下：
+- 你需要测试无穷多种旋转角度
+- 每种角度对应着高维参数空间中的一个点
+- 你必须证明这个空间里的每一个点都不行
 
-**WebDAV支持**：把云盘转换成WebDAV协议，可以配合各种第三方应用使用。
+两位数学家的突破在于提出了两个互补的定理：
 
-**批量操作**：多个文件或整个文件夹打包下载，效率提升不是一点半点。
+**全局定理**：当阴影明显超出时，可以排除大片区域
+**局部定理**：当阴影只是轻微超出时，可以排除局部邻域
 
-**离线下载**：直接把网络资源下载到指定云盘，省去本地中转的麻烦。
+关键是诺珀特多面体的所有阴影都满足「三顶点」条件——这让局部定理得以发挥作用。
 
-**权限控制**：设置密码保护和访问认证，重要文件夹加上安全锁。
+他们将参数空间划分为约1800万个微小区域，逐一测试，最终证明：**无论怎样旋转，都找不到通道**。
 
-### 上手指南：三步搞定部署
+Steininger说：「它能成立简直是个奇迹。」
 
-OpenList推荐使用Docker部署，即使是新手也能快速上手：
+## 意外还是必然？
 
-**第一步**：拉取镜像
-```
-docker pull openlistteam/openlist:latest
-```
+有趣的是，在诺珀特被发现之前，数学家们已经注意到一个奇怪的现象：
 
-**第二步**：运行容器（映射好数据目录和端口）
+对于任何凸多面体，算法要么几乎立刻找到通道，要么完全找不到。没有中间状态。
 
-**第三步**：浏览器访问 `http://你的IP:5244`，用默认账号登录
+约翰斯·霍普金斯大学的Benjamin Grimmer用台式机连续运算两周，测试一个叫「菱方截二十十二面体」的形状。
 
-![dashboard](https://mmbiz.qpic.cn/mmbiz_png/TpAfliaLqyRL8K7ZJr9BAnMTawnaNRSK1OicPoHpVErjOq6skdvqQcWRM31OsgpeScD3ZLhY239jTicyFMpSkpLoA/640?wx_fmt=png&from=appmsg#imgIndex=5)
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLt6IJlG1wJlpyOqhjESjXVKoZQqrF1pEwBBiaSkib9vDZfxwqNB0XiajYwg/640?wx_fmt=png&from=appmsg#imgIndex=6)
 
-**从AList迁移的用户**更是福音：官方提供了专门的迁移工具，配置和数据可以直接导入，几乎零成本切换。
+「它似乎就是对任何尝试都毫不妥协，」他说。
 
-![640](https://mmbiz.qpic.cn/mmbiz_jpg/TpAfliaLqyRL8K7ZJr9BAnMTawnaNRSK1viaGTh1NLw4LIv2O0KTHyhgG9aV5eB2FDdUeXYKJ4u2Bef9QEWe2oBQ/640?wx_fmt=jpeg&from=appmsg#imgIndex=6)
+Tom Murphy更是构造了数亿种不同的形状，算法几乎能为每一种轻松找到通道。只有极少数「顽固分子」例外。
 
-### 写在最后：开源精神的胜利
+这种强烈对比让一些数学家怀疑：诺珀特确实存在，但极其罕见。
 
-这个故事最精彩的地方在于，它完美诠释了开源社区的力量。
+现在，这个猜测得到了证实。
 
-当原作者选择"变现"时，社区用行动证明了什么叫"开源精神"——24小时内推出替代方案，几个月内获得17000+用户支持。
+## 这意味着什么？
 
-OpenList不仅继承了AList的所有优点，更重要的是，它代表了开源社区对透明、开放、用户至上理念的坚持。
+三百年来，数学家们一直相信的「每个凸多面体都能穿过自己」的假设，被推翻了。
 
-对于正在被多个云盘"折磨"的朋友来说，OpenList确实是个值得尝试的解决方案。特别是有NAS或服务器的技术爱好者，这绝对是提升云存储使用体验的神器。
+这个结果不仅仅是找到一个反例那么简单。它告诉我们：
 
-**GitHub项目地址**：https://github.com/OpenListTeam/OpenList
+**直觉有时会欺骗我们，即使是在看似简单的几何问题上。**
 
-云盘管理的新时代已经到来，你准备好告别"云盘焦虑症"了吗？
+至于未来，还有很多问题等待解答：
+- 还有其他诺珀特形状吗？
+- 菱方截二十十二面体到底是不是诺珀特？
+- 能否找到更简单的诺珀特？
+
+「我们只是谦逊的数学爱好者，热爱这类问题，并会一直这样探索下去，」Steininger说。
+
+---
+
+**写在最后**
+
+从17世纪的一场赌局，到21世纪的计算机证明，这个故事跨越了三个世纪。
+
+它提醒我们：数学的魅力不在于找到预期的答案，而在于发现意料之外的真相。
+
+那些看似显而易见的「常识」，也许只是因为我们还没找到那个例外。
+
+而当你终于找到它时，整个世界都会为之改变。
+
+---
+
+*参考资料：*
+*原文链接：https://www.quantamagazine.org/first-shape-found-that-cant-pass-through-itself-20251024/*
+*论文地址：https://arxiv.org/pdf/2508.18475*

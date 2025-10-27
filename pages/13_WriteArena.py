@@ -242,7 +242,7 @@ def load_annotations_from_task(task_data, endpoint_name):
     annotations = task_data.get('annotations', {}).get(endpoint_name, [])
     return annotations
 
-def render_article_with_annotations(article_content, endpoint_name, task_path, key):
+def render_article_with_annotations(article_content, endpoint_name, task_path, key, height=None):
     """渲染带批注功能的文章"""
     # 加载已有批注
     if task_path:
@@ -281,32 +281,49 @@ def render_article_with_annotations(article_content, endpoint_name, task_path, k
     <head>
         <meta charset="utf-8">
         <style>
+            html {{
+                overflow: visible;
+                height: auto;
+                min-height: 100%;
+            }}
+            * {{
+                box-sizing: border-box;
+            }}
             body {{
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 line-height: 1.6;
-                margin: 20px;
-                padding: 20px;
-                background: #f8f9fa;
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                overflow: visible;
+                height: auto;
             }}
             .article-content {{
-                background: white;
-                padding: 30px;
-                border-radius: 8px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                max-width: 800px;
-                margin: 0 auto;
+                background: transparent;
+                padding: 0;
+                border: none;
+                box-shadow: none;
+                max-width: none;
+                margin: 0;
                 user-select: text;
+                font-size: 16px;
+                color: inherit;
+                overflow: visible;
+                height: auto;
+                white-space: normal;
+                word-wrap: break-word;
             }}
             .annotation-toolbar {{
                 position: fixed;
-                background: white;
-                padding: 15px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                background: rgba(255, 255, 255, 0.95);
+                padding: 12px;
+                border-radius: 6px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                 z-index: 10000;
                 display: none;
-                border: 2px solid #007bff;
+                border: 1px solid rgba(0, 123, 255, 0.3);
                 min-width: 250px;
+                backdrop-filter: blur(10px);
             }}
             .annotation-form {{
                 display: flex;
@@ -341,16 +358,19 @@ def render_article_with_annotations(article_content, endpoint_name, task_path, k
             }}
             .annotation-list {{
                 margin-top: 20px;
-                padding: 15px;
-                background: #f8f9fa;
-                border-radius: 8px;
+                padding: 0;
+                background: transparent;
+                border: none;
+                overflow: visible;
+                height: auto;
             }}
             .annotation-item {{
-                background: white;
-                padding: 10px;
+                background: transparent;
+                padding: 8px 0;
                 margin: 8px 0;
-                border-radius: 4px;
-                border-left: 4px solid #007bff;
+                border: none;
+                border-left: 2px solid #007bff;
+                padding-left: 12px;
             }}
             .annotation-item .quote {{
                 font-style: italic;
@@ -369,9 +389,10 @@ def render_article_with_annotations(article_content, endpoint_name, task_path, k
                 position: fixed;
                 top: 10px;
                 right: 10px;
-                background: #28a745;
-                color: white;
-                padding: 8px 12px;
+                background: rgba(40, 167, 69, 0.1);
+                color: #28a745;
+                padding: 6px 10px;
+                border: 1px solid rgba(40, 167, 69, 0.3);
                 border-radius: 4px;
                 font-size: 12px;
                 z-index: 9999;
@@ -379,7 +400,6 @@ def render_article_with_annotations(article_content, endpoint_name, task_path, k
         </style>
     </head>
     <body>
-        <div class="status" id="status">批注模式已开启 - 选择文本进行批注</div>
         
         <div class="annotation-toolbar" id="toolbar">
             <div class="annotation-form">
@@ -626,16 +646,20 @@ def render_article_with_annotations(article_content, endpoint_name, task_path, k
     </body>
     </html>
     """
-    
+
     # 渲染批注 HTML
-    component_value = components.html(annotation_html, height=800, scrolling=True)
-    
+    if height is not None:
+        component_value = components.html(annotation_html, height=height, scrolling=False)
+    else:
+        # 设置一个足够大的高度来完全展开文章内容（基本覆盖所有文章长度）
+        component_value = components.html(annotation_html, height=10000, scrolling=False)
+
     # 处理来自 JavaScript 的消息
     if component_value is not None and isinstance(component_value, dict):
         if component_value.get('type') == 'annotations_updated':
             annotations = component_value.get('annotations', [])
             endpoint = component_value.get('endpoint')
-            
+
             # 保存批注
             if save_annotations_to_task(task_path, endpoint, annotations):
                 st.success(f"✅ 批注已自动保存（共 {len(annotations)} 条）")
@@ -797,208 +821,132 @@ if st.session_state.selected_task_path:
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # 文章预览（带批注按钮和格式切换）
-                with st.expander("📄 查看文章内容", expanded=False):
-                    if article_content:
-                        # 批注模式切换
-                        annotation_mode = st.toggle(
-                            "✍️ 批注模式",
-                            value=False,
-                            key=f"annotation_mode_{idx}_{endpoint_name}",
-                            help="开启后可直接在文章上批注"
-                        )
-                        
-                        # 手动批注按钮（仅在批注模式下显示）
-                        if annotation_mode:
-                            if st.button("✍️ 手动批注", key=f"manual_annotation_{idx}_{endpoint_name}", help="如果选择文本不工作，点击此按钮手动输入批注"):
-                                st.session_state[f"show_manual_annotation_{idx}_{endpoint_name}"] = True
-                        
-                        st.markdown("---")
-                        
-                        # 手动批注表单（仅在批注模式下显示）
-                        if annotation_mode and st.session_state.get(f"show_manual_annotation_{idx}_{endpoint_name}", False):
-                            st.markdown("### ✍️ 手动批注")
-                            with st.form(key=f"manual_annotation_form_{idx}_{endpoint_name}"):
-                                col_manual1, col_manual2 = st.columns(2)
-                                with col_manual1:
-                                    manual_type = st.selectbox(
-                                        "批注类型",
-                                        ["📝 语言问题", "📊 事实错误", "💡 内容建议", "⚠️ 风格问题", "🔧 格式问题"],
-                                        key=f"manual_type_{idx}_{endpoint_name}"
-                                    )
-                                with col_manual2:
-                                    manual_severity = st.selectbox(
-                                        "严重程度",
-                                        ["low", "medium", "high"],
-                                        index=1,
-                                        key=f"manual_severity_{idx}_{endpoint_name}"
-                                    )
-                                
-                                manual_quote = st.text_area(
-                                    "引用文本",
-                                    placeholder="输入要批注的文本片段",
-                                    key=f"manual_quote_{idx}_{endpoint_name}"
-                                )
-                                
-                                manual_content = st.text_area(
-                                    "批注内容",
-                                    placeholder="输入批注内容",
-                                    key=f"manual_content_{idx}_{endpoint_name}"
-                                )
-                                
-                                col_submit1, col_submit2 = st.columns(2)
-                                with col_submit1:
-                                    if st.form_submit_button("保存批注", use_container_width=True):
-                                        if manual_quote and manual_content:
-                                            # 保存手动批注
-                                            annotation = {
-                                                "id": int(time.time() * 1000),
-                                                "quote": manual_quote,
-                                                "type": manual_type,
-                                                "severity": manual_severity,
-                                                "content": manual_content,
-                                                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                            }
-                                            
-                                            if save_annotations_to_task(st.session_state.selected_task_path, endpoint_name, [annotation]):
-                                                st.success("✅ 批注已保存")
-                                                st.session_state[f"show_manual_annotation_{idx}_{endpoint_name}"] = False
-                                                st.rerun()
-                                        else:
-                                            st.error("请填写引用文本和批注内容")
-                                
-                                with col_submit2:
-                                    if st.form_submit_button("取消", use_container_width=True):
-                                        st.session_state[f"show_manual_annotation_{idx}_{endpoint_name}"] = False
-                                        st.rerun()
-                            
-                            st.markdown("---")
-                        
-                        # 根据批注模式渲染内容
-                        if annotation_mode:
-                            # 批注模式 - 使用内联批注器
-                            render_article_with_annotations(
-                                article_content, 
-                                endpoint_name, 
-                                st.session_state.selected_task_path,
-                                key=f"annotator_{idx}_{endpoint_name}"
+                # 文章预览（直接展开，纯净样式）
+                if article_content:
+                    # 统一使用批注模式渲染（无背景，纯净样式）
+                    render_article_with_annotations(
+                        article_content,
+                        endpoint_name,
+                        st.session_state.selected_task_path,
+                        key=f"annotator_{idx}_{endpoint_name}",
+                        height=None  # 设置为None让文章自动展开，不会被截断
+                    )
+                    
+                    # 文章渲染完成后的间距
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # 评判区域
+                    st.markdown("### 📊 评判")
+                    
+                    # 加载现有评分（如果有）
+                    existing_rating = existing_judgments.get("ratings", {}).get(endpoint_name, {})
+                    existing_scores = existing_rating.get("scores", {})
+                    
+                    # 总体评分（必填）
+                    overall_score = st.slider(
+                        "⭐ 总体评分",
+                        min_value=1,
+                        max_value=10,
+                        value=existing_scores.get("overall", 5),
+                        key=f"overall_{idx}_{endpoint_name}",
+                        help="必填项：总体评价"
+                    )
+                    
+                    # 细分维度评分（可选，默认5分）
+                    with st.expander("📈 细分维度评分（可选）", expanded=False):
+                        dimension_scores = {}
+                        for dim_key, dim_info in SCORE_DIMENSIONS.items():
+                            dim_score = st.slider(
+                                dim_info["name"],
+                                min_value=1,
+                                max_value=10,
+                                value=existing_scores.get(dim_key, 5),
+                                key=f"{dim_key}_{idx}_{endpoint_name}",
+                                help=dim_info["help"]
                             )
-                        else:
-                            # 普通预览模式 - 只显示 Markdown
-                            st.markdown(article_content)
-                    else:
-                        st.warning("无法加载文章内容")
-                
-                st.markdown("---")
-                
-                # 评判区域
-                st.markdown("### 📊 评判")
-                
-                # 加载现有评分（如果有）
-                existing_rating = existing_judgments.get("ratings", {}).get(endpoint_name, {})
-                existing_scores = existing_rating.get("scores", {})
-                
-                # 总体评分（必填）
-                overall_score = st.slider(
-                    "⭐ 总体评分",
-                    min_value=1,
-                    max_value=10,
-                    value=existing_scores.get("overall", 5),
-                    key=f"overall_{idx}_{endpoint_name}",
-                    help="必填项：总体评价"
-                )
-                
-                # 细分维度评分（可选，默认5分）
-                with st.expander("📈 细分维度评分（可选）", expanded=False):
-                    dimension_scores = {}
-                    for dim_key, dim_info in SCORE_DIMENSIONS.items():
-                        dim_score = st.slider(
-                            dim_info["name"],
-                            min_value=1,
-                            max_value=10,
-                            value=existing_scores.get(dim_key, 5),
-                            key=f"{dim_key}_{idx}_{endpoint_name}",
-                            help=dim_info["help"]
-                        )
-                        dimension_scores[dim_key] = dim_score
-                
-                # 标签选择
-                st.markdown("**🏷️ 标签**")
-                existing_tags = existing_rating.get("tags", [])
-                selected_tags = st.multiselect(
-                    "选择标签",
-                    PRESET_TAGS,
-                    default=existing_tags,
-                    key=f"tags_{idx}_{endpoint_name}",
-                    label_visibility="collapsed"
-                )
-                
-                # 评语
-                notes = st.text_area(
-                    "💬 评语",
-                    value=existing_rating.get("notes", ""),
-                    height=100,
-                    key=f"notes_{idx}_{endpoint_name}",
-                    placeholder="添加详细评价..."
-                )
-                
-                # 🎯 核心功能：采用并计划发布
-                existing_published = existing_rating.get("published", False)
-                is_published = st.checkbox(
-                    "✅ 采用，计划发布",
-                    value=existing_published,
-                    key=f"publish_{idx}_{endpoint_name}",
-                    help="勾选此项标记该结果将被发布"
-                )
-                
-                # 如果标记为发布，显示发布信息输入
-                publish_info = None
-                if is_published:
-                    with st.expander("📝 发布信息（可选）", expanded=existing_published):
-                        existing_publish_info = existing_rating.get("publish_info", {}) or {}
-                        
-                        publish_platforms = st.multiselect(
-                            "发布平台",
-                            ["微信公众号", "知乎", "掘金", "CSDN", "个人博客", "其他"],
-                            default=existing_publish_info.get("platforms", []),
-                            key=f"platforms_{idx}_{endpoint_name}"
-                        )
-                        
-                        publish_urls = st.text_area(
-                            "发布链接（每行一个）",
-                            value="\n".join(existing_publish_info.get("urls", [])),
-                            key=f"urls_{idx}_{endpoint_name}",
-                            height=60
-                        )
-                        
-                        publish_info = {
-                            "published_at": existing_publish_info.get("published_at") or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "platforms": publish_platforms,
-                            "urls": [url.strip() for url in publish_urls.split("\n") if url.strip()],
-                            "performance": existing_publish_info.get("performance", {})
-                        }
-                
-                # 选为最佳
-                is_best = st.checkbox(
-                    "🏆 选为最佳",
-                    value=(existing_judgments.get("best_choice") == endpoint_name),
-                    key=f"best_{idx}_{endpoint_name}"
-                )
-                
-                if is_best:
-                    best_choice = endpoint_name
-                
-                # 收集当前评判数据
-                current_ratings[endpoint_name] = {
-                    "scores": {
-                        "overall": overall_score,
-                        **dimension_scores
-                    },
-                    "tags": selected_tags,
-                    "notes": notes,
-                    "published": is_published,
-                    "publish_info": publish_info
-                }
+                            dimension_scores[dim_key] = dim_score
+                    
+                    # 标签选择
+                    st.markdown("**🏷️ 标签**")
+                    existing_tags = existing_rating.get("tags", [])
+                    selected_tags = st.multiselect(
+                        "选择标签",
+                        PRESET_TAGS,
+                        default=existing_tags,
+                        key=f"tags_{idx}_{endpoint_name}",
+                        label_visibility="collapsed"
+                    )
+                    
+                    # 评语
+                    notes = st.text_area(
+                        "💬 评语",
+                        value=existing_rating.get("notes", ""),
+                        height=100,
+                        key=f"notes_{idx}_{endpoint_name}",
+                        placeholder="添加详细评价..."
+                    )
+                    
+                    # 🎯 核心功能：采用并计划发布
+                    existing_published = existing_rating.get("published", False)
+                    is_published = st.checkbox(
+                        "✅ 采用，计划发布",
+                        value=existing_published,
+                        key=f"publish_{idx}_{endpoint_name}",
+                        help="勾选此项标记该结果将被发布"
+                    )
+                    
+                    # 如果标记为发布，显示发布信息输入
+                    publish_info = None
+                    if is_published:
+                        with st.expander("📝 发布信息（可选）", expanded=existing_published):
+                            existing_publish_info = existing_rating.get("publish_info", {}) or {}
+                            
+                            publish_platforms = st.multiselect(
+                                "发布平台",
+                                ["微信公众号", "知乎", "掘金", "CSDN", "个人博客", "其他"],
+                                default=existing_publish_info.get("platforms", []),
+                                key=f"platforms_{idx}_{endpoint_name}"
+                            )
+                            
+                            publish_urls = st.text_area(
+                                "发布链接（每行一个）",
+                                value="\n".join(existing_publish_info.get("urls", [])),
+                                key=f"urls_{idx}_{endpoint_name}",
+                                height=60
+                            )
+                            
+                            publish_info = {
+                                "published_at": existing_publish_info.get("published_at") or datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "platforms": publish_platforms,
+                                "urls": [url.strip() for url in publish_urls.split("\n") if url.strip()],
+                                "performance": existing_publish_info.get("performance", {})
+                            }
+                    
+                    # 选为最佳
+                    is_best = st.checkbox(
+                        "🏆 选为最佳",
+                        value=(existing_judgments.get("best_choice") == endpoint_name),
+                        key=f"best_{idx}_{endpoint_name}"
+                    )
+                    
+                    if is_best:
+                        st.session_state.best_choice = endpoint_name
+                    
+                    # 收集当前评判数据
+                    current_ratings[endpoint_name] = {
+                        "scores": {
+                            "overall": overall_score,
+                            **dimension_scores
+                        },
+                        "tags": selected_tags,
+                        "notes": notes,
+                        "published": is_published,
+                        "publish_info": publish_info
+                    }
+                    
+                    st.markdown("---")
+                else:
+                    st.warning("无法加载文章内容")
         
         # 整体评价
         st.markdown("---")
@@ -1126,18 +1074,18 @@ with st.sidebar:
     st.markdown("### 💡 使用提示")
     st.markdown("""
     1. 从下拉框选择要评判的并发任务
-    2. 展开文章内容，切换 Markdown/HTML 格式查看
-    3. 开启"✍️ 批注模式"可直接在文章上批注
+    2. 展开文章内容查看（纯净 Markdown 样式）
+    3. 直接选择文本进行批注（精准定位问题）
     4. 为每个端点打分、添加标签和评语
     5. 勾选"采用，计划发布"标记发布
     6. 选择最佳结果
     7. 保存评判
     
-    **💡 提示**: 
-    - 批注模式：开启开关→选择文本→填写批注→保存，文本会高亮显示
+    **💡 批注技巧**: 
+    - 选择文本→填写批注→保存，文本会高亮显示
     - 如果拖拽选择不工作，可以尝试双击文本选择
-    - 如果选择文本不工作，点击"✍️ 手动批注"按钮
     - 按 ESC 键可以关闭批注工具栏
+    - 批注会按类型和严重程度分类显示
     """)
 
 # ============================================================================
@@ -1370,7 +1318,7 @@ if False and st.session_state.show_annotation_modal and st.session_state.annotat
             st.rerun()
     
     # 渲染批注 HTML
-    component_value = components.html(annotation_html, height=800, scrolling=True)
+    component_value = components.html(annotation_html, height=2000, scrolling=False)
     
     # 处理来自 JavaScript 的消息
     if component_value is not None and isinstance(component_value, dict):

@@ -7,11 +7,14 @@ import streamlit as st
 from pathlib import Path
 
 
-def load_anthropic_theme():
+def load_anthropic_theme(force_light_mode: bool = True):
     """
     加载 Anthropic 风格的 CSS 主题
     
     在任何页面的开头调用此函数即可应用主题：
+    
+    Args:
+        force_light_mode: 是否强制使用亮色模式，默认True（禁用暗黑模式）
     
     Example:
         ```python
@@ -20,8 +23,11 @@ def load_anthropic_theme():
         # 页面配置
         st.set_page_config(...)
         
-        # 加载主题
+        # 加载主题（强制亮色模式）
         load_anthropic_theme()
+        
+        # 或者允许暗黑模式
+        load_anthropic_theme(force_light_mode=False)
         ```
     """
     # 获取 CSS 文件路径
@@ -31,6 +37,28 @@ def load_anthropic_theme():
     try:
         with open(css_path, "r", encoding="utf-8") as f:
             css_content = f.read()
+        
+        # 如果强制亮色模式，移除暗黑模式相关样式
+        if force_light_mode:
+            # 添加CSS来覆盖暗黑模式
+            force_light_css = """
+            /* 强制亮色模式 - 覆盖所有暗黑模式设置 */
+            html, body, .stApp, [data-testid="stAppViewContainer"] {
+                color-scheme: light !important;
+            }
+            
+            /* 禁用系统暗黑模式偏好 */
+            @media (prefers-color-scheme: dark) {
+                .stApp {
+                    background-color: #F5F1E8 !important;
+                }
+                
+                [data-testid="stSidebar"] {
+                    background-color: #FAFAF8 !important;
+                }
+            }
+            """
+            css_content = css_content + "\n" + force_light_css
         
         # 注入到页面
         st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
@@ -64,7 +92,8 @@ def apply_page_config(
     page_title: str = "AI内容创作与分发平台",
     page_icon: str = "🚀",
     layout: str = "wide",
-    initial_sidebar_state: str = "expanded"
+    initial_sidebar_state: str = "expanded",
+    force_light_mode: bool = True
 ):
     """
     应用统一的页面配置和主题
@@ -74,13 +103,17 @@ def apply_page_config(
         page_icon: 页面图标
         layout: 布局方式 ("centered" 或 "wide")
         initial_sidebar_state: 侧边栏初始状态 ("expanded" 或 "collapsed")
+        force_light_mode: 是否强制使用亮色模式，默认True（禁用暗黑模式）
         
     Example:
         ```python
         from core.utils.theme_loader import apply_page_config
         
-        # 一行代码完成配置和主题加载
+        # 一行代码完成配置和主题加载（强制亮色模式）
         apply_page_config(page_title="频道管理", page_icon="📡")
+        
+        # 允许暗黑模式
+        apply_page_config(page_title="频道管理", page_icon="📡", force_light_mode=False)
         ```
     """
     # 设置页面配置
@@ -92,7 +125,7 @@ def apply_page_config(
     )
     
     # 加载主题
-    load_anthropic_theme()
+    load_anthropic_theme(force_light_mode=force_light_mode)
 
 
 # 常用的 HTML 组件生成函数
