@@ -93,6 +93,17 @@ with st.form("web2md_form"):
             help="'Download to Local': Download images to local directory | 'Upload to Image Bed': Upload images to online image hosting service | 'Keep Original URLs': Keep original image URLs unchanged"
         )
 
+        # 自动使用默认图床（当选择"Upload to Image Bed"时）
+        selected_image_bed = None
+        if image_handling == "Upload to Image Bed":
+            try:
+                from core.utils.img_bed import get_default_image_bed
+                selected_image_bed = get_default_image_bed()
+                if not selected_image_bed:
+                    st.warning("未找到默认图床，请前往图床配置页面设置默认图床")
+            except ImportError:
+                st.warning("图床模块未找到，将跳过图床上传")
+
         # 显示图片处理错误选项
         show_image_errors = st.checkbox(
             "Show image processing errors in Markdown",
@@ -152,7 +163,8 @@ if submitted and url:
                 viewport_height=viewport_height,
                 remove_selectors=selectors_to_remove,
                 image_handling=image_handling,
-                show_image_errors=show_image_errors
+                show_image_errors=show_image_errors,
+                image_bed_config=selected_image_bed
             )
 
             # 解析返回结果
@@ -184,7 +196,10 @@ if submitted and url:
                                     file_size = img_file.stat().st_size
                                     st.markdown(f"- {img_file.name} ({file_size:,} bytes)")
                 elif image_handling == "Upload to Image Bed":
-                    st.info(f"Images uploaded to image hosting service")
+                    if selected_image_bed:
+                        st.info(f"Images uploaded to {selected_image_bed['name']} ({selected_image_bed['type']})")
+                    else:
+                        st.info(f"Images uploaded to image hosting service")
                 elif image_handling == "Keep Original URLs":
                     st.info("ℹ️ Original image URLs preserved")
 
