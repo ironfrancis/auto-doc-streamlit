@@ -1,110 +1,147 @@
-# 视觉压缩的革命：DeepSeek用"看图识字"重新定义AI效率
+# 三百年猜想被推翻：数学家终于找到了「穿不过自己」的形状
 
-**当所有人都在追求更大的模型、更长的上下文时，DeepSeek却反其道而行之——用一种近乎"反直觉"的方式，让AI学会了用眼睛"压缩"信息。**
+**一个看似简单的赌局，引发了长达三个世纪的数学探索**
 
-这听起来像科幻小说，但现实就是这么魔幻。
+你有没有想过这样一个问题：
 
-刚刚，DeepSeek开源了一个只有3B参数的OCR模型，却能做到一件让人瞠目结舌的事：**把10倍的文本信息压缩到视觉token里，准确率还能保持97%**。
+能不能在一个骰子上钻个洞，让另一个同样大小的骰子从中穿过？
 
-更夸张的是，即使压缩到20倍，准确率依然有60%。
+听起来不太可能对吧？但17世纪末，英王查理一世的侄子——鲁珀特亲王就用实际行动证明：**可以**。
 
-这不仅仅是一个OCR模型的突破，更像是AI处理信息方式的一次范式转换。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_gif/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtErBiaJ5eqMt5dxHF4BB8m0pbpb5nOJbcKAKv7MFjOW5ibuoeA1FSbgjw/640?wx_fmt=gif&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1#imgIndex=0)
 
-![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWicpT70OCpnU3DuvXR7LDwBkt0DqchibeSCLm7mibApkMBkmicwOpJlD429rUibR4WGJ55icw9CNRic0btuw/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1#imgIndex=0)
+这个反直觉的现象，开启了一段持续三百多年的数学冒险。而就在今年8月，这个故事迎来了一个意外的转折。
 
-### 一个违背常识的发现
+## 从一场赌局说起
 
-传统思维告诉我们：要处理更多信息，就需要更大的模型、更多的token、更强的算力。
+故事要从温莎城堡说起。
 
-但DeepSeek的研究团队却发现了一个反常识的现象：**一张包含文档的图像，能用比等效文本少得多的token来表示同样丰富的信息**。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtuPAZXLqhZNSRvt40KUOIQMsItFwMfgNDrQrmibHae6xvyu3qTz74OZg/640?wx_fmt=png&from=appmsg&tp=webp&wxfrom=5&wx_lazy=1#imgIndex=1)
 
-这个发现的威力有多大？
+退休后的鲁珀特亲王在实验室里研究冶金和玻璃制造，有人跟他打赌：不可能在一个立方体上钻出通道，让另一个同样大小的立方体穿过。
 
-想象一下，你要处理一份10万字的报告。传统方式需要10万个文本token，而通过DeepSeek-OCR的视觉压缩，可能只需要1万个视觉token就能保存几乎所有信息。
+鲁珀特赢了。
 
-这不是简单的数据压缩，而是一种全新的信息表示方式。
+1693年，数学家John Wallis记录下这个故事，并给出了严格的数学证明：**如果沿着立方体的内对角线方向钻一条通道，确实可以让另一个相同大小的立方体穿过**。
 
-### 技术突破背后的深层逻辑
+这个契合度有多紧密？如果第二个立方体只大4%，就卡住了。
 
-DeepSeek-OCR的核心创新在于重新定义了"看"和"读"的关系。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtib9xRicptpu4PvUcpo4e0YHjk2tgHdsGvadXQ6Ctr6QvVBpwMibWpAF8w/640?wx_fmt=png&from=appmsg#imgIndex=2)
 
-传统OCR是先"看"再"读"，而DeepSeek-OCR是把"看"本身变成了一种高效的"记忆"方式。
+## 一个看似普遍的性质
 
-![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWicpT70OCpnU3DuvXR7LDwBkKFrtIS9JRK3bOwkPWnibR0Ak0lSPGVHAXIVgqlRCgsPibNL1J4YUDRdQ/640?wx_fmt=png&from=appmsg#imgIndex=3)
+这种能让自己穿过自己的特性，被数学家称为「**鲁珀特性质**」。
 
-其架构设计也颇具巧思：
+一个自然的问题随之而来：还有哪些形状也有这种神奇的性质？
 
-**DeepEncoder**：负责将图像信息压缩成少量但信息密度极高的视觉token
-**MoE解码器**：从压缩的视觉token中重建原始文本
+谷歌工程师Tom Murphy在业余时间深入研究过这个问题。他说：「这个问题太经典了，它会被一遍又一遍地重新发现，**就算是外星人也会遇到它**。」
 
-最精妙的是，DeepEncoder采用了"两段式"设计：前半段用窗口注意力处理高分辨率输入，后半段用全局注意力提取核心特征。这样既保证了信息完整性，又控制了计算成本。
+数学家们主要关注凸多面体——就是那些表面平整、没有凹陷的立体形状。
 
-### 性能表现令人震撼
+但进展异常缓慢：
+- **1693年**：立方体被证明具有鲁珀特性质
+- **1968年**：四面体和八面体也被证实
+- **过去十年**：十二面体、二十面体、足球形状陆续加入名单
 
-数据不会撒谎。在OmniDocBench基准测试中：
+Statistics Austria的数学家Jakob Steininger感慨：「**几百年来，我们只知道立方体具备这种性质**。」
 
-- 仅用100个视觉token，就超越了GOT-OCR2.0（需要256个token）
-- 用不到800个视觉token，就优于MinerU2.0（需要超过6000个token）
-- 单张A100 GPU每天能生成20万页训练数据
+## 一个大胆的猜想
 
-![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWicpT70OCpnU3DuvXR7LDwBkvZt6AAemfYeZ9ze3FSFWptdgqpL7PUoSCV5BZOCvVh6MtvyTIrr6nw/640?wx_fmt=png&from=appmsg#imgIndex=2)
+随着越来越多的形状被证明具有鲁珀特性质，数学家们开始相信一个普遍规律：
 
-更让人惊讶的是，对于不同类型的文档，所需的视觉token数量差异巨大：
-- 幻灯片：64个token就够了
-- 书籍和报告：100个token即可
+**每一个凸多面体都应该具有鲁珀特性质。**
 
-这说明什么？**信息密度不同的内容，确实可以用不同程度的压缩策略**。
+这个猜想看起来如此自然，以至于几乎没人怀疑它的正确性。
 
-### 这个突破意味着什么？
+直到今年8月。
 
-### 重新定义AI的"记忆"方式
+## 「诺珀特」的诞生
 
-如果AI能用视觉方式高效压缩信息，那么传统的"长上下文"问题可能有了全新的解决思路。
+Jakob Steininger和Sergey Yurkevich是从少年时期就认识的老朋友。虽然两人都离开了学术界（一个拿了硕士，一个拿了博士），但他们从未停止探索数学难题。
 
-不是让模型记住更多token，而是让模型学会更高效的记忆方式。
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtiaSdNH1gZDJfFibOafAY61JsKnSUMgebkyFyE0z7c4vuWvu366gOLrew/640?wx_fmt=png&from=appmsg#imgIndex=7)
 
-### 多模态融合的新范式
+「我们三小时前刚吃了披萨，几乎整顿饭都在谈数学，」Steininger说，「**这就是我们平常的样子**。」
 
-DeepSeek-OCR不仅能处理文档，还能解析图表、几何图形、化学公式，甚至理解自然图像。
+五年前，他们偶然看到一个「立方体穿过立方体」的视频，立刻被吸引了。他们开发了搜索鲁珀特通道的算法，并逐渐意识到：也许真的存在「穿不过去」的形状。
 
-![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWicpT70OCpnU3DuvXR7LDwBkk8ymqwbdr69bxmDshhKUaqXr8Aa7ScRRicyPrKx6WtXB8UscVhtgGBQ/640?wx_fmt=png&from=appmsg#imgIndex=9)
+经过数年努力，他们构造出了一个拥有90个顶点、152个面的复杂形状。
 
-这暗示着未来的AI可能不再严格区分"文本理解"和"视觉理解"，而是用统一的压缩表示来处理所有信息。
+他们给它起了个名字：**诺珀特多面体（Noperthedron）**——结合了Rupert和nope（不）。
 
-### 计算资源的革命性节约
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLttWwBwlhr1asPCHHBY8h0Tw2wAga3YfoMq6csQYMS8LHWMEGcicYVibZA/640?wx_fmt=png&from=appmsg#imgIndex=3)
 
-当压缩比达到10倍甚至20倍时，所需的计算资源将大幅下降。这对于资源受限的场景来说，是一个game changer。
+这个形状看起来像一个圆润的水晶花瓶，底部和顶部都很宽。已经有网友用3D打印做了一个，当铅笔筒用。
 
-### 冷静思考：挑战依然存在
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLtOnFX7FJXtpy4eVficgrpujuJVndynlM4ktLjzyTw2TkzZopMcJfHnibQ/640?wx_fmt=png&from=appmsg#imgIndex=9)
 
-当然，这项技术也不是万能的。
+## 证明的关键
 
-当压缩比超过10倍时，性能开始明显下降。研究团队认为可能的原因包括：
-- 复杂版面布局导致的信息分布不均
-- 低分辨率下长文本变模糊
+要证明一个形状是「诺珀特」，必须排除**所有可能方向**上存在通道的可能性。
 
-这提醒我们，**任何技术突破都有其边界，关键是找到最佳的应用场景**。
+这是个艰巨的任务。想象一下：
+- 你需要测试无穷多种旋转角度
+- 每种角度对应着高维参数空间中的一个点
+- 你必须证明这个空间里的每一个点都不行
 
-### 对行业的深层启示
+两位数学家的突破在于提出了两个互补的定理：
 
-DeepSeek-OCR的出现，让我们重新思考几个根本问题：
+**全局定理**：当阴影明显超出时，可以排除大片区域
+**局部定理**：当阴影只是轻微超出时，可以排除局部邻域
 
-**效率vs规模**：是不是一定要通过增大模型规模来提升能力？还是可以通过更聪明的信息表示方式？
+关键是诺珀特多面体的所有阴影都满足「三顶点」条件——这让局部定理得以发挥作用。
 
-**模态融合的本质**：视觉和文本信息的边界在哪里？未来的AI是否会发展出更统一的信息处理方式？
+他们将参数空间划分为约1800万个微小区域，逐一测试，最终证明：**无论怎样旋转，都找不到通道**。
 
-**开源的价值**：DeepSeek选择开源这项技术，让整个行业都能受益。这种开放态度，可能比技术本身更值得敬佩。
+Steininger说：「它能成立简直是个奇迹。」
 
-### 写在最后
+## 意外还是必然？
 
-DeepSeek-OCR可能只是一个开始。
+有趣的是，在诺珀特被发现之前，数学家们已经注意到一个奇怪的现象：
 
-当AI学会用"视觉"的方式压缩和存储信息时，我们正在见证一种全新的智能范式的诞生。
+对于任何凸多面体，算法要么几乎立刻找到通道，要么完全找不到。没有中间状态。
 
-这不仅仅是技术的进步，更是思维方式的转变：**有时候，解决问题的最佳方案不是正面强攻，而是换个角度思考**。
+约翰斯·霍普金斯大学的Benjamin Grimmer用台式机连续运算两周，测试一个叫「菱方截二十十二面体」的形状。
 
-就像DeepSeek团队所说的："我们或许能通过文本到图像的方法实现近10倍无损上下文压缩。"
+![图片](https://mmbiz.qpic.cn/sz_mmbiz_png/KmXPKA19gWib2WCqcibcvibQ1PVxjHs0hLt6IJlG1wJlpyOqhjESjXVKoZQqrF1pEwBBiaSkib9vDZfxwqNB0XiajYwg/640?wx_fmt=png&from=appmsg#imgIndex=6)
 
-这句话背后，藏着的是对AI未来发展方向的深刻洞察。
+「它似乎就是对任何尝试都毫不妥协，」他说。
 
-**你觉得这种视觉压缩技术，会在哪些场景率先落地？欢迎留言分享你的看法。**
+Tom Murphy更是构造了数亿种不同的形状，算法几乎能为每一种轻松找到通道。只有极少数「顽固分子」例外。
+
+这种强烈对比让一些数学家怀疑：诺珀特确实存在，但极其罕见。
+
+现在，这个猜测得到了证实。
+
+## 这意味着什么？
+
+三百年来，数学家们一直相信的「每个凸多面体都能穿过自己」的假设，被推翻了。
+
+这个结果不仅仅是找到一个反例那么简单。它告诉我们：
+
+**直觉有时会欺骗我们，即使是在看似简单的几何问题上。**
+
+至于未来，还有很多问题等待解答：
+- 还有其他诺珀特形状吗？
+- 菱方截二十十二面体到底是不是诺珀特？
+- 能否找到更简单的诺珀特？
+
+「我们只是谦逊的数学爱好者，热爱这类问题，并会一直这样探索下去，」Steininger说。
+
+---
+
+**写在最后**
+
+从17世纪的一场赌局，到21世纪的计算机证明，这个故事跨越了三个世纪。
+
+它提醒我们：数学的魅力不在于找到预期的答案，而在于发现意料之外的真相。
+
+那些看似显而易见的「常识」，也许只是因为我们还没找到那个例外。
+
+而当你终于找到它时，整个世界都会为之改变。
+
+---
+
+*参考资料：*
+*原文链接：https://www.quantamagazine.org/first-shape-found-that-cant-pass-through-itself-20251024/*
+*论文地址：https://arxiv.org/pdf/2508.18475*

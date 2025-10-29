@@ -4,6 +4,9 @@ import json
 import datetime
 import subprocess
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+import threading
 
 # 使用简化路径管理
 from simple_paths import *
@@ -12,6 +15,8 @@ import streamlit as st
 from language_manager import init_language, get_text, get_language
 # Using simple_paths for path management - get_static_dir, get_md_review_dir, get_json_data_dir are already imported
 import requests
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
 
 # 多语言文本定义
 T = {
@@ -58,6 +63,10 @@ def save_transcribe_history(channel, input_type, input_content, md_result, extra
 init_language()
 
 st.set_page_config(page_title="AI Transcription", layout="wide")
+
+# 加载主题
+load_anthropic_theme()
+
 st.title("Creation and Transcription")
 
 STATIC_DIR = get_static_dir()
@@ -73,36 +82,36 @@ if os.path.exists(CHANNELS_PATH):
             channels_data = json.load(f)
             channels = channels_data.get("channels", [])
     except json.JSONDecodeError as e:
-        st.error(f"❌ 频道配置文件格式错误: {e}")
+        st.error(f"频道配置文件格式错误: {e}")
         channels = []
     except Exception as e:
-        st.error(f"❌ 加载频道配置失败: {e}")
+        st.error(f"加载频道配置失败: {e}")
         channels = []
 else:
-    st.error(f"❌ 频道配置文件不存在: {CHANNELS_PATH}")
+    st.error(f"频道配置文件不存在: {CHANNELS_PATH}")
     channels = []
 
 # 现在所有频道都使用统一的扁平结构
 channel_names = [c.get("name", f'频道 {idx}') for idx, c in enumerate(channels)] if channels else []
-# 频道和端点选择同一行
-sel_col1, sel_col2 = st.columns([1, 1])
+# 频道和端点选择同一行（改为三列）
+sel_col1, sel_col2, sel_col3 = st.columns([1, 1, 1])
 
 with sel_col1:
     selected_channel = st.selectbox(get_text("select_channel"), ["-"] + channel_names, key="channel_selector")
 
+# 获取频道对象（现在统一使用扁平结构）
+channel_obj = next((c for c in channels if c.get("name") == selected_channel), None)
+
+# 读取LLM端点
+if os.path.exists(ENDPOINTS_PATH):
+    with open(ENDPOINTS_PATH, "r", encoding="utf-8") as f:
+        endpoints = json.load(f)
+else:
+    endpoints = []
+
+endpoint_names = [ep["name"] for ep in endpoints] if endpoints else []
+
 with sel_col2:
-    # 获取频道对象（现在统一使用扁平结构）
-    channel_obj = next((c for c in channels if c.get("name") == selected_channel), None)
-    
-    # 读取LLM端点
-    if os.path.exists(ENDPOINTS_PATH):
-        with open(ENDPOINTS_PATH, "r", encoding="utf-8") as f:
-            endpoints = json.load(f)
-    else:
-        endpoints = []
-    
-    endpoint_names = [ep["name"] for ep in endpoints] if endpoints else []
-    
     # 联动：频道指定端点优先选中
     if endpoint_names:
         if channel_obj and channel_obj.get("llm_endpoint") in endpoint_names:
@@ -111,205 +120,894 @@ with sel_col2:
             endpoint_index = 0
         selected_endpoint = st.selectbox("选择LLM端点", endpoint_names, index=endpoint_index, key="endpoint_selector")
     else:
-        st.error("❌ 没有找到可用的LLM端点")
+        st.error(f"没有找到可用的LLM端点")
         selected_endpoint = ""
-    
-    # 移除端点配置详情显示
 
-# 移除频道配置信息显示
+with sel_col3:
+    # 并发端点多选框
+    if endpoint_names:
+        # 获取频道绑定的并发端点列表
+        default_concurrent_endpoints = []
+        if channel_obj:
+            concurrent_endpoints_config = channel_obj.get("concurrent_endpoints", [])
+            # 只选择在当前可用端点列表中的端点
+            default_concurrent_endpoints = [ep for ep in concurrent_endpoints_config if ep in endpoint_names]
+        
+        selected_concurrent_endpoints = st.multiselect(
+            "并发端点（多选）",
+            endpoint_names,
+            default=default_concurrent_endpoints,
+            key="concurrent_endpoints_selector",
+            help="选择多个端点进行并发转写"
+        )
+
+    else:
+        selected_concurrent_endpoints = []
+
+# ============================================================================
+# 并发历史管理函数
+# ============================================================================
+
+def get_concurrent_history_dir():
+    """获取并发历史目录"""
+    history_dir = os.path.join(get_workspace_dir(), "concurrent_history")
+    os.makedirs(history_dir, exist_ok=True)
+    return history_dir
+
+
+def save_concurrent_history(task_id, channel, results, saved_files):
+    """
+    保存并发转写历史到 JSON 文件
+    
+    参数:
+        task_id: 任务ID（时间戳）
+        channel: 频道名称
+        results: 结果字典
+        saved_files: 保存的文件列表
+    """
+    history_dir = get_concurrent_history_dir()
+    
+    # 构建元数据
+    metadata = {
+        "id": task_id,
+        "channel": channel,
+        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "results": []
+    }
+    
+    # 添加每个端点的结果信息（只保存必要信息，不保存内容）
+    for ep_name, result_data in results.items():
+        result_info = {
+            "endpoint": ep_name,
+            "success": result_data["success"],
+            "elapsed": result_data["elapsed"],
+            "file_path": None  # 初始化为 None
+        }
+        
+        # 如果成功，找到对应的文件路径
+        if result_data["success"]:
+            for saved_ep, saved_path in saved_files:
+                if saved_ep == ep_name:
+                    result_info["file_path"] = saved_path
+                    break
+        else:
+            # 失败时保存错误信息
+            result_info["error"] = result_data["result"]
+        
+        metadata["results"].append(result_info)
+    
+    # 统计信息
+    success_count = sum(1 for r in results.values() if r["success"])
+    metadata["statistics"] = {
+        "total": len(results),
+        "success": success_count,
+        "failed": len(results) - success_count,
+        "avg_time": sum(r["elapsed"] for r in results.values()) / len(results) if results else 0
+    }
+    
+    # 保存到 JSON 文件
+    json_path = os.path.join(history_dir, f"{task_id}_{channel.replace('/', '_').replace(' ', '_')}.json")
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(metadata, f, ensure_ascii=False, indent=2)
+    
+    return json_path
+
+
+def load_concurrent_history_list():
+    """
+    加载并发历史记录列表
+    
+    返回:
+        列表，每项包含 (display_name, file_path, metadata)
+    """
+    history_dir = get_concurrent_history_dir()
+    history_files = sorted(
+        [f for f in os.listdir(history_dir) if f.endswith('.json')],
+        reverse=True  # 最新的在前
+    )
+    
+    history_list = []
+    for filename in history_files:
+        file_path = os.path.join(history_dir, filename)
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                metadata = json.load(f)
+            
+            # 构建显示名称
+            timestamp = metadata.get("timestamp", "未知时间")
+            channel = metadata.get("channel", "未知频道")
+            stats = metadata.get("statistics", {})
+            total = stats.get("total", 0)
+            success = stats.get("success", 0)
+            
+            display_name = f"{timestamp} | {channel} | {success}/{total} 成功"
+            history_list.append((display_name, file_path, metadata))
+        except Exception as e:
+            # 忽略损坏的文件
+            continue
+    
+    return history_list
+
+
+def load_concurrent_history(file_path):
+    """
+    从 JSON 文件加载并发历史
+    
+    返回:
+        metadata 字典
+    """
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+# ============================================================================
+# 输入区
+# ============================================================================
 
 # 输入区堆叠
-md_input = st.text_area("Markdown", height=100, key="md_input_1_Creation")
+md_input = st.text_area("Markdown", height=200, key="md_input_1_Creation")
 text_input = st.text_area("Text", height=100, key="text_input_1_Creation")
 link_input = st.text_area("Link", height=60, key="link_input_1_Creation")
 
-# AI转写按钮单独一行
-if st.button(get_text("transcribe_btn")):
+# AI转写按钮 - 美化样式
+st.markdown("""
+<style>
+    /* 转写按钮区域样式 */
+    .transcribe-section {
+        margin: 30px 0 20px 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #FAFAF8 0%, #F5F1E8 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    
+    /* 自定义转写按钮样式 - 使用更强的选择器 */
+    div[data-testid="stButton"] > button[kind="primary"],
+    button[data-testid="stBaseButton-primary"] {
+        background: linear-gradient(135deg, #E8957B 0%, #D97A5E 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 24px 56px !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 4px 12px rgba(233, 149, 123, 0.3) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        width: 100% !important;
+        height: auto !important;
+        cursor: pointer !important;
+        position: relative !important;
+        overflow: hidden !important;
+        min-height: 60px !important;
+        max-height: none !important;
+    }
+    
+    /* 确保按钮内部的内容也统一 */
+    button[data-testid="stBaseButton-primary"] div[data-testid="stMarkdownContainer"],
+    button[data-testid="stBaseButton-primary"] div[data-testid="stMarkdownContainer"] p {
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+    }
+    
+    div[data-testid="stButton"] > button[kind="primary"]:hover,
+    button[data-testid="stBaseButton-primary"]:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 8px 24px rgba(233, 149, 123, 0.45) !important;
+        background: linear-gradient(135deg, #D97A5E 0%, #C86A4E 100%) !important;
+    }
+    
+    div[data-testid="stButton"] > button[kind="primary"]:active,
+    button[data-testid="stBaseButton-primary"]:active {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 8px rgba(233, 149, 123, 0.35) !important;
+    }
+    
+    /* 按钮图标样式 */
+    div[data-testid="stButton"] > button[kind="primary"] svg,
+    button[data-testid="stBaseButton-primary"] svg {
+        vertical-align: middle !important;
+        margin-right: 8px !important;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) !important;
+    }
+    
+    /* 禁用状态样式 - 保持相同的尺寸 */
+    div[data-testid="stButton"] > button[kind="primary"]:disabled,
+    button[data-testid="stBaseButton-primary"]:disabled {
+        background: linear-gradient(135deg, #D4C5B0 0%, #C4B19D 100%) !important;
+        cursor: not-allowed !important;
+        opacity: 0.65 !important;
+        transform: none !important;
+        /* 确保禁用状态下尺寸不变 */
+        padding: 24px 56px !important;
+        min-height: 60px !important;
+        max-height: none !important;
+        height: auto !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 创建按钮容器（两个按钮并排）
+col_left, col_btn1, col_btn2, col_right = st.columns([1, 1.2, 1.2, 1])
+
+with col_btn1:
+    # 普通AI转写按钮
+    button_label = "AI转写"
+    transcribe_clicked = st.button(button_label, key="transcribe_main_button", type="primary", use_container_width=True)
+
+with col_btn2:
+    # 并发转写按钮
+    concurrent_transcribe_clicked = st.button(
+        "并发转写", 
+        key="concurrent_transcribe_button", 
+        type="primary", 
+        use_container_width=True,
+        disabled=(not selected_concurrent_endpoints),  # 如果没有选择并发端点则禁用
+        help="使用多个端点同时进行转写" if selected_concurrent_endpoints else "请先在右侧选择并发端点"
+    )
+
+# 按钮下方添加留白
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ============================================================================
+# 核心抽象函数：统一的 LLM 端点调用
+# ============================================================================
+
+def call_single_llm_endpoint(endpoint_config, prompt, timeout=180):
+    """
+    统一的 LLM 端点调用函数
+    
+    参数:
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        timeout: 超时时间（秒）
+    
+    返回:
+        (success: bool, result: str, elapsed_time: float)
+        - success: 是否成功
+        - result: 成功时返回 markdown 内容，失败时返回错误信息
+        - elapsed_time: 请求耗时（秒）
+    """
+    start_time = time.time()
+    
+    try:
+        api_type = endpoint_config.get("api_type", "")
+        api_url = endpoint_config.get("api_url", "").strip()
+        api_key = endpoint_config.get("api_key", "")
+        model = endpoint_config.get("model", "")
+        is_openai = endpoint_config.get("is_openai_compatible", False)
+        temperature = endpoint_config.get("temperature", 0.7)
+        
+        # 根据 API 类型构建请求
+        if is_openai:
+            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            data = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature
+            }
+            resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
+            
+        elif api_type == "Magic":
+            # Magic API 支持两种格式
+            if "api/chat" in api_url:
+                # 新版本 Magic API
+                headers = {"api-key": api_key, "Content-Type": "application/json"}
+                data = {
+                    "message": prompt,
+                    "conversation_id": "",
+                    "model": model if model else "magic-chat"
+                }
+            else:
+                # 旧版本 Magic API (OpenAI 兼容)
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                data = {
+                    "model": model if model else "magic-chat",
+                    "messages": [
+                        {"role": "system", "content": "你是一个专业的AI写作助手。"},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": temperature,
+                    "stream": False,
+                    "max_tokens": 4000
+                }
+            resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
+        else:
+            elapsed = time.time() - start_time
+            return (False, f"不支持的 API 类型: {api_type}", elapsed)
+        
+        elapsed = time.time() - start_time
+        
+        # 解析响应
+        if resp.status_code == 200:
+            try:
+                result = resp.json()
+                # 尝试解析 Magic API 格式
+                if "data" in result and "messages" in result["data"] and result["data"]["messages"]:
+                    md_result = result["data"]["messages"][0]["message"]["content"]
+                # 尝试解析 OpenAI 格式
+                else:
+                    md_result = result["choices"][0]["message"]["content"]
+                return (True, md_result, elapsed)
+            except Exception as e:
+                return (False, f"解析响应失败: {str(e)}\n响应内容: {resp.text[:200]}", elapsed)
+        else:
+            return (False, f"HTTP {resp.status_code}: {resp.text[:200]}", elapsed)
+    
+    except requests.exceptions.Timeout:
+        elapsed = time.time() - start_time
+        return (False, f"请求超时（{timeout}秒）", elapsed)
+    except requests.exceptions.ConnectionError:
+        elapsed = time.time() - start_time
+        return (False, "连接失败，请检查网络或 API 地址", elapsed)
+    except requests.exceptions.RequestException as e:
+        elapsed = time.time() - start_time
+        return (False, f"请求异常: {str(e)}", elapsed)
+    except Exception as e:
+        elapsed = time.time() - start_time
+        return (False, f"未知错误: {str(e)}", elapsed)
+
+
+def extract_input_content(md_input, text_input, link_input):
+    """
+    从输入框提取和整合内容
+    
+    参数:
+        md_input: Markdown 输入
+        text_input: 文本输入
+        link_input: 链接输入
+    
+    返回:
+        整合后的输入内容字符串
+    """
+    input_parts = []
+    if md_input.strip():
+        input_parts.append(f"采集到的文章:{md_input.strip()}\n")
+    if text_input.strip():
+        input_parts.append(f"用户的想法或灵感:{text_input.strip()}\n")
+    if link_input.strip():
+        try:
+            from gzh_url2md import fetch_and_convert_to_md
+            md_content = fetch_and_convert_to_md(link_input.strip())
+            if md_content:
+                input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析后的Markdown内容:\n{md_content}")
+            else:
+                input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析失败，请检查链接是否正确")
+        except Exception as e:
+            input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析网页内容时出错: {str(e)}")
+    return "\n\n".join(input_parts)
+
+
+def build_full_prompt(channel_obj, selected_channel, input_content):
+    """
+    构建完整的提示词
+    
+    参数:
+        channel_obj: 频道对象
+        selected_channel: 选中的频道名称
+        input_content: 输入内容
+    
+    返回:
+        完整的提示词字符串
+    """
+    prompt_parts = [f"# 频道信息\n频道：{selected_channel}"]
+    
+    # 添加频道描述
+    channel_description = channel_obj.get("description", "") if channel_obj else ""
+    if channel_description:
+        prompt_parts.append(f"# 频道描述\n{channel_description}")
+    
+    # 添加当前时间
+    current_time = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
+    prompt_parts.append(f"# 当前时间\n现在是：{current_time}")
+    
+    # 添加内容规则
+    if channel_obj:
+        content_rules = channel_obj.get("content_rules", {})
+        if content_rules:
+            prompt_parts.append("# 内容规范要求")
+            
+            # 目标受众
+            target_audience = content_rules.get("target_audience", "")
+            if target_audience:
+                prompt_parts.append(f"**目标受众:** {target_audience}")
+            
+            # 写作风格
+            writing_style = content_rules.get("writing_style", {})
+            if writing_style:
+                prompt_parts.append("**写作风格要求:**")
+                if writing_style.get("title"):
+                    prompt_parts.append(f"- 标题风格: {writing_style['title']}")
+                if writing_style.get("tone"):
+                    prompt_parts.append(f"- 写作语气: {writing_style['tone']}")
+                if writing_style.get("depth"):
+                    prompt_parts.append(f"- 内容深度: {writing_style['depth']}")
+            
+            # 技术规则
+            technical_rules = content_rules.get("technical_rules", [])
+            if technical_rules:
+                prompt_parts.append("**技术要求:**")
+                for rule in technical_rules:
+                    prompt_parts.append(f"- {rule}")
+    
+    # 添加处理内容
+    prompt_parts.append(f"# 处理内容\n{input_content}")
+    
+    return "\n\n".join(prompt_parts)
+
+# ============================================================================
+# 普通转写逻辑（使用抽象函数）
+# ============================================================================
+
+if transcribe_clicked:
     if not (md_input.strip() or text_input.strip() or link_input.strip()):
         st.warning("请至少输入一项内容！" if get_language()=="zh" else "Please input at least one field!")
     else:
-        # 根据有值的输入框拼接内容
-        input_parts = []
-        if md_input.strip():
-            input_parts.append(f"采集到的文章:{md_input.strip()}\n")
-        if text_input.strip():
-            input_parts.append(f"用户的想法或灵感:{text_input.strip()}\n")
-        if link_input.strip():
-            try:
-                from gzh_url2md import fetch_and_convert_to_md
-                md_content = fetch_and_convert_to_md(link_input.strip())
-                if md_content:
-                    input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析后的Markdown内容:\n{md_content}")
-                else:
-                    input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析失败，请检查链接是否正确")
-            except Exception as e:
-                input_parts.append(f"原文链接[Link]\n{link_input.strip()}\n\n解析网页内容时出错: {str(e)}")
-        input_content = "\n\n".join(input_parts)
+        # 提取输入内容（使用抽象函数）
+        input_content = extract_input_content(md_input, text_input, link_input)
         
-        # 获取频道描述（现在统一使用扁平结构）
-        channel_description = channel_obj.get("description", "") if channel_obj else ""
-
-        # 构建完整的提示词
-        prompt_parts = [f"# 频道信息\n频道：{selected_channel}"]
-
-        # 添加频道描述（角色定义）
-        if channel_description:
-            prompt_parts.append(f"# 频道描述\n{channel_description}")
-
-        # 添加当前时间说明
-        current_time = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
-        prompt_parts.append(f"# 当前时间\n现在是：{current_time}")
-
-        # 添加内容规则（提示词要求）
-        if channel_obj:
-            content_rules = channel_obj.get("content_rules", {})
-            if content_rules:
-                prompt_parts.append("# 内容规范要求")
-
-                # 目标受众
-                target_audience = content_rules.get("target_audience", "")
-                if target_audience:
-                    prompt_parts.append(f"**目标受众:** {target_audience}")
-
-                # 写作风格
-                writing_style = content_rules.get("writing_style", {})
-                if writing_style:
-                    prompt_parts.append("**写作风格要求:**")
-                    if writing_style.get("title"):
-                        prompt_parts.append(f"- 标题风格: {writing_style['title']}")
-                    if writing_style.get("tone"):
-                        prompt_parts.append(f"- 写作语气: {writing_style['tone']}")
-                    if writing_style.get("depth"):
-                        prompt_parts.append(f"- 内容深度: {writing_style['depth']}")
-
-                # 技术规则
-                technical_rules = content_rules.get("technical_rules", [])
-                if technical_rules:
-                    prompt_parts.append("**技术要求:**")
-                    for rule in technical_rules:
-                        prompt_parts.append(f"- {rule}")
+        # 构建完整的提示词（使用抽象函数）
+        full_prompt = build_full_prompt(channel_obj, selected_channel, input_content)
         
-        # 添加输入内容
-        prompt_parts.append(f"# 处理内容\n{input_content}")
-        
-        # 组合最终提示词
-        full_prompt = "\n\n".join(prompt_parts)
         # 读取端点配置
         ep = next((e for e in endpoints if e["name"] == selected_endpoint), None)
         if not ep:
             st.error("未找到所选LLM端点配置！")
         else:
-            api_type = ep.get("api_type", "")
-            api_url = ep.get("api_url", "").strip()
-            api_key = ep.get("api_key", "")
-            model = ep.get("model", "")
-            is_openai = ep.get("is_openai_compatible", False)
-            temperature = ep.get("temperature", 0.7)
-            try:
-                # 设置合理的超时时间，支持慢速模型
-                timeout = 180  # 延长到180秒，支持慢速模型推理
+            # 显示请求状态
+            with st.spinner(f"正在请求 {selected_endpoint}...（最长等待180秒）"):
+                # 调用统一的端点函数
+                success, result, elapsed = call_single_llm_endpoint(ep, full_prompt, timeout=180)
+            
+            if success:
+                # 转写成功
+                md_result = result
+                st.session_state["ai_md_result"] = md_result
+                md_path = os.path.join(STATIC_DIR, "preview.md")
+                with open(md_path, "w", encoding="utf-8") as f:
+                    f.write(md_result)
                 
-                # 显示请求状态
-                with st.spinner(f"正在请求 {selected_endpoint}...（最长等待180秒）"):
-                    if is_openai:
-                        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-                        data = {"model": model, "messages": [{"role": "user", "content": full_prompt}], "temperature": temperature}
-                        resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
-                    elif api_type == "Magic":
-                        # 优化Magic API请求格式
-                        if "api/chat" in api_url:
-                            # 新版本Magic API
-                            headers = {"api-key": api_key, "Content-Type": "application/json"}
-                            data = {
-                                "message": full_prompt,
-                                "conversation_id": "",
-                                "model": model if model else "magic-chat"
-                            }
-                        else:
-                            # 旧版本Magic API (OpenAI兼容)
-                            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-                            data = {
-                                "model": model if model else "magic-chat",
-                                "messages": [
-                                    {"role": "system", "content": "你是一个专业的AI写作助手。"},
-                                    {"role": "user", "content": full_prompt}
-                                ],
-                                "temperature": temperature,
-                                "stream": False,
-                                "max_tokens": 4000  # 限制token数量提高速度
-                            }
-                        
-                        resp = requests.post(api_url, headers=headers, json=data, timeout=timeout)
-                    else:
-                        st.error("暂不支持该API类型")
-                        resp = None
-                if resp is not None:
-                    if resp.status_code == 200:
-                        try:
-                            result = resp.json()
-                            if "data" in result and "messages" in result["data"] and result["data"]["messages"]:
-                                md_result = result["data"]["messages"][0]["message"]["content"]
-                            else:
-                                md_result = result["choices"][0]["message"]["content"]
-                        except Exception:
-                            md_result = resp.text
-                        st.session_state["ai_md_result"] = md_result
-                        md_path = os.path.join(STATIC_DIR, "preview.md")
-                        with open(md_path, "w", encoding="utf-8") as f:
-                            f.write(md_result)
-                        # 保存历史
-                        save_transcribe_history(selected_channel, "multi", input_content, md_result)
-                        # 额外保存到本地md_review目录
-                        from datetime import datetime
-                        safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
-                        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                        md_review_dir = get_md_review_dir()  # 使用统一的路径管理
-                        os.makedirs(md_review_dir, exist_ok=True)
-                        # 在文件名中加入模型端点名
-                        safe_endpoint = selected_endpoint.replace("/", "_").replace(" ", "_").replace(":", "_")
+                # 保存历史
+                save_transcribe_history(selected_channel, "single", input_content, md_result, 
+                                      extra={"endpoint": selected_endpoint, "elapsed": elapsed})
+                
+                # 保存到本地md_review目录
+                from datetime import datetime
+                safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                md_review_dir = get_md_review_dir()
+                os.makedirs(md_review_dir, exist_ok=True)
+                safe_endpoint = selected_endpoint.replace("/", "_").replace(" ", "_").replace(":", "_")
+                local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                with open(local_md_path, "w", encoding="utf-8") as f:
+                    f.write(md_result)
+                
+                # 用Typora打开
+                try:
+                    subprocess.Popen(["open", "-a", "Typora", local_md_path])
+                except Exception as e:
+                    st.info(f"无法自动打开Typora: {e}")
+                
+                st.success(get_text("success"))
+                
+                # 自动切换到新生成的文章预览
+                # 文件名应该是 {ts}_{safe_channel}_{safe_endpoint}.md
+                new_article_name = f"{ts}_{safe_channel}_{safe_endpoint}.md"
+                st.session_state["current_md_file"] = new_article_name
+                st.session_state["current_md_path"] = local_md_path
+                st.session_state["auto_select_triggered"] = True  # 标记已触发自动选择
+                
+                # 显示成功信息和预览提示
+                st.success(f"✅ 转写成功！文章已保存为: {new_article_name}")
+                st.info(f"⏱️ 耗时: {elapsed:.2f}秒")
+                
+                # 延迟一下再刷新，确保文件写入完成
+                time.sleep(0.5)
+                st.rerun()
+            else:
+                # 转写失败
+                st.error(f"❌ AI转写失败\n\n**错误信息:** {result}\n\n**端点:** {selected_endpoint}\n**耗时:** {elapsed:.2f}秒")
+
+# ============================================================================
+# 并发转写包装器函数
+# ============================================================================
+
+def concurrent_call_wrapper(endpoint_name, endpoint_config, prompt, timeout=180):
+    """
+    并发调用的包装器函数
+    调用核心的 call_single_llm_endpoint 函数，并返回带端点名称的结果
+    
+    参数:
+        endpoint_name: 端点名称
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        timeout: 超时时间（秒）
+    
+    返回:
+        (endpoint_name, success, result, elapsed_time)
+    """
+    success, result, elapsed = call_single_llm_endpoint(endpoint_config, prompt, timeout)
+    return (endpoint_name, success, result, elapsed)
+
+# ============================================================================
+# 并发转写逻辑（使用抽象函数）
+# ============================================================================
+
+if concurrent_transcribe_clicked:
+    if not (md_input.strip() or text_input.strip() or link_input.strip()):
+        st.warning("请至少输入一项内容！" if get_language()=="zh" else "Please input at least one field!")
+    elif not selected_concurrent_endpoints:
+        st.error("请先选择并发端点！")
+    else:
+        st.markdown("### ⚡ 并发转写进行中...")
+        
+        # 提取输入内容（使用抽象函数）
+        input_content = extract_input_content(md_input, text_input, link_input)
+        
+        # 构建完整的提示词（使用抽象函数）
+        full_prompt = build_full_prompt(channel_obj, selected_channel, input_content)
+        
+        # 准备端点配置
+        endpoint_configs = {}
+        for ep_name in selected_concurrent_endpoints:
+            ep = next((e for e in endpoints if e["name"] == ep_name), None)
+            if ep:
+                endpoint_configs[ep_name] = ep
+        
+        if not endpoint_configs:
+            st.error("未找到任何有效的端点配置！")
+        else:
+            # 显示并发信息
+            st.info(f"🚀 正在并发调用 {len(endpoint_configs)} 个端点...")
+            
+            # 创建进度显示
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            # 创建结果容器
+            results = {}
+            saved_files = []
+            completed_count = 0
+            success_count = 0
+            failed_count = 0
+            
+            # 准备保存目录和基础时间戳
+            base_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_channel = selected_channel.replace("/", "_").replace(" ", "_")
+            md_review_dir = get_md_review_dir()
+            os.makedirs(md_review_dir, exist_ok=True)
+            
+            # 使用线程池执行并发请求
+            with ThreadPoolExecutor(max_workers=len(endpoint_configs)) as executor:
+                # 提交所有任务
+                future_to_endpoint = {
+                    executor.submit(concurrent_call_wrapper, ep_name, ep_config, full_prompt): ep_name
+                    for ep_name, ep_config in endpoint_configs.items()
+                }
+                
+                # 处理完成的任务 - 流式处理，完成一个立即保存和打开
+                for future in as_completed(future_to_endpoint):
+                    endpoint_name, success, result, elapsed = future.result()
+                    results[endpoint_name] = {
+                        "success": success,
+                        "result": result,
+                        "elapsed": elapsed
+                    }
+                    
+                    completed_count += 1
+                    
+                    # 如果成功，立即保存并打开文件
+                    if success:
+                        success_count += 1
+                        # 为每个端点添加序号，避免时间戳冲突
+                        ts = f"{base_ts}_{completed_count}"
+                        safe_endpoint = endpoint_name.replace("/", "_").replace(" ", "_").replace(":", "_")
                         local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                        
+                        # 保存文件
                         with open(local_md_path, "w", encoding="utf-8") as f:
-                            f.write(md_result)
-                        # 用Typora打开
+                            f.write(result)
+                        
+                        # 保存历史
+                        save_transcribe_history(selected_channel, "concurrent", input_content, result, 
+                                               extra={"endpoint": endpoint_name, "elapsed": elapsed})
+                        
+                        # 立即打开文件，不等待其他端点
                         try:
-                            subprocess.Popen(["open", "-a", "Typora", local_md_path])
+                            subprocess.Popen(["open", local_md_path])
+                            status_text.text(f"✅ {endpoint_name} 完成并已打开 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
                         except Exception as e:
-                            st.info(f"无法自动打开Typora: {e}")
-                        st.success(get_text("success"))
+                            status_text.text(f"✅ {endpoint_name} 完成 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
                         
-                        # 自动切换到新生成的文章预览
-                        new_article_name = f"{ts}_{safe_channel}.md"
-                        st.session_state["current_md_file"] = new_article_name
-                        st.session_state["current_md_path"] = local_md_path
-                        
-                        # 显示成功信息和预览提示
-                        st.success(f"✅ 转写成功！文章已保存为: {new_article_name}")
-                        st.info(f"🔄 正在切换到新文章预览...")
-                        
-                        # 延迟一下再刷新，确保文件写入完成
-                        import time
-                        time.sleep(0.5)
-                        st.rerun()
+                        saved_files.append((endpoint_name, local_md_path))
                     else:
-                        st.error(f"AI转写失败: {resp.text}")
-            except requests.exceptions.Timeout:
-                st.error(f"⏰ 请求超时！{selected_endpoint} 在180秒内没有响应。建议：\n1. 检查网络连接\n2. 尝试其他LLM端点\n3. 减少输入内容长度\n4. 考虑使用更快的模型")
-            except requests.exceptions.ConnectionError:
-                st.error(f"🔌 连接失败！无法连接到 {selected_endpoint}。请检查：\n1. API地址是否正确\n2. 网络是否正常\n3. 服务是否可用")
-            except requests.exceptions.RequestException as e:
-                st.error(f"📡 请求异常：{str(e)}")
-            except Exception as e:
-                st.error(f"❌ 未知错误：{str(e)}")
+                        failed_count += 1
+                        status_text.text(f"❌ {endpoint_name} 失败 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
+                    
+                    # 更新进度条
+                    progress = completed_count / len(endpoint_configs)
+                    progress_bar.progress(progress)
+                    
+                    # 短暂延迟，让用户看到状态更新
+                    time.sleep(0.3)
+            
+            # 完成后清除进度显示
+            progress_bar.empty()
+            status_text.empty()
+            
+            # 保存并发历史到 JSON 文件
+            save_concurrent_history(base_ts, selected_channel, results, saved_files)
+            
+            # 保存到 session_state 以便在对比区显示
+            st.session_state["current_concurrent_results"] = {
+                "task_id": base_ts,
+                "channel": selected_channel,
+                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "results": results,
+                "saved_files": saved_files,
+                "statistics": {
+                    "total": len(results),
+                    "success": success_count,
+                    "failed": failed_count
+                }
+            }
+            
+            # 显示最终统计
+            if saved_files:
+                st.success(f"🎉 并发转写完成！已自动保存并打开 {len(saved_files)} 个成功的结果")
+            
+            # 显示统计信息
+            col_stat1, col_stat2, col_stat3 = st.columns(3)
+            with col_stat1:
+                st.metric("总端点数", len(results))
+            with col_stat2:
+                st.metric("成功", success_count, delta=success_count, delta_color="normal")
+            with col_stat3:
+                st.metric("失败", failed_count, delta=failed_count if failed_count > 0 else None, delta_color="inverse")
+            
+            # 并发转写完成后，自动切换到对比区
+            st.session_state["show_concurrent_compare"] = True
 
-import sys
-import os
+# ============================================================================
+# 并发结果对比区（独立、可折叠）
+# ============================================================================
 
-# 路径已在文件开头设置，无需重复
+def render_concurrent_results(results_data, key_prefix="current"):
+    """
+    渲染并发结果对比
+    
+    参数:
+        results_data: 包含 results 和 saved_files 的字典
+        key_prefix: 按钮key的前缀，避免重复
+    """
+    results = results_data.get("results", {})
+    saved_files = results_data.get("saved_files", [])
+    
+    if not results:
+        st.info("暂无并发结果")
+        return
+    
+    # 根据端点数量决定列数（最多4列，最少2列）
+    num_endpoints = len(results)
+    num_columns = min(max(2, num_endpoints), 4)
+    
+    # 创建并排的列布局
+    result_columns = st.columns(num_columns)
+    
+    # 将结果分配到各列中
+    for idx, (ep_name, result_data) in enumerate(results.items()):
+        col_idx = idx % num_columns
+        
+        with result_columns[col_idx]:
+            # 卡片样式的容器
+            status_icon = "✅" if result_data["success"] else "❌"
+            status_color = "#28a745" if result_data["success"] else "#dc3545"
+            elapsed_time = f"{result_data['elapsed']:.2f}秒"
+            
+            # 使用自定义样式的容器
+            st.markdown(f"""
+            <div style="
+                border: 2px solid {status_color};
+                border-radius: 10px;
+                padding: 15px;
+                margin-bottom: 20px;
+                background-color: rgba(255, 255, 255, 0.05);
+            ">
+                <h4 style="margin: 0 0 10px 0; color: {status_color};">
+                    {status_icon} {ep_name}
+                </h4>
+                <p style="margin: 0; font-size: 0.9em; color: #888;">
+                    ⏱️ {elapsed_time}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if result_data["success"]:
+                # 显示成功的转写结果
+                with st.container():
+                    # 直接显示完整内容，不再使用折叠块
+                    st.markdown(result_data["result"])
+                    
+                    # 添加打开按钮
+                    # 找到该端点对应的已保存文件
+                    saved_file_path = None
+                    for saved_ep, saved_path in saved_files:
+                        if saved_ep == ep_name:
+                            saved_file_path = saved_path
+                            break
+                    
+                    if saved_file_path:
+                        if st.button(f"📂 打开文件", key=f"{key_prefix}_open_{ep_name}_{idx}", use_container_width=True):
+                            # 用系统默认应用打开已保存的文件
+                            try:
+                                subprocess.Popen(["open", saved_file_path])
+                                st.success(f"✅ 已打开文件！")
+                            except Exception as e:
+                                st.error(f"无法打开文件: {e}")
+            else:
+                # 显示错误信息
+                st.error(f"**错误:**\n{result_data['result']}")
 
-import streamlit as st
-from language_manager import init_language, get_text
+
+# 检查是否有并发结果或历史记录
+history_list = load_concurrent_history_list()
+has_current_results = "current_concurrent_results" in st.session_state
+has_history = len(history_list) > 0
+
+# 如果有当前结果或历史记录，显示对比区
+if has_current_results or has_history:
+    st.markdown("---")
+    st.markdown("## 并发结果对比区")
+    
+    # 决定默认显示哪个Tab（如果刚执行完并发转写，显示当前结果；否则显示历史）
+    if has_current_results and st.session_state.get("show_concurrent_compare", False):
+        # 刚执行完并发转写，默认显示当前结果
+        default_tab_index = 0
+        # 清除标记，避免下次刷新时还默认显示当前结果
+        if "show_concurrent_compare" in st.session_state:
+            del st.session_state["show_concurrent_compare"]
+    else:
+        # 否则默认显示历史对比
+        default_tab_index = 1 if has_history and not has_current_results else 0
+    
+    # 创建标签页
+    tab1, tab2 = st.tabs(["🎯 当前结果", "📚 历史对比"])
+    
+    with tab1:
+        # 显示当前并发结果
+        if "current_concurrent_results" in st.session_state:
+            current_data = st.session_state["current_concurrent_results"]
+            
+            # 显示信息
+            col_info1, col_info2, col_info3 = st.columns(3)
+            with col_info1:
+                st.info(f"**频道:** {current_data['channel']}")
+            with col_info2:
+                st.info(f"**时间:** {current_data['timestamp']}")
+            with col_info3:
+                stats = current_data['statistics']
+                st.info(f"**结果:** {stats['success']}/{stats['total']} 成功")
+            
+            st.markdown("---")
+            
+            # 渲染结果
+            render_concurrent_results(current_data, key_prefix="current")
+        else:
+            st.info("暂无当前并发结果，请先执行并发转写")
+    
+    with tab2:
+        # 显示历史对比
+        st.markdown("### 选择历史记录")
+        
+        # 使用已加载的历史列表（避免重复加载）
+        if history_list:
+            # 创建下拉选择框
+            history_options = ["请选择历史记录..."] + [item[0] for item in history_list]
+            selected_history = st.selectbox(
+                "历史并发结果",
+                history_options,
+                key="history_selector"
+            )
+            
+            if selected_history and selected_history != "请选择历史记录...":
+                # 找到对应的历史记录
+                selected_idx = history_options.index(selected_history) - 1
+                history_file_path = history_list[selected_idx][1]
+                history_metadata = history_list[selected_idx][2]
+                
+                # 显示历史信息
+                col_h1, col_h2, col_h3 = st.columns(3)
+                with col_h1:
+                    st.info(f"**频道:** {history_metadata['channel']}")
+                with col_h2:
+                    st.info(f"**时间:** {history_metadata['timestamp']}")
+                with col_h3:
+                    stats = history_metadata['statistics']
+                    st.info(f"**结果:** {stats['success']}/{stats['total']} 成功")
+                
+                st.markdown("---")
+                
+                # 从历史元数据重建结果数据结构
+                history_results = {}
+                history_saved_files = []
+                
+                for result_info in history_metadata['results']:
+                    ep_name = result_info['endpoint']
+                    
+                    if result_info['success']:
+                        # 成功的结果 - 从文件读取内容
+                        file_path = result_info.get('file_path')
+                        if file_path and os.path.exists(file_path):
+                            try:
+                                with open(file_path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                history_results[ep_name] = {
+                                    "success": True,
+                                    "result": content,
+                                    "elapsed": result_info['elapsed']
+                                }
+                                history_saved_files.append((ep_name, file_path))
+                            except Exception as e:
+                                history_results[ep_name] = {
+                                    "success": False,
+                                    "result": f"无法读取文件: {e}",
+                                    "elapsed": result_info['elapsed']
+                                }
+                        else:
+                            history_results[ep_name] = {
+                                "success": False,
+                                "result": "文件不存在或已被删除",
+                                "elapsed": result_info['elapsed']
+                            }
+                    else:
+                        # 失败的结果
+                        history_results[ep_name] = {
+                            "success": False,
+                            "result": result_info.get('error', '未知错误'),
+                            "elapsed": result_info['elapsed']
+                        }
+                
+                # 渲染历史结果
+                history_data = {
+                    "results": history_results,
+                    "saved_files": history_saved_files
+                }
+                render_concurrent_results(history_data, key_prefix=f"history_{selected_idx}")
+        else:
+            st.info("暂无历史记录，执行并发转写后会自动保存")
+
+# ============================================================================
+# 板块分隔：MD审核与HTML预览
+# ============================================================================
+
+# 添加视觉分隔
+st.markdown("---")
+st.markdown("<br>", unsafe_allow_html=True)
+
+# 导入MD预览所需的模块
 from md_utils import md_to_html
-# Using simple_paths for path management - functions already imported
 import streamlit.components.v1 as components
 from datetime import datetime
 
@@ -327,10 +1025,7 @@ T = {
     }
 }
 
-# 移除顶部语言选择相关代码
-
-# st.set_page_config(page_title="本地MD审核", layout="wide")
-st.title("MD审核与HTML预览")
+st.title("📝 MD审核与HTML预览")
 
 # 读取所有md文件（包括workspace和legacy目录）
 def get_all_md_files():
@@ -406,7 +1101,7 @@ else:
     current_file_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file_dir)))
     
-    with st.expander("🔍 调试信息"):
+    with st.expander(f"调试信息"):
         st.write("**检查的目录:**")
         workspace_md_dir = get_md_review_dir()
         legacy_md_dir = os.path.join(project_root, "app", "md_review")
@@ -439,57 +1134,179 @@ MD_DIR = get_md_review_dir()
 os.makedirs(STATIC_DIR, exist_ok=True)
 os.makedirs(MD_DIR, exist_ok=True)
 
-# 页面左右分栏
-col1, col2 = st.columns([1, 1])
+# 初始化变量，避免作用域问题
+selected = None
+edited = ""
+selected_file_data = None
+
+# 页面左右分栏（审核区和预览区用分割线分隔）
+col1, col_divider, col2 = st.columns([10, 0.5, 10])
+
+# 在中间列显示分割线
+with col_divider:
+    st.markdown("""
+        <div style="
+            width: 1px;
+            height: 100vh;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                #E0E0E0 10%, 
+                #E0E0E0 90%, 
+                transparent 100%);
+            margin: 0 auto;
+        "></div>
+    """, unsafe_allow_html=True)
 
 # 左侧：选择/编辑/预览Markdown
 with col1:
     if md_files:
-        selected = st.selectbox("选择Markdown文件：", md_files)
-        if selected:
+        # 添加默认选项，避免自动加载第一个文件
+        file_options = ["--- 请选择Markdown文件 ---"] + md_files
+        
+        # 如果 session_state 中有指定的文件，自动选中（来自转写操作）
+        default_index = 0
+        if "current_md_file" in st.session_state and st.session_state["current_md_file"] in md_files:
+            # 只在首次触发时自动选中，用户手动选择后清除
+            if st.session_state.get("auto_select_triggered", False):
+                default_index = md_files.index(st.session_state["current_md_file"]) + 1
+        
+        selected = st.selectbox("选择Markdown文件：", file_options, index=default_index)
+        
+        # 如果用户手动选择了文件（非默认选项），清除自动选择标记
+        if selected != "--- 请选择Markdown文件 ---":
+            if "auto_select_triggered" in st.session_state:
+                # 如果当前选择的不是自动触发的文件，清除标记
+                if selected != st.session_state.get("current_md_file"):
+                    del st.session_state["auto_select_triggered"]
+                    if "current_md_file" in st.session_state:
+                        del st.session_state["current_md_file"]
+        
+        # 只有用户选择了具体文件才加载
+        if selected and selected != "--- 请选择Markdown文件 ---":
             # 找到对应的文件数据
             selected_file_data = next((f for f in md_files_data if f['name'] == selected), None)
         
-        if selected_file_data:
-            
-            # 读取文件内容
-            with open(selected_file_data['path'], 'r', encoding='utf-8') as f:
-                md_content = f.read()
-            
-            # 显示文件信息
-            file_stat = os.stat(selected_file_data['path'])
-            st.caption(f"📅 最后修改: {datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')}")
-            st.caption(f"📏 文件大小: {file_stat.st_size:,} 字节")
-            
-            # 显示渲染后的Markdown内容
-            st.markdown(md_content, unsafe_allow_html=False)
-            edited = md_content
+            if selected_file_data:
+                # 读取文件内容
+                with open(selected_file_data['path'], 'r', encoding='utf-8') as f:
+                    md_content = f.read()
+                
+                # 显示文件信息
+                file_stat = os.stat(selected_file_data['path'])
+                st.caption(f"最后修改: {datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')}")
+                st.caption(f"文件大小: {file_stat.st_size:,} 字节")
+                
+                # 显示渲染后的Markdown内容
+                st.markdown(md_content, unsafe_allow_html=False)
+                edited = md_content
+            else:
+                st.error("无法找到选中的文件")
+                edited = ""
         else:
-            st.error("无法找到选中的文件")
+            # 显示提示信息
+            st.info("👆 请从上方下拉框选择一个Markdown文件进行审核和预览")
             edited = ""
     else:
-        edited = ""
+        st.info("暂无Markdown文件")
 
 # 右侧：选择模板、HTML预览
 with col2:
-    template_files = [f for f in os.listdir(TEMPLATE_DIR) if f.endswith('.html')]
-    template_choice = st.selectbox("选择HTML模板", template_files)
-    # 移除html_height滑块
-    if selected:
-        html_result = md_to_html(edited, template_name=template_choice)
-        # 强制覆盖所有容器的高度和overflow，确保完整显示
-        force_css = '''
-        <style>
-        html, body, .container, .main-title, .content, .logo-badge {
-            min-height: 100vh !important;
-            height: auto !important;
-            max-height: none !important;
-            overflow: visible !important;
-        }
-        * { box-sizing: border-box !important; }
-        </style>
-        '''
-        html_result = force_css + html_result
-        st.markdown("**HTML预览**", unsafe_allow_html=True)
-        # height设为10000，保证内容完整显示且无滚动条
-        components.html(html_result, height=10000, scrolling=False) 
+    if not md_files:
+        st.info("请先在左侧选择Markdown文件")
+    elif not selected or selected == "--- 请选择Markdown文件 ---":
+        st.info("👈 请先在左侧选择Markdown文件")
+    else:
+        template_files = [f for f in os.listdir(TEMPLATE_DIR) if f.endswith('.html')]
+        
+        # 从文件名中提取频道信息，自动匹配频道绑定的模板
+        default_template_idx = 0
+        current_channel_name = None
+        matching_channel = None
+        
+        if selected:
+            # 尝试从文件名中解析频道名称（格式：时间戳_频道名_端点名.md）
+            import re
+            # 匹配格式：20241021_123456_{频道名}_{端点名}.md
+            # 使用贪婪匹配，匹配到倒数第二个下划线为止
+            # 因为端点名可能包含下划线，所以从后往前找最后一个下划线来分隔
+            match = re.match(r'(\d{8}_\d{6})_(.+)\.md$', selected)
+            
+            safe_channel_name = None
+            endpoint_name = None
+            
+            if match:
+                timestamp = match.group(1)
+                # 剩余部分（频道名_端点名）
+                remaining = match.group(2)
+                
+                # 尝试匹配所有可能的频道，从最长的开始匹配
+                # 这样可以处理频道名和端点名都包含下划线的情况
+                best_match_channel = None
+                best_match_endpoint = None
+                
+                for ch in channels:
+                    ch_name = ch.get('name', '')
+                    # 将频道名转换为safe格式（与保存时的逻辑一致）
+                    safe_ch_name = ch_name.replace("/", "_").replace(" ", "_")
+                    
+                    # 检查 remaining 是否以 safe_ch_name 开头
+                    if remaining.startswith(safe_ch_name + "_"):
+                        # 提取端点名部分
+                        potential_endpoint = remaining[len(safe_ch_name) + 1:]  # +1 跳过下划线
+                        
+                        # 如果这是目前找到的最佳匹配（频道名最长的）
+                        if best_match_channel is None or len(safe_ch_name) > len(best_match_channel.get('name', '').replace("/", "_").replace(" ", "_")):
+                            best_match_channel = ch
+                            best_match_endpoint = potential_endpoint
+                            safe_channel_name = safe_ch_name
+                            endpoint_name = potential_endpoint
+                
+                if best_match_channel:
+                    matching_channel = best_match_channel
+                    current_channel_name = safe_channel_name
+            
+            # 如果找到匹配的频道，使用其绑定的模板
+            if matching_channel:
+                bound_template = matching_channel.get('template', '01_modern_news.html')
+                if bound_template in template_files:
+                    default_template_idx = template_files.index(bound_template)
+        
+        # 确保在选择框渲染前有有效的索引
+        if default_template_idx >= len(template_files):
+            default_template_idx = 0
+        
+        template_choice = st.selectbox(
+            "选择HTML模板", 
+            template_files,
+            index=default_template_idx,
+            key=f"template_selector_{selected}",  # 添加唯一key，确保选择器随文件变化而更新
+            help="默认使用频道绑定的模板，也可手动切换"
+        )
+        
+        # 渲染HTML预览
+        if selected and edited:
+            try:
+                html_result = md_to_html(edited, template_name=template_choice)
+                # 强制覆盖所有容器的高度和overflow，确保完整显示
+                force_css = '''
+                <style>
+                html, body, .container, .main-title, .content, .logo-badge {
+                    min-height: 100vh !important;
+                    height: auto !important;
+                    max-height: none !important;
+                    overflow: visible !important;
+                }
+                * { box-sizing: border-box !important; }
+                </style>
+                '''
+                html_result = force_css + html_result
+                st.markdown("**HTML预览**", unsafe_allow_html=True)
+                # height设为10000，保证内容完整显示且无滚动条
+                components.html(html_result, height=10000, scrolling=False)
+            except Exception as e:
+                st.error(f"HTML渲染失败: {str(e)}")
+                import traceback
+                with st.expander("查看详细错误信息"):
+                    st.code(traceback.format_exc())
+        else:
+            st.info("请选择一个Markdown文件以查看HTML预览") 

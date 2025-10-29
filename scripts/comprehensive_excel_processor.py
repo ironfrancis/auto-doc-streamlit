@@ -172,7 +172,7 @@ def standardize_columns(df, platform):
         return df
     
     # 根据平台确定账号名称前缀
-    if "头条" in platform:
+    if "头条号" in platform:
         account_prefix = "头条号-"
     elif "百家号" in platform:
         account_prefix = "百家号-"
@@ -180,7 +180,7 @@ def standardize_columns(df, platform):
         account_prefix = ""
     
     # 提取账号名称（从文件名中提取）
-    account_name = platform.replace("头条-", "").replace("百家号-", "")
+    account_name = platform.replace("头条号-", "").replace("百家号-", "")
     full_account_name = account_prefix + account_name
     
     # 创建标准化的DataFrame

@@ -1,0 +1,37 @@
+{
+  "image_beds": [
+    {
+      "id": "scdn",
+      "name": "SCDN图床",
+      "type": "scdn",
+      "api_url": "https://img.scdn.io/api/v1.php",
+      "token": "",
+      "default": true,
+      "enabled": true,
+      "description": "SCDN 免费图床服务"
+    },
+    {
+      "id": "lsky_example",
+      "name": "Lsky Pro 示例",
+      "type": "lsky",
+      "api_url": "https://your-lsky-domain.com/api/v1/upload",
+      "token": "your-bearer-token-here",
+      "default": false,
+      "enabled": false,
+      "description": "Lsky Pro 私有图床示例配置"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2025-01-15T00:00:00.000000",
+    "last_modified": "2025-01-15T00:00:00.000000",
+    "description": "图床配置文件",
+    "notes": [
+      "配置文件中列出了所有可用的图床服务",
+      "每种图床类型需要不同的API地址和认证方式",
+      "Lsky 类型需要 Bearer Token 认证",
+      "SCDN 类型无需token",
+      "请将示例数据替换为您的实际配置"
+    ]
+  }
+}

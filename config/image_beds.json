@@ -1,0 +1,36 @@
+{
+  "image_beds": [
+    {
+      "id": "scdn",
+      "name": "SCDN图床",
+      "type": "scdn",
+      "api_url": "https://img.scdn.io/api/v1.php",
+      "token": "",
+      "default": false,
+      "enabled": true,
+      "description": "SCDN 免费图床服务"
+    },
+    {
+      "id": "lsky_custom",
+      "name": "我的Lsky图床",
+      "type": "lsky",
+      "api_url": "http://1.13.181.142:12000/api/v1",
+      "token": "",
+      "default": false,
+      "enabled": false,
+      "description": "Lsky Pro 私有图床 - 请在图床管理页面填写Token并设置为默认"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2025-01-15T00:00:00.000000",
+    "last_modified": "2025-01-15T00:00:00.000000",
+    "description": "图床配置文件",
+    "notes": [
+      "配置文件中列出了所有可用的图床服务",
+      "每种图床类型需要不同的API地址和认证方式",
+      "Lsky 类型需要 Bearer Token 认证",
+      "SCDN 类型无需token"
+    ]
+  }
+}

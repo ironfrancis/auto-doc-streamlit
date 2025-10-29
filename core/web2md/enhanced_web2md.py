@@ -64,7 +64,7 @@ def download_image(url, save_dir, base_url=None):
         print(f"下载图片失败 {url}: {str(e)}")
         return None
 
-def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode="download", show_errors=False):
+def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode="download", show_errors=False, image_bed_config=None, total_count=0):
     """
     处理Markdown内容中的图片
 
@@ -74,16 +74,34 @@ def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode
         images_dir (str, optional): 图片保存目录，仅在mode="download"时使用
         mode (str): 处理模式 - "download"（下载到本地）或 "upload"（上传到图床）
         show_errors (bool): 是否在Markdown中显示错误信息
+        image_bed_config (dict, optional): 图床配置
+        total_count (int): 图片总数，用于进度显示
 
     返回:
         str: 处理后的Markdown内容
     """
     # 匹配Markdown图片语法
     image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+    
+    # 统计处理进度
+    processed_count = [0]  # 使用列表以便在闭包中修改
+    success_count = [0]
+    fail_count = [0]
 
     def replace_image(match):
         alt_text = match.group(1)
         image_url = match.group(2)
+        
+        processed_count[0] += 1
+        current_num = processed_count[0]
+        
+        # 显示处理进度
+        if total_count > 0:
+            progress = f"[{current_num}/{total_count}]"
+        else:
+            progress = f"[{current_num}]"
+        
+        print(f"{progress} 正在处理图片: {image_url[:80]}...")
 
         # 检查是否是网络图片
         if image_url.startswith(('http://', 'https://')) or (not image_url.startswith('/') and not os.path.isabs(image_url)):
@@ -91,6 +109,7 @@ def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode
                 if mode == "download":
                     # 下载到本地
                     if not images_dir:
+                        print(f"{progress} 跳过: 图片目录未指定")
                         return f'![{alt_text}]({image_url}) <!-- 图片目录未指定 -->'
 
                     # 创建图片目录
@@ -100,10 +119,13 @@ def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode
                     if filename:
                         # 返回绝对路径
                         new_path = os.path.abspath(os.path.join(images_dir, filename))
+                        success_count[0] += 1
+                        print(f"{progress} ✓ 下载成功: {filename}")
                         return f'![{alt_text}]({new_path})'
                     else:
                         # 下载失败，在控制台记录错误，保持原URL
-                        print(f"图片下载失败: {image_url}")
+                        fail_count[0] += 1
+                        print(f"{progress} ✗ 下载失败: {image_url}")
                         if show_errors:
                             return f'![{alt_text}]({image_url}) <!-- 图片下载失败 -->'
                         else:
@@ -113,24 +135,30 @@ def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode
                     # 上传到图床
                     try:
                         from core.utils.img_bed import upload_image_from_url
-                        bed_url = upload_image_from_url(image_url, base_url)
+                        print(f"{progress} 开始上传到图床...")
+                        bed_url = upload_image_from_url(image_url, base_url, image_bed_config)
                         if bed_url:
+                            success_count[0] += 1
+                            print(f"{progress} ✓ 上传成功: {bed_url[:80]}...")
                             return f'![{alt_text}]({bed_url})'
                         else:
                             # 上传失败，在控制台记录错误，保持原URL
-                            print(f"图片上传失败: {image_url}")
+                            fail_count[0] += 1
+                            print(f"{progress} ✗ 上传失败: {image_url}")
                             if show_errors:
                                 return f'![{alt_text}]({image_url}) <!-- 图片上传失败 -->'
                             else:
                                 return f'![{alt_text}]({image_url})'
-                    except ImportError:
-                        print(f"图床模块未找到，无法上传图片: {image_url}")
+                    except ImportError as e:
+                        fail_count[0] += 1
+                        print(f"{progress} ✗ 图床模块未找到: {str(e)}")
                         if show_errors:
                             return f'![{alt_text}]({image_url}) <!-- 图床模块未找到 -->'
                         else:
                             return f'![{alt_text}]({image_url})'
                     except Exception as e:
-                        print(f"图片上传失败 {image_url}: {str(e)}")
+                        fail_count[0] += 1
+                        print(f"{progress} ✗ 上传异常: {image_url} - {str(e)}")
                         if show_errors:
                             return f'![{alt_text}]({image_url}) <!-- 图片上传失败: {str(e)[:50]}... -->'
                         else:
@@ -138,7 +166,8 @@ def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode
 
                 else:
                     # 未知模式，在控制台记录错误，保持原URL
-                    print(f"未知图片处理模式: {mode}，图片: {image_url}")
+                    fail_count[0] += 1
+                    print(f"{progress} ✗ 未知处理模式: {mode}")
                     if show_errors:
                         return f'![{alt_text}]({image_url}) <!-- 未知处理模式: {mode} -->'
                     else:
@@ -146,23 +175,37 @@ def process_images_in_markdown(markdown_content, base_url, images_dir=None, mode
 
             except Exception as e:
                 # 如果处理失败，在控制台记录错误，保持原路径
-                print(f"图片处理失败 {image_url}: {str(e)}")
+                fail_count[0] += 1
+                print(f"{progress} ✗ 处理异常: {image_url} - {str(e)}")
+                import traceback
+                print(f"异常详情: {traceback.format_exc()}")
                 if show_errors:
                     return f'![{alt_text}]({image_url}) <!-- 图片处理失败: {str(e)[:50]}... -->'
                 else:
                     return f'![{alt_text}]({image_url})'
         else:
             # 如果是本地路径或已经是相对路径，保持不变
+            print(f"{progress} 跳过本地路径: {image_url[:80]}...")
             return match.group(0)
 
     # 替换所有图片路径
+    print(f"开始处理图片，共 {total_count if total_count > 0 else '未知数量'} 张...")
     processed_md = re.sub(image_pattern, replace_image, markdown_content)
+    
+    # 显示处理结果统计
+    print(f"\n图片处理完成:")
+    print(f"  总计: {processed_count[0]} 张")
+    print(f"  成功: {success_count[0]} 张")
+    print(f"  失败: {fail_count[0]} 张")
+    if processed_count[0] > 0:
+        print(f"  成功率: {success_count[0] * 100 // processed_count[0]}%")
+    
     return processed_md
 
 def extract_markdown_from_url(url, output_file=None, scope="viewport", wait_time=5,
                              scroll=True, scroll_pause=1.0, viewport_height=1080,
                              remove_selectors=None, image_handling="Download to Local",
-                             show_image_errors=False):
+                             show_image_errors=False, image_bed_config=None):
     """
     使用MagicLens从网页提取Markdown内容（增强版）
 
@@ -309,25 +352,36 @@ Chrome初始化失败，可能是以下原因之一：
 
         # 如果启用图片处理，处理图片
         if image_handling != "Keep Original URLs" and markdown_content:
-            print(f"正在处理图片 ({image_handling})...")
+            # 先统计图片数量
+            import re
+            image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+            image_matches = list(re.finditer(image_pattern, markdown_content))
+            image_count = len(image_matches)
+            
+            if image_count > 0:
+                print(f"正在处理图片 ({image_handling})... 共找到 {image_count} 张图片")
+                
+                if image_handling == "Download to Local":
+                    # 使用正确的图片存储路径
+                    try:
+                        from simple_paths import get_images_dir
+                        images_dir = get_images_dir()
+                    except ImportError:
+                        # 备用方案：直接计算路径
+                        project_root = os.path.dirname(current_dir)
+                        images_dir = os.path.join(project_root, 'workspace', 'images')
 
-            if image_handling == "Download to Local":
-                # 使用正确的图片存储路径
-                try:
-                    from simple_paths import get_images_dir
-                    images_dir = get_images_dir()
-                except ImportError:
-                    # 备用方案：直接计算路径
-                    project_root = os.path.dirname(current_dir)
-                    images_dir = os.path.join(project_root, 'workspace', 'images')
-
-                # 处理图片 - 下载到本地
-                markdown_content = process_images_in_markdown(markdown_content, url, images_dir, mode="download", show_errors=show_image_errors)
-                print(f"图片下载完成，保存到: {images_dir}")
-            elif image_handling == "Upload to Image Bed":
-                # 处理图片 - 上传到图床
-                markdown_content = process_images_in_markdown(markdown_content, url, None, mode="upload", show_errors=show_image_errors)
-                print("图片上传到图床完成")
+                    # 处理图片 - 下载到本地
+                    markdown_content = process_images_in_markdown(markdown_content, url, images_dir, mode="download", show_errors=show_image_errors, total_count=image_count)
+                    print(f"图片下载完成，保存到: {images_dir}")
+                elif image_handling == "Upload to Image Bed":
+                    # 处理图片 - 上传到图床
+                    if image_bed_config:
+                        print(f"使用图床: {image_bed_config.get('name', 'Unknown')} ({image_bed_config.get('type', 'Unknown')})")
+                    markdown_content = process_images_in_markdown(markdown_content, url, None, mode="upload", show_errors=show_image_errors, image_bed_config=image_bed_config, total_count=image_count)
+                    print("图片上传到图床完成")
+            else:
+                print("未找到需要处理的图片")
             # 对于"Keep Original URLs"，不做任何处理
 
         # 自动生成输出文件名

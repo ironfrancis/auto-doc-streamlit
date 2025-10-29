@@ -20,9 +20,14 @@ from urllib.parse import urlparse
 import hashlib
 import base64
 # Using simple_paths for path management - get_ori_docs_dir is already imported
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
 
 # 页面设置
 st.set_page_config(page_title="网页转MD", layout="wide")
+
+# 加载主题
+load_anthropic_theme()
 
 # 标题
 st.title("Web to Markdown")
@@ -88,6 +93,17 @@ with st.form("web2md_form"):
             help="'Download to Local': Download images to local directory | 'Upload to Image Bed': Upload images to online image hosting service | 'Keep Original URLs': Keep original image URLs unchanged"
         )
 
+        # 自动使用默认图床（当选择"Upload to Image Bed"时）
+        selected_image_bed = None
+        if image_handling == "Upload to Image Bed":
+            try:
+                from core.utils.img_bed import get_default_image_bed
+                selected_image_bed = get_default_image_bed()
+                if not selected_image_bed:
+                    st.warning("未找到默认图床，请前往图床配置页面设置默认图床")
+            except ImportError:
+                st.warning("图床模块未找到，将跳过图床上传")
+
         # 显示图片处理错误选项
         show_image_errors = st.checkbox(
             "Show image processing errors in Markdown",
@@ -147,7 +163,8 @@ if submitted and url:
                 viewport_height=viewport_height,
                 remove_selectors=selectors_to_remove,
                 image_handling=image_handling,
-                show_image_errors=show_image_errors
+                show_image_errors=show_image_errors,
+                image_bed_config=selected_image_bed
             )
 
             # 解析返回结果
@@ -173,13 +190,16 @@ if submitted and url:
                     if images_dir.exists():
                         image_files = [f for f in images_dir.iterdir() if f.suffix.lower() in ('.png', '.jpg', '.jpeg', '.gif', '.webp')]
                         if image_files:
-                            st.info(f"✅ Downloaded {len(image_files)} images to local directory")
+                            st.info(f"Downloaded {len(image_files)} images to local directory")
                             with st.expander("View downloaded images", expanded=False):
                                 for img_file in sorted(image_files):
                                     file_size = img_file.stat().st_size
                                     st.markdown(f"- {img_file.name} ({file_size:,} bytes)")
                 elif image_handling == "Upload to Image Bed":
-                    st.info("✅ Images uploaded to image hosting service")
+                    if selected_image_bed:
+                        st.info(f"Images uploaded to {selected_image_bed['name']} ({selected_image_bed['type']})")
+                    else:
+                        st.info(f"Images uploaded to image hosting service")
                 elif image_handling == "Keep Original URLs":
                     st.info("ℹ️ Original image URLs preserved")
 
@@ -219,11 +239,11 @@ if submitted and url:
                                 else:  # Linux
                                     subprocess.run(['xdg-open', str(saved_file_path)], check=True)
 
-                                st.success(f"✅ 文件已使用默认应用打开：{os.path.basename(saved_file_path)}")
+                                st.success(f"文件已使用默认应用打开：{os.path.basename(saved_file_path)}")
                             except subprocess.CalledProcessError as e:
-                                st.warning(f"⚠️ 无法自动打开文件：{str(e)}")
+                                st.warning(f"无法自动打开文件：{str(e)}")
                             except Exception as e:
-                                st.warning(f"⚠️ 打开文件时发生错误：{str(e)}")
+                                st.warning(f"打开文件时发生错误：{str(e)}")
                     else:
                         st.warning("文件保存路径未知，无法自动打开文件")
 

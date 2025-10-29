@@ -9,6 +9,8 @@ from language_manager import init_language, get_text, get_language
 from md_utils import md_to_html, TEMPLATE_DIR
 # Using simple_paths for path management - functions already imported
 import glob
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
 
 # 多语言文本定义
 T = {
@@ -18,7 +20,7 @@ T = {
         "html_newtab": "在新标签页中打开",
         "html_preview": "HTML预览",
         "inline_css_option": "生成内联CSS的HTML（适合粘贴到富文本编辑器）",
-        "copy_inline_css": "📋 复制内联CSS HTML",
+        "copy_inline_css": "复制内联CSS HTML",
         "copy_inline_css_help": "复制带有内联样式的HTML代码，可直接粘贴到公众号后台等富文本编辑器"
     },
     "en": {
@@ -27,13 +29,17 @@ T = {
         "html_newtab": "Open in new tab",
         "html_preview": "HTML Preview",
         "inline_css_option": "Generate HTML with inline CSS (suitable for rich text editors)",
-        "copy_inline_css": "📋 Copy Inline CSS HTML",
+        "copy_inline_css": "Copy Inline CSS HTML",
         "copy_inline_css_help": "Copy HTML with inline styles for direct pasting into rich text editors"
     }
 }
 
 
 st.set_page_config(page_title="MD转HTML", layout="wide")
+
+# 加载主题
+load_anthropic_theme()
+
 st.title("MD转HTML")
 
 STATIC_DIR = get_static_dir()
@@ -90,8 +96,8 @@ if st.button(get_text("convert"), key="convert_button"):
         if os.path.exists(images_dir):
             image_files = [f for f in os.listdir(images_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp'))]
             if image_files:
-                st.info(f"✅ 已处理 {len(image_files)} 张图片（包括本地复制和网络下载）")
-                st.info("💡 图片已自动转换为base64编码，HTML组件中可以正确显示")
+                st.info(f"已处理 {len(image_files)} 张图片（包括本地复制和网络下载）")
+                st.info(f"图片已自动转换为base64编码，HTML组件中可以正确显示")
                 with st.expander("查看处理的图片", expanded=False):
                     for img_file in sorted(image_files):
                         file_path = os.path.join(images_dir, img_file)
@@ -126,16 +132,16 @@ if st.button(get_text("convert"), key="convert_button"):
                 copy_button_text = T['zh']['copy_inline_css'] if current_lang == "zh" else T['en']['copy_inline_css']
                 copy_help_text = T['zh']['copy_inline_css_help'] if current_lang == "zh" else T['en']['copy_inline_css_help']
             else:
-                copy_button_text = "📋 复制HTML" if current_lang == "zh" else "📋 Copy HTML"
+                copy_button_text = "复制HTML" if current_lang == "zh" else "Copy HTML"
                 copy_help_text = "点击复制生成的HTML代码到剪贴板" if current_lang == "zh" else "Copy generated HTML to clipboard"
             
             if st.button(copy_button_text, key="copy_html_btn", help=copy_help_text):
                 # 使用Streamlit的会话状态来处理复制
                 st.session_state['html_to_copy'] = html_result
                 if inline_css_option:
-                    copy_success_msg = "✅ 内联CSS HTML代码已准备复制！可直接粘贴到公众号后台等富文本编辑器。" if current_lang == "zh" else "✅ Inline CSS HTML code ready! Can be pasted directly into rich text editors."
+                    copy_success_msg = "内联CSS HTML代码已准备复制！可直接粘贴到公众号后台等富文本编辑器。" if current_lang == "zh" else "Inline CSS HTML code ready! Can be pasted directly into rich text editors."
                 else:
-                    copy_success_msg = "✅ HTML代码已准备复制！请使用下方的文本框手动复制。" if current_lang == "zh" else "✅ HTML code ready! Please copy from the text box below."
+                    copy_success_msg = "HTML代码已准备复制！请使用下方的文本框手动复制。" if current_lang == "zh" else "HTML code ready! Please copy from the text box below."
                 st.success(copy_success_msg)
             
             # 如果用户点击了复制按钮，显示可复制的文本框
@@ -157,9 +163,9 @@ if st.button(get_text("convert"), key="convert_button"):
                     st.code(html_content, language='html')
                     
                     # 提供下载功能作为备选
-                    download_label = "💾 下载内联CSS HTML文件" if inline_css_option else "💾 下载HTML文件"
+                    download_label = "下载内联CSS HTML文件" if inline_css_option else "下载HTML文件"
                     if current_lang != "zh":
-                        download_label = "💾 Download Inline CSS HTML file" if inline_css_option else "💾 Download HTML file"
+                        download_label = "Download Inline CSS HTML file" if inline_css_option else "Download HTML file"
                     
                     st.download_button(
                         label=download_label,
@@ -176,11 +182,11 @@ if st.button(get_text("convert"), key="convert_button"):
                 if inline_css_option:
                     copy_success_msg = "内联CSS HTML已复制到剪贴板！可直接粘贴到富文本编辑器" if current_lang == "zh" else "Inline CSS HTML copied to clipboard! Can be pasted directly into rich text editors"
                     copy_fail_msg = "自动复制失败，请手动复制上方代码" if current_lang == "zh" else "Auto-copy failed, please copy the code above manually"
-                    button_text = "🚀 一键复制内联CSS HTML到剪贴板" if current_lang == "zh" else "🚀 Copy Inline CSS HTML to Clipboard"
+                    button_text = "一键复制内联CSS HTML到剪贴板" if current_lang == "zh" else "Copy Inline CSS HTML to Clipboard"
                 else:
                     copy_success_msg = "HTML已复制到剪贴板!" if current_lang == "zh" else "HTML copied to clipboard!"
                     copy_fail_msg = "自动复制失败，请手动复制上方代码" if current_lang == "zh" else "Auto-copy failed, please copy the code above manually"
-                    button_text = "🚀 一键复制到剪贴板" if current_lang == "zh" else "🚀 Copy to Clipboard"
+                    button_text = "一键复制到剪贴板" if current_lang == "zh" else "Copy to Clipboard"
                 
                 st.markdown(f"""
                 <div>
@@ -244,7 +250,7 @@ if st.button(get_text("convert"), key="convert_button"):
                 function showCopySuccess(message) {{
                     // 创建成功提示
                     const successDiv = document.createElement('div');
-                    successDiv.innerHTML = '✅ ' + message;
+                    successDiv.innerHTML = message;
                     successDiv.style.cssText = `
                         position: fixed;
                         top: 20px;
@@ -272,7 +278,7 @@ if st.button(get_text("convert"), key="convert_button"):
                 function showCopyError(message) {{
                     // 创建错误提示
                     const errorDiv = document.createElement('div');
-                    errorDiv.innerHTML = '❌ ' + message;
+                    errorDiv.innerHTML = message;
                     errorDiv.style.cssText = `
                         position: fixed;
                         top: 20px;

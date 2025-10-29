@@ -8,8 +8,13 @@ from simple_paths import *
 
 # 移除未使用的导入
 import requests
+from core.utils.theme_loader import load_anthropic_theme
 
 st.set_page_config(page_title="AI智能布局", layout="wide")
+
+# 加载主题
+load_anthropic_theme()
+
 st.title("AI智能排版（实验功能）")
 
 # 使用简化路径管理
@@ -68,9 +73,9 @@ endpoint_names = [ep["name"] for ep in endpoints] if endpoints else []
 if endpoints:
     selected_ep_idx = st.selectbox("选择LLM端点", range(len(endpoint_names)), format_func=lambda i: endpoint_names[i], key="ai_layout_ep_select")
     ep = endpoints[selected_ep_idx]
-    llm_endpoint = st.text_input("LLM端点（如OpenAI/Magic API地址）", value=ep.get("api_url", ""), key="ai_layout_llm_endpoint")
-    llm_api_key = st.text_input("API Key", value=ep.get("api_key", ""), type="password", key="ai_layout_llm_key")
-    llm_model = st.text_input("模型名称", value=ep.get("model", ""), key="ai_layout_llm_model")
+    llm_endpoint = st.text_input("LLM端点（如OpenAI/Magic API地址）", value=ep.get("api_url", ""), disabled=True, key="ai_layout_llm_endpoint")
+    llm_api_key = st.text_input("API Key", value=ep.get("api_key", ""), type="password", disabled=True, key="ai_layout_llm_key")
+    llm_model = st.text_input("模型名称", value=ep.get("model", ""), disabled=True, key="ai_layout_llm_model")
     
     # 所有端点都使用OpenAI兼容格式，无需选择API类型
 else:

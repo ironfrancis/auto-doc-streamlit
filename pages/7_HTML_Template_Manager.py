@@ -11,6 +11,8 @@ import json
 from datetime import datetime
 import shutil
 from jinja2 import Environment, BaseLoader
+from core.utils.theme_loader import load_anthropic_theme
+from core.utils.icon_library import get_icon
 
 # 初始化语言设置
 init_language()
@@ -139,7 +141,11 @@ class TemplateManager:
 
 def main():
     st.set_page_config(page_title="HTML模板管理", layout="wide")
-    st.title("🎨 " + get_text("page_title"))
+    
+    # 加载主题
+    load_anthropic_theme()
+    
+    st.title(get_text("page_title"))
     st.markdown("---")
     
     # 初始化模板管理器
@@ -150,7 +156,7 @@ def main():
         st.markdown("### 🛠️ 操作面板")
         
         # 创建新模板
-        if st.button("➕ " + get_text("create_template"), type="primary"):
+        if st.button(get_text("create_template"), type="primary"):
             st.session_state.show_create = True
             st.session_state.show_edit = False
             st.session_state.show_preview = False
@@ -229,7 +235,7 @@ def main():
                         col_btn1, col_btn2, col_btn3, col_btn4 = st.columns(4)
                         
                         with col_btn1:
-                            if st.button("👁️ 预览", key=f"preview_{i}"):
+                            if st.button(f"预览", key=f"preview_{i}"):
                                 st.session_state.show_preview = True
                                 st.session_state.preview_file = filepath
                                 st.session_state.show_edit = False
@@ -237,7 +243,7 @@ def main():
                                 st.session_state.show_render = False
                         
                         with col_btn2:
-                            if st.button("✏️ 编辑", key=f"edit_{i}"):
+                            if st.button(f"编辑", key=f"edit_{i}"):
                                 st.session_state.show_edit = True
                                 st.session_state.edit_file = filepath
                                 st.session_state.show_preview = False
@@ -245,7 +251,7 @@ def main():
                                 st.session_state.show_render = False
                         
                         with col_btn3:
-                            if st.button("▶️ 渲染", key=f"render_{i}"):
+                            if st.button(f"渲染", key=f"render_{i}"):
                                 st.session_state.show_render = True
                                 st.session_state.render_file = filepath
                                 st.session_state.show_preview = False
@@ -253,7 +259,7 @@ def main():
                                 st.session_state.show_create = False
                         
                         with col_btn4:
-                            if st.button("🗑️ 删除", key=f"delete_{i}"):
+                            if st.button(f"删除", key=f"delete_{i}"):
                                 if st.session_state.get("confirm_delete", False):
                                     if template_manager.delete_template(filename):
                                         st.success(get_text("template_deleted"))
