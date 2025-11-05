@@ -7,7 +7,7 @@
       "api_url": "https://img.scdn.io/api/v1.php",
       "token": "",
       "default": false,
-      "enabled": true,
+      "enabled": false,
       "description": "SCDN 免费图床服务"
     },
     {
@@ -15,9 +15,9 @@
       "name": "我的Lsky图床",
       "type": "lsky",
       "api_url": "http://1.13.181.142:12000/api/v1",
-      "token": "",
-      "default": false,
-      "enabled": false,
+      "token": "1|Wx59l8hVR5Xxcb7XyzJP7uCUgEqLNal1RMUbEahR",
+      "default": true,
+      "enabled": true,
       "description": "Lsky Pro 私有图床 - 请在图床管理页面填写Token并设置为默认"
     }
   ],

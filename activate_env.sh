@@ -56,3 +56,14 @@ echo "  uv sync                      # 同步依赖"
 echo "  uv add <package>             # 添加新包"
 echo ""
 echo "💡 提示: 使用 'deactivate' 退出虚拟环境"
+
+
+# # 基础静默模式（无浏览器、无头模式、仅输出错误日志）
+# nohup streamlit run /www/wwwroot/auto-doc-streamlit/homepage.py \
+#   --server.headless=true \          # 无头模式（无GUI窗口，必选）
+#   --server.browser.serverAddress=0.0.0.0 \  # 允许外部访问（可选，默认127.0.0.1）
+#   --server.port=8501 \              # 指定端口（可选，默认8501）
+#   --logger.level=ERROR \            # 仅输出错误日志（禁用INFO/WARNING，可选）
+#   --server.fileWatcherType=none \   # 禁用文件热重载（可选，生产级静默）
+#   --server.enableDevMode=false \    # 禁用开发模式（可选，关闭调试特性）
+#   > /dev/null 2>&1 &                # 重定向日志到黑洞（彻底静默，可选）

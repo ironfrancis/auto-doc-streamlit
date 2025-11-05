@@ -2,6 +2,7 @@ import requests
 import tempfile
 import os
 import json
+import sys
 from urllib.parse import urljoin
 from typing import Optional, Tuple, Dict, List
 
@@ -33,16 +34,16 @@ def load_image_beds_config() -> List[Dict]:
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         config = json.load(f)
-                    print(f"读取图床配置: {path}")
+                    print(f"读取图床配置: {path}", file=sys.stderr)
                     return config.get("image_beds", [])
                 except Exception as e:
-                    print(f"读取图床配置失败 {path}: {e}")
+                    print(f"读取图床配置失败 {path}: {e}", file=sys.stderr)
                     continue
 
-        print(f"未找到图床配置文件，已尝试: {config_paths}")
+        print(f"未找到图床配置文件，已尝试: {config_paths}", file=sys.stderr)
         return []
     except Exception as e:
-        print(f"加载图床配置失败: {str(e)}")
+        print(f"加载图床配置失败: {str(e)}", file=sys.stderr)
         return []
 
 def get_default_image_bed() -> Optional[Dict]:
@@ -81,60 +82,60 @@ def upload_to_lsky(image_path: str, api_url: str, token: str) -> Optional[str]:
         normalized_url = api_url.rstrip('/')
         if not normalized_url.endswith('upload'):
             normalized_url = f"{normalized_url}/upload"
-            print(f"  API地址已规范化: {api_url} -> {normalized_url}")
+            print(f"  API地址已规范化: {api_url} -> {normalized_url}", file=sys.stderr)
         
         # 检查文件是否存在
         if not os.path.exists(image_path):
-            print(f"  文件不存在: {image_path}")
+            print(f"  文件不存在: {image_path}", file=sys.stderr)
             return None
         
         file_size = os.path.getsize(image_path)
-        print(f"  准备上传文件: {image_path} ({file_size} bytes)")
+        print(f"  准备上传文件: {image_path} ({file_size} bytes)", file=sys.stderr)
         
         headers = {
             'Authorization': f'Bearer {token}',
             'Accept': 'application/json'
         }
-        print(f"  发送请求到: {normalized_url}")
+        print(f"  发送请求到: {normalized_url}", file=sys.stderr)
         
         with open(image_path, 'rb') as f:
             files = {'file': f}
             response = requests.post(normalized_url, files=files, headers=headers, timeout=30)
         
-        print(f"  响应状态码: {response.status_code}")
+        print(f"  响应状态码: {response.status_code}", file=sys.stderr)
         
         if response.status_code == 200:
             result = response.json()
-            print(f"  响应内容: {result}")
+            print(f"  响应内容: {result}", file=sys.stderr)
             
             if result.get('status') and 'data' in result:
                 image_url = result['data'].get('links', {}).get('url')
                 if image_url:
-                    print(f"  上传成功，图片URL: {image_url}")
+                    print(f"  上传成功，图片URL: {image_url}", file=sys.stderr)
                     return image_url
                 else:
-                    print(f"  响应中没有图片URL，完整响应: {result}")
+                    print(f"  响应中没有图片URL，完整响应: {result}", file=sys.stderr)
                     return None
             else:
                 error_msg = result.get('message', 'Unknown error')
-                print(f"  Lsky上传失败: {error_msg}")
-                print(f"  完整响应: {result}")
+                print(f"  Lsky上传失败: {error_msg}", file=sys.stderr)
+                print(f"  完整响应: {result}", file=sys.stderr)
                 return None
         else:
-            print(f"  Lsky HTTP错误 {response.status_code}")
-            print(f"  响应内容: {response.text[:500]}")  # 只打印前500字符
+            print(f"  Lsky HTTP错误 {response.status_code}", file=sys.stderr)
+            print(f"  响应内容: {response.text[:500]}", file=sys.stderr)  # 只打印前500字符
             return None
             
     except requests.exceptions.Timeout:
-        print(f"  上传到Lsky超时: {api_url}")
+        print(f"  上传到Lsky超时: {api_url}", file=sys.stderr)
         return None
     except requests.exceptions.RequestException as e:
-        print(f"  上传到Lsky请求失败: {str(e)}")
+        print(f"  上传到Lsky请求失败: {str(e)}", file=sys.stderr)
         return None
     except Exception as e:
-        print(f"  上传图片到Lsky异常: {str(e)}")
+        print(f"  上传图片到Lsky异常: {str(e)}", file=sys.stderr)
         import traceback
-        print(f"  异常详情: {traceback.format_exc()}")
+        print(f"  异常详情: {traceback.format_exc()}", file=sys.stderr)
         return None
 
 def upload_to_scdn(image_path: str, api_url: str) -> Optional[str]:
@@ -158,14 +159,14 @@ def upload_to_scdn(image_path: str, api_url: str) -> Optional[str]:
             if result.get('success') and 'url' in result:
                 return result['url']
             else:
-                print(f"SCDN上传失败: {result}")
+                print(f"SCDN上传失败: {result}", file=sys.stderr)
                 return None
         else:
-            print(f"SCDN HTTP错误 {response.status_code}: {response.text}")
+            print(f"SCDN HTTP错误 {response.status_code}: {response.text}", file=sys.stderr)
             return None
 
     except Exception as e:
-        print(f"上传图片到SCDN失败: {str(e)}")
+        print(f"上传图片到SCDN失败: {str(e)}", file=sys.stderr)
         return None
 
 def upload_image_to_bed(image_path: str, bed_config: Optional[Dict] = None) -> Optional[str]:
@@ -182,42 +183,42 @@ def upload_image_to_bed(image_path: str, bed_config: Optional[Dict] = None) -> O
     try:
         # 如果没有提供图床配置，使用默认图床
         if bed_config is None:
-            print("  未提供图床配置，尝试获取默认图床...")
+            print("  未提供图床配置，尝试获取默认图床...", file=sys.stderr)
             bed_config = get_default_image_bed()
             if bed_config is None:
-                print("  ✗ 没有找到默认图床配置")
+                print("  ✗ 没有找到默认图床配置", file=sys.stderr)
                 return None
-            print(f"  使用默认图床: {bed_config.get('name', 'Unknown')}")
+            print(f"  使用默认图床: {bed_config.get('name', 'Unknown')}", file=sys.stderr)
         
         bed_type = bed_config.get("type", "scdn")
         api_url = bed_config.get("api_url", "")
         token = bed_config.get("token", "")
         
-        print(f"  图床类型: {bed_type}")
-        print(f"  API地址: {api_url}")
+        print(f"  图床类型: {bed_type}", file=sys.stderr)
+        print(f"  API地址: {api_url}", file=sys.stderr)
         
         if not api_url:
-            print("  ✗ 图床API地址为空")
+            print("  ✗ 图床API地址为空", file=sys.stderr)
             return None
         
         # 根据图床类型调用对应的上传函数
         if bed_type == "lsky":
             if not token:
-                print("  ✗ Lsky图床需要认证Token")
+                print("  ✗ Lsky图床需要认证Token", file=sys.stderr)
                 return None
-            print(f"  使用Lsky图床上传...")
+            print(f"  使用Lsky图床上传...", file=sys.stderr)
             return upload_to_lsky(image_path, api_url, token)
         elif bed_type == "scdn":
-            print(f"  使用SCDN图床上传...")
+            print(f"  使用SCDN图床上传...", file=sys.stderr)
             return upload_to_scdn(image_path, api_url)
         else:
-            print(f"  ✗ 不支持的图床类型: {bed_type}")
+            print(f"  ✗ 不支持的图床类型: {bed_type}", file=sys.stderr)
             return None
             
     except Exception as e:
-        print(f"  ✗ 上传图片到图床异常: {str(e)}")
+        print(f"  ✗ 上传图片到图床异常: {str(e)}", file=sys.stderr)
         import traceback
-        print(f"  异常详情: {traceback.format_exc()}")
+        print(f"  异常详情: {traceback.format_exc()}", file=sys.stderr)
         return None
 
 def upload_image_from_url(image_url: str, base_url: Optional[str] = None, bed_config: Optional[Dict] = None) -> Optional[str]:
