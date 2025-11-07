@@ -7,6 +7,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import threading
+import asyncio
+from typing import AsyncIterator, Optional
 
 # 使用简化路径管理
 from simple_paths import *
@@ -15,6 +17,11 @@ import streamlit as st
 from language_manager import init_language, get_text, get_language
 # Using simple_paths for path management - get_static_dir, get_md_review_dir, get_json_data_dir are already imported
 import requests
+try:
+    import httpx
+except ImportError:
+    httpx = None
+    st.warning("⚠️ 需要安装 httpx 以支持异步流式输出: pip install httpx")
 from core.utils.theme_loader import load_anthropic_theme
 from core.utils.icon_library import get_icon
 
@@ -375,14 +382,15 @@ st.markdown("<br>", unsafe_allow_html=True)
 # 核心抽象函数：统一的 LLM 端点调用
 # ============================================================================
 
-def call_single_llm_endpoint(endpoint_config, prompt, timeout=180):
+async def call_single_llm_endpoint_stream(endpoint_config, prompt, timeout=180, stream_container=None):
     """
-    统一的 LLM 端点调用函数
+    异步流式 LLM 端点调用函数
     
     参数:
         endpoint_config: 端点配置字典
         prompt: 提示词内容
         timeout: 超时时间（秒）
+        stream_container: Streamlit 容器对象，用于实时显示流式输出（可选）
     
     返回:
         (success: bool, result: str, elapsed_time: float)
@@ -390,6 +398,166 @@ def call_single_llm_endpoint(endpoint_config, prompt, timeout=180):
         - result: 成功时返回 markdown 内容，失败时返回错误信息
         - elapsed_time: 请求耗时（秒）
     """
+    if httpx is None:
+        raise ImportError("需要安装 httpx: pip install httpx")
+    
+    start_time = time.time()
+    full_result = ""
+    
+    try:
+        api_type = endpoint_config.get("api_type", "")
+        api_url = endpoint_config.get("api_url", "").strip()
+        api_key = endpoint_config.get("api_key", "")
+        model = endpoint_config.get("model", "")
+        is_openai = endpoint_config.get("is_openai_compatible", False)
+        temperature = endpoint_config.get("temperature", 0.7)
+        
+        # 构建请求参数
+        if is_openai:
+            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            data = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature,
+                "stream": True  # 启用流式输出
+            }
+            api_type_flag = "openai"
+            
+        elif api_type == "Magic":
+            # Magic API 支持两种格式
+            if "api/chat" in api_url:
+                # 新版本 Magic API（不支持流式，需要回退到同步模式）
+                elapsed = time.time() - start_time
+                raise ValueError("新版本 Magic API 不支持流式输出，请使用同步模式")
+            else:
+                # 旧版本 Magic API (OpenAI 兼容)
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                data = {
+                    "model": model if model else "magic-chat",
+                    "messages": [
+                        {"role": "system", "content": "你是一个专业的AI写作助手。"},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": temperature,
+                    "stream": True,  # 启用流式输出
+                    "max_tokens": 4000
+                }
+                api_type_flag = "magic_openai"
+        else:
+            elapsed = time.time() - start_time
+            return (False, f"不支持的 API 类型: {api_type}", elapsed)
+        
+        # 使用 httpx 进行异步流式请求
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            async with client.stream("POST", api_url, headers=headers, json=data) as response:
+                if response.status_code != 200:
+                    error_text = await response.aread()
+                    elapsed = time.time() - start_time
+                    return (False, f"HTTP {response.status_code}: {error_text[:200].decode('utf-8', errors='ignore')}", elapsed)
+                
+                # 处理流式响应
+                buffer = ""
+                async for chunk in response.aiter_bytes():
+                    if chunk:
+                        buffer += chunk.decode('utf-8', errors='ignore')
+                        
+                        # 处理 SSE 格式的数据（每行一个 JSON 对象）
+                        lines = buffer.split('\n')
+                        buffer = lines[-1]  # 保留最后不完整的行
+                        
+                        for line in lines[:-1]:
+                            line = line.strip()
+                            if not line or line.startswith(':'):
+                                continue
+                            
+                            # 处理 data: 前缀
+                            if line.startswith('data: '):
+                                line = line[6:]
+                            
+                            if line == '[DONE]':
+                                continue
+                            
+                            try:
+                                json_data = json.loads(line)
+                                
+                                # 解析 OpenAI 格式
+                                if "choices" in json_data and len(json_data["choices"]) > 0:
+                                    delta = json_data["choices"][0].get("delta", {})
+                                    content = delta.get("content", "")
+                                    if content:
+                                        full_result += content
+                                        if stream_container:
+                                            # 实时更新流式输出
+                                            stream_container.markdown(full_result)
+                                            # 使用异步延迟以确保 UI 更新
+                                            await asyncio.sleep(0.01)
+                                
+                                # 解析 Magic API 格式（如果支持流式）
+                                elif "data" in json_data:
+                                    # Magic API 流式格式可能不同，需要根据实际情况调整
+                                    pass
+                                    
+                            except json.JSONDecodeError:
+                                continue
+        
+        elapsed = time.time() - start_time
+        return (True, full_result, elapsed)
+    
+    except httpx.TimeoutException:
+        elapsed = time.time() - start_time
+        return (False, f"请求超时（{timeout}秒）", elapsed)
+    except httpx.ConnectError:
+        elapsed = time.time() - start_time
+        return (False, "连接失败，请检查网络或 API 地址", elapsed)
+    except httpx.RequestError as e:
+        elapsed = time.time() - start_time
+        return (False, f"请求异常: {str(e)}", elapsed)
+    except Exception as e:
+        elapsed = time.time() - start_time
+        return (False, f"未知错误: {str(e)}", elapsed)
+
+
+def call_single_llm_endpoint(endpoint_config, prompt, timeout=180, use_stream=False, stream_container=None):
+    """
+    统一的 LLM 端点调用函数（支持同步和异步流式两种模式）
+    
+    参数:
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        timeout: 超时时间（秒）
+        use_stream: 是否使用流式输出（默认 False，保持向后兼容）
+        stream_container: Streamlit 容器对象，用于实时显示流式输出（仅当 use_stream=True 时有效）
+    
+    返回:
+        (success: bool, result: str, elapsed_time: float)
+        - success: 是否成功
+        - result: 成功时返回 markdown 内容，失败时返回错误信息
+        - elapsed_time: 请求耗时（秒）
+    """
+    if use_stream and httpx is not None:
+        # 使用异步流式模式
+        try:
+            # 在 Streamlit 中运行异步函数
+            # 尝试获取现有事件循环，如果没有则创建新的
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_closed():
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            # 运行异步函数
+            result = loop.run_until_complete(
+                call_single_llm_endpoint_stream(endpoint_config, prompt, timeout, stream_container)
+            )
+            return result
+        except Exception as e:
+            # 如果异步模式失败，回退到同步模式
+            st.warning(f"流式输出失败，回退到同步模式: {str(e)}")
+    
+    # 同步模式（原有逻辑）
     start_time = time.time()
     
     try:
@@ -576,10 +744,19 @@ if transcribe_clicked:
         if not ep:
             st.error("未找到所选LLM端点配置！")
         else:
-            # 显示请求状态
-            with st.spinner(f"正在请求 {selected_endpoint}...（最长等待180秒）"):
-                # 调用统一的端点函数
-                success, result, elapsed = call_single_llm_endpoint(ep, full_prompt, timeout=180)
+            # 创建流式输出容器
+            stream_container = st.empty()
+            stream_container.info(f"🔄 正在连接 {selected_endpoint}...")
+            
+            # 调用统一的端点函数（启用流式输出）
+            success, result, elapsed = call_single_llm_endpoint(
+                ep, full_prompt, timeout=180, 
+                use_stream=True, 
+                stream_container=stream_container
+            )
+            
+            # 清理流式输出容器
+            stream_container.empty()
             
             if success:
                 # 转写成功
@@ -634,9 +811,34 @@ if transcribe_clicked:
 # 并发转写包装器函数
 # ============================================================================
 
-def concurrent_call_wrapper(endpoint_name, endpoint_config, prompt, timeout=180):
+async def concurrent_call_wrapper_async(endpoint_name, endpoint_config, prompt, timeout=180, stream_container=None):
     """
-    并发调用的包装器函数
+    异步并发调用的包装器函数
+    直接调用异步流式函数，返回带端点名称的结果
+    
+    参数:
+        endpoint_name: 端点名称
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        timeout: 超时时间（秒）
+        stream_container: Streamlit 容器对象，用于实时显示流式输出
+    
+    返回:
+        (endpoint_name, success, result, elapsed_time)
+    """
+    if httpx is None:
+        # 如果 httpx 不可用，回退到同步模式
+        success, result, elapsed = call_single_llm_endpoint(endpoint_config, prompt, timeout, use_stream=False)
+    else:
+        success, result, elapsed = await call_single_llm_endpoint_stream(
+            endpoint_config, prompt, timeout, stream_container
+        )
+    return (endpoint_name, success, result, elapsed)
+
+
+def concurrent_call_wrapper(endpoint_name, endpoint_config, prompt, timeout=180, use_stream=False, stream_container=None):
+    """
+    并发调用的包装器函数（同步版本，用于线程池）
     调用核心的 call_single_llm_endpoint 函数，并返回带端点名称的结果
     
     参数:
@@ -644,11 +846,17 @@ def concurrent_call_wrapper(endpoint_name, endpoint_config, prompt, timeout=180)
         endpoint_config: 端点配置字典
         prompt: 提示词内容
         timeout: 超时时间（秒）
+        use_stream: 是否使用流式输出
+        stream_container: Streamlit 容器对象，用于实时显示流式输出
     
     返回:
         (endpoint_name, success, result, elapsed_time)
     """
-    success, result, elapsed = call_single_llm_endpoint(endpoint_config, prompt, timeout)
+    success, result, elapsed = call_single_llm_endpoint(
+        endpoint_config, prompt, timeout, 
+        use_stream=use_stream, 
+        stream_container=stream_container
+    )
     return (endpoint_name, success, result, elapsed)
 
 # ============================================================================
@@ -686,12 +894,21 @@ if concurrent_transcribe_clicked:
             progress_bar = st.progress(0)
             status_text = st.empty()
             
+            # 为每个端点创建独立的流式输出容器
+            stream_containers = {}
+            for ep_name in endpoint_configs.keys():
+                stream_containers[ep_name] = st.empty()
+                stream_containers[ep_name].info(f"🔄 正在连接 {ep_name}...")
+            
             # 创建结果容器
             results = {}
             saved_files = []
-            completed_count = 0
-            success_count = 0
-            failed_count = 0
+            # 使用字典存储计数器，避免 nonlocal 作用域问题
+            counters = {
+                "completed_count": 0,
+                "success_count": 0,
+                "failed_count": 0
+            }
             
             # 准备保存目录和基础时间戳
             base_ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -699,59 +916,147 @@ if concurrent_transcribe_clicked:
             md_review_dir = get_md_review_dir()
             os.makedirs(md_review_dir, exist_ok=True)
             
-            # 使用线程池执行并发请求
-            with ThreadPoolExecutor(max_workers=len(endpoint_configs)) as executor:
-                # 提交所有任务
-                future_to_endpoint = {
-                    executor.submit(concurrent_call_wrapper, ep_name, ep_config, full_prompt): ep_name
+            # 使用 asyncio 执行并发异步请求（更适合流式输出）
+            async def run_concurrent_transcribe():
+                """异步执行并发转写"""
+                # 创建所有异步任务
+                tasks = [
+                    concurrent_call_wrapper_async(
+                        ep_name,
+                        ep_config,
+                        full_prompt,
+                        180,  # timeout
+                        stream_containers[ep_name]  # stream_container
+                    )
                     for ep_name, ep_config in endpoint_configs.items()
-                }
+                ]
                 
-                # 处理完成的任务 - 流式处理，完成一个立即保存和打开
-                for future in as_completed(future_to_endpoint):
-                    endpoint_name, success, result, elapsed = future.result()
-                    results[endpoint_name] = {
-                        "success": success,
-                        "result": result,
-                        "elapsed": elapsed
+                # 使用 asyncio.as_completed 来实时处理完成的任务
+                completed_tasks = []
+                for coro in asyncio.as_completed(tasks):
+                    try:
+                        result = await coro
+                        completed_tasks.append(result)
+                        
+                        endpoint_name, success, result_text, elapsed = result
+                        results[endpoint_name] = {
+                            "success": success,
+                            "result": result_text,
+                            "elapsed": elapsed
+                        }
+                        
+                        # 清理该端点的流式输出容器
+                        if endpoint_name in stream_containers:
+                            stream_containers[endpoint_name].empty()
+                        
+                        counters["completed_count"] = len(completed_tasks)
+                        
+                        # 如果成功，立即保存并打开文件
+                        if success:
+                            counters["success_count"] += 1
+                            # 为每个端点添加序号，避免时间戳冲突
+                            ts = f"{base_ts}_{counters['completed_count']}"
+                            safe_endpoint = endpoint_name.replace("/", "_").replace(" ", "_").replace(":", "_")
+                            local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                            
+                            # 保存文件
+                            with open(local_md_path, "w", encoding="utf-8") as f:
+                                f.write(result_text)
+                            
+                            # 保存历史
+                            save_transcribe_history(selected_channel, "concurrent", input_content, result_text, 
+                                                   extra={"endpoint": endpoint_name, "elapsed": elapsed})
+                            
+                            # 立即打开文件，不等待其他端点
+                            try:
+                                subprocess.Popen(["open", local_md_path])
+                                status_text.text(f"✅ {endpoint_name} 完成并已打开 ({elapsed:.2f}秒) | 进度: {counters['completed_count']}/{len(endpoint_configs)}")
+                            except Exception as e:
+                                status_text.text(f"✅ {endpoint_name} 完成 ({elapsed:.2f}秒) | 进度: {counters['completed_count']}/{len(endpoint_configs)}")
+                            
+                            saved_files.append((endpoint_name, local_md_path))
+                        else:
+                            counters["failed_count"] += 1
+                            status_text.text(f"❌ {endpoint_name} 失败 ({elapsed:.2f}秒) | 进度: {counters['completed_count']}/{len(endpoint_configs)}")
+                        
+                        # 更新进度条
+                        progress = counters["completed_count"] / len(endpoint_configs)
+                        progress_bar.progress(progress)
+                        
+                    except Exception as e:
+                        st.error(f"处理任务时出错: {str(e)}")
+            
+            # 运行异步并发转写
+            try:
+                # 获取或创建事件循环
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_closed():
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                
+                # 运行异步函数
+                loop.run_until_complete(run_concurrent_transcribe())
+            except Exception as e:
+                st.error(f"并发转写执行失败: {str(e)}")
+                # 如果异步模式失败，回退到线程池模式
+                st.warning("异步模式失败，回退到线程池模式...")
+                with ThreadPoolExecutor(max_workers=len(endpoint_configs)) as executor:
+                    future_to_endpoint = {
+                        executor.submit(
+                            concurrent_call_wrapper, 
+                            ep_name, 
+                            ep_config, 
+                            full_prompt,
+                            180,
+                            True,
+                            stream_containers[ep_name]
+                        ): ep_name
+                        for ep_name, ep_config in endpoint_configs.items()
                     }
                     
-                    completed_count += 1
-                    
-                    # 如果成功，立即保存并打开文件
-                    if success:
-                        success_count += 1
-                        # 为每个端点添加序号，避免时间戳冲突
-                        ts = f"{base_ts}_{completed_count}"
-                        safe_endpoint = endpoint_name.replace("/", "_").replace(" ", "_").replace(":", "_")
-                        local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                    for future in as_completed(future_to_endpoint):
+                        endpoint_name, success, result_text, elapsed = future.result()
+                        results[endpoint_name] = {
+                            "success": success,
+                            "result": result_text,
+                            "elapsed": elapsed
+                        }
                         
-                        # 保存文件
-                        with open(local_md_path, "w", encoding="utf-8") as f:
-                            f.write(result)
+                        if endpoint_name in stream_containers:
+                            stream_containers[endpoint_name].empty()
                         
-                        # 保存历史
-                        save_transcribe_history(selected_channel, "concurrent", input_content, result, 
-                                               extra={"endpoint": endpoint_name, "elapsed": elapsed})
+                        counters["completed_count"] += 1
                         
-                        # 立即打开文件，不等待其他端点
-                        try:
-                            subprocess.Popen(["open", local_md_path])
-                            status_text.text(f"✅ {endpoint_name} 完成并已打开 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
-                        except Exception as e:
-                            status_text.text(f"✅ {endpoint_name} 完成 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
+                        if success:
+                            counters["success_count"] += 1
+                            ts = f"{base_ts}_{counters['completed_count']}"
+                            safe_endpoint = endpoint_name.replace("/", "_").replace(" ", "_").replace(":", "_")
+                            local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                            
+                            with open(local_md_path, "w", encoding="utf-8") as f:
+                                f.write(result_text)
+                            
+                            save_transcribe_history(selected_channel, "concurrent", input_content, result_text, 
+                                                   extra={"endpoint": endpoint_name, "elapsed": elapsed})
+                            
+                            try:
+                                subprocess.Popen(["open", local_md_path])
+                                status_text.text(f"✅ {endpoint_name} 完成并已打开 ({elapsed:.2f}秒) | 进度: {counters['completed_count']}/{len(endpoint_configs)}")
+                            except Exception:
+                                status_text.text(f"✅ {endpoint_name} 完成 ({elapsed:.2f}秒) | 进度: {counters['completed_count']}/{len(endpoint_configs)}")
+                            
+                            saved_files.append((endpoint_name, local_md_path))
+                        else:
+                            counters["failed_count"] += 1
+                            status_text.text(f"❌ {endpoint_name} 失败 ({elapsed:.2f}秒) | 进度: {counters['completed_count']}/{len(endpoint_configs)}")
                         
-                        saved_files.append((endpoint_name, local_md_path))
-                    else:
-                        failed_count += 1
-                        status_text.text(f"❌ {endpoint_name} 失败 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
-                    
-                    # 更新进度条
-                    progress = completed_count / len(endpoint_configs)
-                    progress_bar.progress(progress)
-                    
-                    # 短暂延迟，让用户看到状态更新
-                    time.sleep(0.3)
+                        progress = counters["completed_count"] / len(endpoint_configs)
+                        progress_bar.progress(progress)
+                        time.sleep(0.3)
             
             # 完成后清除进度显示
             progress_bar.empty()
@@ -769,8 +1074,8 @@ if concurrent_transcribe_clicked:
                 "saved_files": saved_files,
                 "statistics": {
                     "total": len(results),
-                    "success": success_count,
-                    "failed": failed_count
+                    "success": counters["success_count"],
+                    "failed": counters["failed_count"]
                 }
             }
             
@@ -783,9 +1088,9 @@ if concurrent_transcribe_clicked:
             with col_stat1:
                 st.metric("总端点数", len(results))
             with col_stat2:
-                st.metric("成功", success_count, delta=success_count, delta_color="normal")
+                st.metric("成功", counters["success_count"], delta=counters["success_count"], delta_color="normal")
             with col_stat3:
-                st.metric("失败", failed_count, delta=failed_count if failed_count > 0 else None, delta_color="inverse")
+                st.metric("失败", counters["failed_count"], delta=counters["failed_count"] if counters["failed_count"] > 0 else None, delta_color="inverse")
             
             # 并发转写完成后，自动切换到对比区
             st.session_state["show_concurrent_compare"] = True

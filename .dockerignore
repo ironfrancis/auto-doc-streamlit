@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 文档
+docs/
+*.md
+!README.md
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+*.cache
+
+# 工作空间数据（可选，如果需要持久化则注释掉）
+# workspace/
+
+# 配置文件示例（保留实际配置文件）
+*.example.json
+*.example.env
+

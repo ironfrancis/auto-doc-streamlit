@@ -1,13 +1,41 @@
+# Web Framework
 streamlit
+fastapi
+uvicorn[standard]
+
+# HTTP Clients
 requests
-jinja2
-markdown
-selenium
-webdriver-manager
-bs4
-markdownify
-plotly
+httpx
+
+# Database
+sqlalchemy
+psycopg2-binary
+alembic
+
+# LangGraph & LangChain
+langgraph
+langchain-core
+langchain-openai
+
+# Data Processing
 pandas
 openpyxl
 xlrd
-python-dotenv 
+
+# Content Processing
+jinja2
+markdown
+markdownify
+bs4
+
+# Browser Automation
+selenium
+webdriver-manager
+
+# Visualization
+plotly
+
+# Utilities
+python-dotenv
+pydantic
+python-multipart 

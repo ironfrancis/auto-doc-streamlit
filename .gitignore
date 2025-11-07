@@ -4,6 +4,15 @@ __pycache__/
 *.pyo
 *.pyd
 
+# 虚拟环境（项目使用 Docker，不需要本地虚拟环境）
+.venv/
+venv/
+env/
+ENV/
+
+# uv 相关（项目使用 Docker，不需要 uv）
+uv.lock
+
 # Streamlit/临时/日志
 *.log
 *.tmp

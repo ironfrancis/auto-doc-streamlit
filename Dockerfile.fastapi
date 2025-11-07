@@ -1,0 +1,87 @@
+# FastAPI 服务 Dockerfile
+FROM python:3.14-slim
+
+# 设置工作目录
+WORKDIR /app
+
+# 配置 Debian 镜像源（使用清华大学镜像，Debian 13 trixie）
+RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+        sed -i 's|http://deb.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources && \
+        sed -i 's|http://snapshot.debian.org|https://mirrors.tuna.tsinghua.edu.cn|g' /etc/apt/sources.list.d/debian.sources; \
+    else \
+        echo "Types: deb" > /etc/apt/sources.list.d/debian.sources && \
+        echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "Suites: trixie trixie-updates" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "Components: main contrib non-free non-free-firmware" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "Types: deb" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "URIs: https://mirrors.tuna.tsinghua.edu.cn/debian-security" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "Suites: trixie-security" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "Components: main contrib non-free non-free-firmware" >> /etc/apt/sources.list.d/debian.sources && \
+        echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" >> /etc/apt/sources.list.d/debian.sources; \
+    fi
+
+# 安装系统依赖（包括编译工具，用于构建 Python 包）
+RUN apt-get update --fix-missing && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    curl \
+    cmake \
+    make \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    pkg-config \
+    ninja-build \
+    && rm -rf /var/lib/apt/lists/*
+
+# 配置 pip 镜像源（使用清华大学镜像）
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
+
+# 复制依赖文件
+COPY requirements.txt .
+
+# 安装 Python 依赖
+# 分步安装，确保核心包先安装成功
+RUN echo "📦 第一步：安装 FastAPI 核心依赖..." && \
+    pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir fastapi "uvicorn[standard]" && \
+    echo "✅ FastAPI 和 uvicorn 已安装" && \
+    python -m uvicorn --version
+
+RUN echo "📦 第二步：安装其他核心依赖..." && \
+    pip install --no-cache-dir requests httpx sqlalchemy psycopg2-binary alembic langgraph langchain-core langchain-openai python-dotenv pydantic python-multipart
+
+RUN echo "📦 第三步：安装数据处理依赖..." && \
+    pip install --no-cache-dir pandas openpyxl xlrd jinja2 markdown markdownify bs4
+
+RUN echo "📦 第四步：安装其他工具..." && \
+    (pip install --no-cache-dir selenium webdriver-manager || echo "⚠️  selenium 安装失败") && \
+    (pip install --no-cache-dir streamlit || echo "⚠️  streamlit 安装失败")
+
+RUN echo "📦 第五步：尝试安装可选依赖（plotly, pyarrow）..." && \
+    (pip install --no-cache-dir plotly 2>&1 | head -5 || echo "⚠️  plotly 安装失败") && \
+    (pip install --no-cache-dir --only-binary=:all: pyarrow 2>/dev/null || \
+     pip install --no-cache-dir pyarrow 2>/dev/null || \
+     echo "⚠️  pyarrow 安装失败，将跳过") || true
+
+RUN echo "✅ 最终验证..." && \
+    python -c "import fastapi; import uvicorn; print('✅ FastAPI 和 uvicorn 可用')" && \
+    python -m uvicorn --version
+
+# 注意：代码通过 volume 挂载，不需要 COPY
+# 这样可以实现开发模式下的热重载
+
+# 暴露 FastAPI 端口
+EXPOSE 8000
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# 默认命令（会被 docker-compose 覆盖）
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+

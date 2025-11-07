@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库服务
+  postgres:
+    image: postgres:15-alpine
+    container_name: auto-doc-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: autodoc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # FastAPI 后端服务
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.fastapi
+    container_name: auto-doc-fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - ./config:/app/config
+      - ./workspace:/app/workspace
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/autodoc
+      - PROJECT_ROOT=/app
+      - CONFIG_DIR=/app/config
+      - WORKSPACE_DIR=/app/workspace
+      - DEBUG=True
+    depends_on:
+      postgres:
+        condition: service_healthy
+    working_dir: /app
+    command: ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Streamlit 前端服务
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auto-doc-streamlit
+    ports:
+      - "8501:8501"
+    volumes:
+      # 挂载整个项目代码（开发模式）
+      - .:/app
+      # 挂载配置文件目录
+      - ./config:/app/config
+      # 挂载工作空间目录（数据持久化）
+      - ./workspace:/app/workspace
+      # 挂载静态文件目录
+      - ./static:/app/static
+      # 挂载模板目录
+      - ./templates:/app/templates
+      # 挂载环境变量文件
+      - ./project.env:/app/project.env:ro
+    environment:
+      # 设置项目根目录
+      - PROJECT_ROOT=/app
+      - APP_DIR=/app
+      - CONFIG_DIR=/app/config
+      - TEMPLATES_DIR=/app/templates
+      - STATIC_DIR=/app/static
+      - WORKSPACE_DIR=/app/workspace
+      - MD_REVIEW_DIR=/app/workspace/articles/md_review
+      - IMAGES_DIR=/app/workspace/images
+      - EXPORTS_DIR=/app/workspace/exports
+      - ARTICLES_DIR=/app/workspace/articles
+      - API_BASE_URL=http://fastapi:8000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/autodoc
+      - DEBUG=True
+    depends_on:
+      - postgres
+      - fastapi
+    working_dir: /app
+    command: ["python", "-m", "streamlit", "run", "homepage.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    stdin_open: true
+    tty: true
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
