@@ -364,7 +364,7 @@ Chrome初始化失败，可能是以下原因之一：
                 if image_handling == "Download to Local":
                     # 使用正确的图片存储路径
                     try:
-                        from simple_paths import get_images_dir
+                        from scripts.utils.simple_paths import get_images_dir
                         images_dir = get_images_dir()
                     except ImportError:
                         # 备用方案：直接计算路径

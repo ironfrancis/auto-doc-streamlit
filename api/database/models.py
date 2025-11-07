@@ -72,7 +72,7 @@ class Article(Base):
     channel_id = Column(String, ForeignKey("channels.id"))
     status = Column(SQLEnum(ArticleStatus), default=ArticleStatus.DRAFT)
     # 使用 JSONB 存储额外的元数据
-    metadata = Column(JSONB)
+    extra_metadata = Column(JSONB)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -112,10 +112,68 @@ class WorkflowExecution(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 
+class ImageBed(Base):
+    """图床配置模型"""
+    __tablename__ = "image_beds"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # lsky, scdn等
+    api_url = Column(String)
+    token = Column(String)
+    is_default = Column(String, default="false")
+    is_enabled = Column(String, default="true")
+    description = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class WechatToken(Base):
+    """微信公众号Token配置"""
+    __tablename__ = "wechat_tokens"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    account_name = Column(String, nullable=False)
+    token = Column(String, nullable=False)
+    status = Column(String, default="active")
+    description = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class InfoSource(Base):
+    """信息源配置模型"""
+    __tablename__ = "info_sources"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    url = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # rss, website, api等
+    config = Column(JSONB)  # 存储额外的配置信息
+    is_enabled = Column(String, default="true")
+    description = Column(Text)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class Template(Base):
+    """HTML模板配置模型"""
+    __tablename__ = "templates"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False, unique=True)
+    file_path = Column(String, nullable=False)
+    description = Column(Text)
+    category = Column(String)  # news, article, observation等
+    is_default = Column(String, default="false")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
 class Config(Base):
     """系统配置模型"""
     __tablename__ = "configs"
-    
+
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     key = Column(String, unique=True, nullable=False)
     value = Column(JSONB)

@@ -52,46 +52,36 @@ services:
   # Streamlit 前端服务
   streamlit:
     build:
-      context: .
+      context: ./frontend/streamlit
       dockerfile: Dockerfile
     container_name: auto-doc-streamlit
     ports:
       - "8501:8501"
     volumes:
-      # 挂载整个项目代码（开发模式）
-      - .:/app
+      # 挂载 Streamlit 应用代码
+      - ./frontend/streamlit/app:/app
+      # 挂载核心模块
+      - ./core:/app/core:ro
+      - ./scripts:/app/scripts:ro
+      # 挂载共享资源
+      - ./frontend/shared:/app/shared:ro
       # 挂载配置文件目录
-      - ./config:/app/config
+      - ./config:/app/config:ro
       # 挂载工作空间目录（数据持久化）
-      - ./workspace:/app/workspace
-      # 挂载静态文件目录
-      - ./static:/app/static
-      # 挂载模板目录
-      - ./templates:/app/templates
-      # 挂载环境变量文件
-      - ./project.env:/app/project.env:ro
+      - ./workspace:/app/workspace:ro
     environment:
-      # 设置项目根目录
-      - PROJECT_ROOT=/app
-      - APP_DIR=/app
-      - CONFIG_DIR=/app/config
-      - TEMPLATES_DIR=/app/templates
-      - STATIC_DIR=/app/static
-      - WORKSPACE_DIR=/app/workspace
-      - MD_REVIEW_DIR=/app/workspace/articles/md_review
-      - IMAGES_DIR=/app/workspace/images
-      - EXPORTS_DIR=/app/workspace/exports
-      - ARTICLES_DIR=/app/workspace/articles
+      # API 配置
       - API_BASE_URL=http://fastapi:8000
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/autodoc
+      # 调试模式
       - DEBUG=True
+      # 目录配置
+      - CONFIG_DIR=/app/config
+      - WORKSPACE_DIR=/app/workspace
+      - SHARED_DIR=/app/shared
     depends_on:
       - postgres
       - fastapi
-    working_dir: /app
-    command: ["python", "-m", "streamlit", "run", "homepage.py", "--server.port=8501", "--server.address=0.0.0.0"]
-    stdin_open: true
-    tty: true
     networks:
       - app-network
     restart: unless-stopped

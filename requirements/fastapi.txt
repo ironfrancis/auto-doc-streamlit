@@ -1,0 +1,28 @@
+# FastAPI 后端服务依赖
+# FastAPI backend service dependencies
+
+-r base.txt
+
+# FastAPI Framework
+fastapi>=0.68.0
+uvicorn[standard]>=0.15.0
+
+# Database
+sqlalchemy>=1.4.0
+psycopg2-binary>=2.9.0
+alembic>=1.8.0
+
+# LangGraph & LangChain (for workflow orchestration)
+langgraph>=0.0.20
+langchain-core>=0.1.0
+langchain-openai>=0.0.5
+
+# Optional: Streamlit for potential admin interface (can be removed if not needed)
+# streamlit>=1.28.0
+
+# Optional: Selenium if backend needs web scraping capabilities
+# selenium>=4.15.0
+# webdriver-manager>=4.0.0
+
+# Optional: Visualization for data analysis endpoints
+# plotly>=5.11.0

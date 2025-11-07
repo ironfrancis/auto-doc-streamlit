@@ -16,4 +16,5 @@ services:
     volumes:
       - ./analyse:/app/analyse
       - ./scripts:/app/scripts
+      - ./requirements:/app/requirements  # 挂载依赖文件用于开发调试
 

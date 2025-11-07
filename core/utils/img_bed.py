@@ -17,7 +17,7 @@ def load_image_beds_config() -> List[Dict]:
         # 优先使用 simple_paths 提供的 CONFIG_DIR（workspace/data/json）
         config_paths: List[str] = []
         try:
-            from simple_paths import get_config_dir
+            from scripts.utils.simple_paths import get_config_dir
             config_dir = get_config_dir()
             config_paths.append(os.path.join(config_dir, "image_beds.json"))
         except Exception:

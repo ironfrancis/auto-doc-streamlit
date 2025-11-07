@@ -1,0 +1,57 @@
+# Streamlit 前端应用依赖
+
+# Streamlit Framework
+streamlit>=1.28.0
+
+# HTTP Clients
+requests>=2.28.0
+httpx>=0.24.0
+
+# Configuration & Environment
+python-dotenv>=0.19.0
+
+# Data Validation & Serialization
+pydantic>=1.10.0
+
+# Data Processing
+pandas>=1.5.0
+openpyxl>=3.1.0
+xlrd>=2.0.0
+
+# Note: pyarrow is excluded due to ARM64 compilation issues
+# It will be installed automatically by streamlit if needed for specific features
+
+# Content Processing
+jinja2>=3.1.0
+markdown>=3.4.0
+markdownify>=0.11.0
+bs4>=0.0.1
+
+# Visualization & UI
+plotly>=5.11.0
+altair>=4.2.0
+watchdog>=2.1.0
+gitpython>=3.1.0
+cachetools>=5.3.0
+click>=8.1.0
+numpy>=1.24.0
+packaging>=23.0
+pillow>=10.0.0
+protobuf>=4.21.0
+python-dateutil>=2.8.0
+pytz>=2023.3
+rich>=13.0.0
+tenacity>=8.2.0
+toml>=0.10.0
+typing-extensions>=4.5.0
+tzlocal>=5.0
+pydeck>=0.8.0
+tornado>=6.3.0
+blinker>=1.5.0
+
+# Browser Automation (for web scraping features)
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
+# Utilities
+python-multipart>=0.0.5

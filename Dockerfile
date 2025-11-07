@@ -99,34 +99,22 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
     pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
 
 # 复制依赖文件
-COPY requirements.txt .
+COPY requirements/ ./requirements/
 
-# 安装 Python 依赖
-# 分步安装，确保核心包先安装成功
-RUN echo "📦 第一步：安装 Streamlit 及其核心依赖..." && \
+# 安装 Python 依赖（处理 pyarrow 兼容性问题）
+RUN echo "📦 安装 Streamlit 前端依赖..." && \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir streamlit --no-deps && \
-    pip install --no-cache-dir altair blinker cachetools click numpy packaging pillow protobuf python-dateutil pytz requests rich tenacity toml typing-extensions tzlocal watchdog gitpython pydeck tornado pyarrow && \
-    echo "✅ Streamlit 核心依赖已安装" && \
+    pip install --no-cache-dir -r requirements/base.txt && \
+    echo "✅ 安装其他 Streamlit 依赖（跳过问题包）..." && \
+    pip install --no-cache-dir plotly altair watchdog gitpython cachetools click numpy packaging pillow protobuf python-dateutil pytz rich tenacity toml typing-extensions tzlocal pydeck tornado selenium webdriver-manager blinker || true && \
+    echo "✅ Streamlit 依赖安装完成" && \
     pip show streamlit | head -3
 
-RUN echo "📦 第二步：安装 FastAPI 和其他核心依赖..." && \
-    pip install --no-cache-dir fastapi "uvicorn[standard]" requests httpx sqlalchemy psycopg2-binary alembic langgraph langchain-core langchain-openai python-dotenv pydantic python-multipart
-
-RUN echo "📦 第三步：安装数据处理依赖..." && \
-    pip install --no-cache-dir pandas openpyxl xlrd jinja2 markdown markdownify bs4
-
-RUN echo "📦 第四步：安装其他工具..." && \
-    (pip install --no-cache-dir selenium webdriver-manager || echo "⚠️  selenium 安装失败")
-
-RUN echo "📦 第五步：尝试安装可选依赖（plotly, pyarrow）..." && \
-    (pip install --no-cache-dir plotly 2>&1 | head -5 || echo "⚠️  plotly 安装失败") && \
-    (pip install --no-cache-dir --only-binary=:all: pyarrow 2>/dev/null || \
-     pip install --no-cache-dir pyarrow 2>/dev/null || \
-     echo "⚠️  pyarrow 安装失败，将跳过") || true
-
-RUN echo "✅ 最终验证..." && \
+RUN echo "✅ 验证关键包..." && \
     (python -c "import streamlit; print('✅ Streamlit 可用')" || echo "⚠️  Streamlit 导入失败") && \
+    (python -c "import plotly; print('✅ Plotly 可用')" || echo "⚠️  Plotly 导入失败") && \
+    (python -c "import selenium; print('✅ Selenium 可用')" || echo "⚠️  Selenium 导入失败") && \
     (python -m streamlit --version || echo "⚠️  Streamlit 命令失败，但包已安装")
 
 # 注意：代码通过 volume 挂载，不需要 COPY

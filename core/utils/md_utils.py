@@ -590,7 +590,7 @@ def convert_absolute_paths_to_web_paths(html_content, static_dir=None):
     # 如果没有指定static_dir，使用simple_paths中的配置
     if static_dir is None:
         try:
-            from simple_paths import get_static_dir
+            from scripts.utils.simple_paths import get_static_dir
             static_dir = get_static_dir()
         except ImportError:
             static_dir = "static"  # fallback
@@ -795,7 +795,7 @@ def md_to_html(md_text: str, template_name: str = 'magic-article-template.html',
     # 如果没有指定static_dir，使用simple_paths中的配置
     if static_dir is None:
         try:
-            from simple_paths import get_static_dir
+            from scripts.utils.simple_paths import get_static_dir
             static_dir = get_static_dir()
         except ImportError:
             static_dir = "static"  # fallback

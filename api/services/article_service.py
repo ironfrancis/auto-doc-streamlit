@@ -67,7 +67,8 @@ class ArticleService:
             "title": article.title,
             "content": article.content,
             "channel_id": article.channel_id,
-            "status": article.status,
+            "status": article.status.value if hasattr(article.status, 'value') else str(article.status),
+            "extra_metadata": article.extra_metadata if article.extra_metadata else {},
             "created_at": article.created_at.isoformat() if article.created_at else None,
             "updated_at": article.updated_at.isoformat() if article.updated_at else None,
         }
