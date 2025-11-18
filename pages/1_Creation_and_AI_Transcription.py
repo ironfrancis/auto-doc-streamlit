@@ -7,6 +7,7 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import threading
+from queue import Queue
 
 # 使用简化路径管理
 from simple_paths import *
@@ -68,6 +69,53 @@ st.set_page_config(page_title="AI Transcription", layout="wide")
 load_anthropic_theme()
 
 st.title("Creation and Transcription")
+
+# ============================================================================
+# Sidebar 调试信息
+# ============================================================================
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### 🔍 调试信息")
+    
+    # 获取目录信息
+    workspace_md_dir = get_md_review_dir()
+    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file_dir)))
+    legacy_md_dir = os.path.join(project_root, "app", "md_review")
+    
+    # 精简显示
+    workspace_exists = os.path.exists(workspace_md_dir)
+    legacy_exists = os.path.exists(legacy_md_dir)
+    
+    # Workspace目录信息
+    workspace_status = "✅" if workspace_exists else "❌"
+    workspace_info = ""
+    if workspace_exists:
+        try:
+            files = os.listdir(workspace_md_dir)
+            md_count = len([f for f in files if f.endswith('.md')])
+            workspace_info = f" ({len(files)}文件, {md_count}MD)"
+        except:
+            workspace_info = " (读取失败)"
+    
+    st.markdown(f"**Workspace:** {workspace_status} {workspace_info}")
+    if workspace_exists:
+        st.caption(workspace_md_dir)
+    
+    # Legacy目录信息
+    legacy_status = "✅" if legacy_exists else "❌"
+    legacy_info = ""
+    if legacy_exists:
+        try:
+            files = os.listdir(legacy_md_dir)
+            md_count = len([f for f in files if f.endswith('.md')])
+            legacy_info = f" ({md_count}MD)"
+        except:
+            legacy_info = " (读取失败)"
+    
+    st.markdown(f"**Legacy:** {legacy_status} {legacy_info}")
+    if legacy_exists:
+        st.caption(legacy_md_dir)
 
 STATIC_DIR = get_static_dir()
 # 使用简化路径管理
@@ -372,6 +420,59 @@ with col_btn2:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ============================================================================
+# 统一的MD预览区域
+# ============================================================================
+
+def init_md_preview_area(num_tasks=1):
+    """
+    初始化统一的MD预览区域
+    
+    参数:
+        num_tasks: 任务数量（单发=1，并发=端点数量）
+    
+    返回:
+        (columns, display_containers, status_containers)
+        - columns: 列布局列表
+        - display_containers: 显示容器字典 {task_name: container}
+        - status_containers: 状态容器字典 {task_name: container}
+    """
+    # 根据任务数量决定列数（最多4列，最少1列）
+    num_columns = min(max(1, num_tasks), 4)
+    
+    # 创建列布局
+    preview_columns = st.columns(num_columns)
+    
+    # 创建容器字典
+    display_containers = {}
+    status_containers = {}
+    
+    return preview_columns, display_containers, status_containers
+
+
+def create_preview_slot(column, task_name, task_index, num_columns):
+    """
+    在指定列中创建预览槽位
+    
+    参数:
+        column: Streamlit列对象
+        task_name: 任务名称（端点名称）
+        task_index: 任务索引
+        num_columns: 总列数
+    
+    返回:
+        (display_container, status_container)
+    """
+    with column:
+        # 显示任务名称
+        st.markdown(f"#### 📡 {task_name}")
+        
+        # 创建显示容器和状态容器
+        display_container = st.empty()
+        status_container = st.empty()
+        
+        return display_container, status_container
+
+# ============================================================================
 # 核心抽象函数：统一的 LLM 端点调用
 # ============================================================================
 
@@ -468,6 +569,224 @@ def call_single_llm_endpoint(endpoint_config, prompt, timeout=180):
     except Exception as e:
         elapsed = time.time() - start_time
         return (False, f"未知错误: {str(e)}", elapsed)
+
+
+def call_single_llm_endpoint_streaming(endpoint_config, prompt, timeout=180):
+    """
+    流式 LLM 端点调用函数（生成器模式）
+    
+    参数:
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        timeout: 超时时间（秒）
+    
+    生成:
+        (success: bool, chunk: str, is_done: bool, error: str)
+        - success: 是否成功（True表示正常，False表示错误）
+        - chunk: 文本片段（成功时）
+        - is_done: 是否完成（True表示流式结束）
+        - error: 错误信息（失败时）
+    """
+    try:
+        api_type = endpoint_config.get("api_type", "")
+        api_url = endpoint_config.get("api_url", "").strip()
+        api_key = endpoint_config.get("api_key", "")
+        model = endpoint_config.get("model", "")
+        is_openai = endpoint_config.get("is_openai_compatible", False)
+        temperature = endpoint_config.get("temperature", 0.7)
+        
+        # 根据 API 类型构建流式请求
+        if is_openai:
+            # OpenAI 兼容 API 流式请求
+            headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            data = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": temperature,
+                "stream": True
+            }
+            
+            # 发送流式请求
+            resp = requests.post(api_url, headers=headers, json=data, timeout=timeout, stream=True)
+            
+            if resp.status_code != 200:
+                yield (False, "", True, f"HTTP {resp.status_code}: {resp.text[:200]}")
+                return
+            
+            # 解析 SSE 流式响应
+            for line in resp.iter_lines():
+                if not line:
+                    continue
+                
+                line = line.decode('utf-8')
+                
+                # 跳过非 data 行
+                if not line.startswith('data: '):
+                    continue
+                
+                # 提取 JSON 数据
+                json_str = line[6:]  # 跳过 "data: "
+                
+                # 检查结束标记
+                if json_str.strip() == '[DONE]':
+                    yield (True, "", True, None)
+                    return
+                
+                # 解析 JSON
+                try:
+                    chunk_data = json.loads(json_str)
+                    
+                    # 提取内容片段
+                    if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
+                        delta = chunk_data["choices"][0].get("delta", {})
+                        content = delta.get("content", "")
+                        if content:
+                            yield (True, content, False, None)
+                except json.JSONDecodeError:
+                    # 忽略解析错误的行
+                    continue
+                except Exception as e:
+                    yield (False, "", True, f"解析流式响应失败: {str(e)}")
+                    return
+            
+            # 流式结束
+            yield (True, "", True, None)
+            
+        elif api_type == "Magic":
+            # Magic API 流式请求
+            if "api/chat" in api_url:
+                # 新版本 Magic API - 可能不支持流式，回退到非流式
+                yield (False, "", True, "新版本 Magic API 暂不支持流式输出")
+                return
+            else:
+                # 旧版本 Magic API (OpenAI 兼容)
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+                data = {
+                    "model": model if model else "magic-chat",
+                    "messages": [
+                        {"role": "system", "content": "你是一个专业的AI写作助手。"},
+                        {"role": "user", "content": prompt}
+                    ],
+                    "temperature": temperature,
+                    "stream": True,
+                    "max_tokens": 4000
+                }
+                
+                # 发送流式请求
+                resp = requests.post(api_url, headers=headers, json=data, timeout=timeout, stream=True)
+                
+                if resp.status_code != 200:
+                    yield (False, "", True, f"HTTP {resp.status_code}: {resp.text[:200]}")
+                    return
+                
+                # 解析 SSE 流式响应（与 OpenAI 格式相同）
+                for line in resp.iter_lines():
+                    if not line:
+                        continue
+                    
+                    line = line.decode('utf-8')
+                    
+                    if not line.startswith('data: '):
+                        continue
+                    
+                    json_str = line[6:]
+                    
+                    if json_str.strip() == '[DONE]':
+                        yield (True, "", True, None)
+                        return
+                    
+                    try:
+                        chunk_data = json.loads(json_str)
+                        
+                        if "choices" in chunk_data and len(chunk_data["choices"]) > 0:
+                            delta = chunk_data["choices"][0].get("delta", {})
+                            content = delta.get("content", "")
+                            if content:
+                                yield (True, content, False, None)
+                    except json.JSONDecodeError:
+                        continue
+                    except Exception as e:
+                        yield (False, "", True, f"解析流式响应失败: {str(e)}")
+                        return
+                
+                yield (True, "", True, None)
+        else:
+            yield (False, "", True, f"不支持的 API 类型: {api_type}")
+    
+    except requests.exceptions.Timeout:
+        yield (False, "", True, f"请求超时（{timeout}秒）")
+    except requests.exceptions.ConnectionError:
+        yield (False, "", True, "连接失败，请检查网络或 API 地址")
+    except requests.exceptions.RequestException as e:
+        yield (False, "", True, f"请求异常: {str(e)}")
+    except Exception as e:
+        yield (False, "", True, f"未知错误: {str(e)}")
+
+
+def stream_llm_with_display(endpoint_config, prompt, display_container, status_container=None, timeout=180):
+    """
+    流式 LLM 调用并实时显示
+    
+    参数:
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        display_container: Streamlit 容器（st.empty()），用于显示内容
+        status_container: Streamlit 容器（可选），用于显示状态信息
+        timeout: 超时时间（秒）
+    
+    返回:
+        (success: bool, result: str, elapsed_time: float)
+        - success: 是否成功
+        - result: 完整的 markdown 内容
+        - elapsed_time: 请求耗时（秒）
+    """
+    start_time = time.time()
+    accumulated_text = ""
+    
+    try:
+        # 初始化显示
+        display_container.markdown("⏳ 正在生成内容...")
+        if status_container:
+            status_container.info("🔄 连接中...")
+        
+        # 调用流式生成器
+        for success, chunk, is_done, error in call_single_llm_endpoint_streaming(endpoint_config, prompt, timeout):
+            if not success:
+                # 发生错误
+                elapsed = time.time() - start_time
+                error_msg = error or "未知错误"
+                display_container.error(f"❌ 错误: {error_msg}")
+                if status_container:
+                    status_container.error(f"❌ 失败 ({elapsed:.2f}秒)")
+                return (False, error_msg, elapsed)
+            
+            # 累积文本片段（如果有）
+            if chunk:
+                accumulated_text += chunk
+                # 实时更新显示
+                display_container.markdown(accumulated_text)
+            
+            # 检查是否完成
+            if is_done:
+                # 流式结束
+                elapsed = time.time() - start_time
+                if status_container:
+                    status_container.success(f"✅ 完成 ({elapsed:.2f}秒)")
+                return (True, accumulated_text, elapsed)
+        
+        # 如果循环正常结束（理论上不会到这里）
+        elapsed = time.time() - start_time
+        if status_container:
+            status_container.info(f"⏱️ 耗时: {elapsed:.2f}秒")
+        return (True, accumulated_text, elapsed)
+    
+    except Exception as e:
+        elapsed = time.time() - start_time
+        error_msg = f"流式处理异常: {str(e)}"
+        display_container.error(f"❌ {error_msg}")
+        if status_container:
+            status_container.error(f"❌ 异常 ({elapsed:.2f}秒)")
+        return (False, error_msg, elapsed)
 
 
 def extract_input_content(md_input, text_input, link_input):
@@ -576,10 +895,26 @@ if transcribe_clicked:
         if not ep:
             st.error("未找到所选LLM端点配置！")
         else:
-            # 显示请求状态
-            with st.spinner(f"正在请求 {selected_endpoint}...（最长等待180秒）"):
-                # 调用统一的端点函数
-                success, result, elapsed = call_single_llm_endpoint(ep, full_prompt, timeout=180)
+            # 初始化统一的MD预览区域（单发转写，1个任务）
+            st.markdown("### 📝 实时生成内容")
+            preview_columns, display_containers, status_containers = init_md_preview_area(num_tasks=1)
+            
+            # 在第一个列中创建预览槽位
+            display_container, status_container = create_preview_slot(
+                preview_columns[0], 
+                selected_endpoint, 
+                0, 
+                1
+            )
+            
+            # 调用流式端点函数
+            success, result, elapsed = stream_llm_with_display(
+                ep, 
+                full_prompt, 
+                display_container, 
+                status_container, 
+                timeout=180
+            )
             
             if success:
                 # 转写成功
@@ -627,8 +962,8 @@ if transcribe_clicked:
                 time.sleep(0.5)
                 st.rerun()
             else:
-                # 转写失败
-                st.error(f"❌ AI转写失败\n\n**错误信息:** {result}\n\n**端点:** {selected_endpoint}\n**耗时:** {elapsed:.2f}秒")
+                # 转写失败（错误信息已在流式显示中显示）
+                st.error(f"❌ AI转写失败\n\n**端点:** {selected_endpoint}\n**耗时:** {elapsed:.2f}秒")
 
 # ============================================================================
 # 并发转写包装器函数
@@ -649,6 +984,83 @@ def concurrent_call_wrapper(endpoint_name, endpoint_config, prompt, timeout=180)
         (endpoint_name, success, result, elapsed_time)
     """
     success, result, elapsed = call_single_llm_endpoint(endpoint_config, prompt, timeout)
+    return (endpoint_name, success, result, elapsed)
+
+
+def stream_llm_with_queue(endpoint_config, prompt, update_queue, timeout=180):
+    """
+    流式 LLM 调用并使用队列传递更新（用于并发场景）
+    
+    参数:
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        update_queue: 队列对象，用于传递更新消息
+        timeout: 超时时间（秒）
+    
+    返回:
+        (success: bool, result: str, elapsed_time: float)
+    """
+    start_time = time.time()
+    accumulated_text = ""
+    
+    try:
+        # 发送初始化消息
+        update_queue.put(("init", "⏳ 正在生成内容...", None))
+        
+        # 调用流式生成器
+        for success, chunk, is_done, error in call_single_llm_endpoint_streaming(endpoint_config, prompt, timeout):
+            if not success:
+                # 发生错误
+                elapsed = time.time() - start_time
+                error_msg = error or "未知错误"
+                update_queue.put(("error", error_msg, elapsed))
+                return (False, error_msg, elapsed)
+            
+            # 累积文本片段（如果有）
+            if chunk:
+                accumulated_text += chunk
+                # 通过队列发送更新
+                update_queue.put(("update", accumulated_text, None))
+            
+            # 检查是否完成
+            if is_done:
+                # 流式结束
+                elapsed = time.time() - start_time
+                update_queue.put(("done", accumulated_text, elapsed))
+                return (True, accumulated_text, elapsed)
+        
+        # 如果循环正常结束
+        elapsed = time.time() - start_time
+        update_queue.put(("done", accumulated_text, elapsed))
+        return (True, accumulated_text, elapsed)
+    
+    except Exception as e:
+        elapsed = time.time() - start_time
+        error_msg = f"流式处理异常: {str(e)}"
+        update_queue.put(("error", error_msg, elapsed))
+        return (False, error_msg, elapsed)
+
+
+def concurrent_stream_wrapper(endpoint_name, endpoint_config, prompt, update_queue, timeout=180):
+    """
+    并发流式调用的包装器函数（使用队列机制）
+    
+    参数:
+        endpoint_name: 端点名称
+        endpoint_config: 端点配置字典
+        prompt: 提示词内容
+        update_queue: 队列对象，用于传递更新消息
+        timeout: 超时时间（秒）
+    
+    返回:
+        (endpoint_name, success, result, elapsed_time)
+    """
+    success, result, elapsed = stream_llm_with_queue(
+        endpoint_config, 
+        prompt, 
+        update_queue, 
+        timeout
+    )
     return (endpoint_name, success, result, elapsed)
 
 # ============================================================================
@@ -682,9 +1094,22 @@ if concurrent_transcribe_clicked:
             # 显示并发信息
             st.info(f"🚀 正在并发调用 {len(endpoint_configs)} 个端点...")
             
-            # 创建进度显示
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+            # 初始化统一的MD预览区域（并发转写，根据端点数量）
+            num_endpoints = len(endpoint_configs)
+            preview_columns, display_containers, status_containers = init_md_preview_area(num_tasks=num_endpoints)
+            num_columns = len(preview_columns)
+            
+            # 为每个端点创建预览槽位
+            for idx, (ep_name, ep_config) in enumerate(endpoint_configs.items()):
+                col_idx = idx % num_columns
+                display_container, status_container = create_preview_slot(
+                    preview_columns[col_idx],
+                    ep_name,
+                    idx,
+                    num_columns
+                )
+                display_containers[ep_name] = display_container
+                status_containers[ep_name] = status_container
             
             # 创建结果容器
             results = {}
@@ -699,63 +1124,96 @@ if concurrent_transcribe_clicked:
             md_review_dir = get_md_review_dir()
             os.makedirs(md_review_dir, exist_ok=True)
             
-            # 使用线程池执行并发请求
+            # 为每个端点创建更新队列
+            endpoint_queues = {ep_name: Queue() for ep_name in endpoint_configs.keys()}
+            
+            # 使用线程池执行并发流式请求
             with ThreadPoolExecutor(max_workers=len(endpoint_configs)) as executor:
-                # 提交所有任务
+                # 提交所有流式任务
                 future_to_endpoint = {
-                    executor.submit(concurrent_call_wrapper, ep_name, ep_config, full_prompt): ep_name
+                    executor.submit(
+                        concurrent_stream_wrapper,
+                        ep_name,
+                        ep_config,
+                        full_prompt,
+                        endpoint_queues[ep_name],
+                        180
+                    ): ep_name
                     for ep_name, ep_config in endpoint_configs.items()
                 }
                 
-                # 处理完成的任务 - 流式处理，完成一个立即保存和打开
-                for future in as_completed(future_to_endpoint):
-                    endpoint_name, success, result, elapsed = future.result()
-                    results[endpoint_name] = {
-                        "success": success,
-                        "result": result,
-                        "elapsed": elapsed
-                    }
-                    
-                    completed_count += 1
-                    
-                    # 如果成功，立即保存并打开文件
-                    if success:
-                        success_count += 1
-                        # 为每个端点添加序号，避免时间戳冲突
-                        ts = f"{base_ts}_{completed_count}"
-                        safe_endpoint = endpoint_name.replace("/", "_").replace(" ", "_").replace(":", "_")
-                        local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
-                        
-                        # 保存文件
-                        with open(local_md_path, "w", encoding="utf-8") as f:
-                            f.write(result)
-                        
-                        # 保存历史
-                        save_transcribe_history(selected_channel, "concurrent", input_content, result, 
-                                               extra={"endpoint": endpoint_name, "elapsed": elapsed})
-                        
-                        # 立即打开文件，不等待其他端点
+                # 主线程轮询队列并更新UI
+                active_tasks = set(endpoint_configs.keys())
+                
+                while active_tasks or any(not q.empty() for q in endpoint_queues.values()):
+                    # 处理所有队列中的更新消息
+                    for ep_name in list(active_tasks):
+                        queue = endpoint_queues[ep_name]
                         try:
-                            subprocess.Popen(["open", local_md_path])
-                            status_text.text(f"✅ {endpoint_name} 完成并已打开 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
-                        except Exception as e:
-                            status_text.text(f"✅ {endpoint_name} 完成 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
-                        
-                        saved_files.append((endpoint_name, local_md_path))
-                    else:
-                        failed_count += 1
-                        status_text.text(f"❌ {endpoint_name} 失败 ({elapsed:.2f}秒) | 进度: {completed_count}/{len(endpoint_configs)}")
+                            while not queue.empty():
+                                msg_type, content, elapsed = queue.get_nowait()
+                                
+                                if msg_type == "init":
+                                    display_containers[ep_name].markdown(content)
+                                    if status_containers[ep_name]:
+                                        status_containers[ep_name].info("🔄 连接中...")
+                                elif msg_type == "update":
+                                    display_containers[ep_name].markdown(content)
+                                elif msg_type == "error":
+                                    display_containers[ep_name].error(f"❌ 错误: {content}")
+                                    if status_containers[ep_name]:
+                                        status_containers[ep_name].error(f"❌ 失败 ({elapsed:.2f}秒)")
+                                elif msg_type == "done":
+                                    if status_containers[ep_name]:
+                                        status_containers[ep_name].success(f"✅ 完成 ({elapsed:.2f}秒)")
+                        except:
+                            pass
                     
-                    # 更新进度条
-                    progress = completed_count / len(endpoint_configs)
-                    progress_bar.progress(progress)
-                    
-                    # 短暂延迟，让用户看到状态更新
-                    time.sleep(0.3)
-            
-            # 完成后清除进度显示
-            progress_bar.empty()
-            status_text.empty()
+                    # 检查完成的任务
+                    try:
+                        for future in as_completed(future_to_endpoint, timeout=0.1):
+                            endpoint_name, success, result, elapsed = future.result()
+                            if endpoint_name in active_tasks:
+                                active_tasks.remove(endpoint_name)
+                                results[endpoint_name] = {
+                                    "success": success,
+                                    "result": result,
+                                    "elapsed": elapsed
+                                }
+                                
+                                completed_count += 1
+                                
+                                # 如果成功，立即保存并打开文件
+                                if success:
+                                    success_count += 1
+                                    # 为每个端点添加序号，避免时间戳冲突
+                                    ts = f"{base_ts}_{completed_count}"
+                                    safe_endpoint = endpoint_name.replace("/", "_").replace(" ", "_").replace(":", "_")
+                                    local_md_path = os.path.join(md_review_dir, f"{ts}_{safe_channel}_{safe_endpoint}.md")
+                                    
+                                    # 保存文件
+                                    with open(local_md_path, "w", encoding="utf-8") as f:
+                                        f.write(result)
+                                    
+                                    # 保存历史
+                                    save_transcribe_history(selected_channel, "concurrent", input_content, result, 
+                                                           extra={"endpoint": endpoint_name, "elapsed": elapsed})
+                                    
+                                    # 立即打开文件，不等待其他端点
+                                    try:
+                                        subprocess.Popen(["open", local_md_path])
+                                    except Exception as e:
+                                        pass  # 忽略打开文件错误
+                                    
+                                    saved_files.append((endpoint_name, local_md_path))
+                                else:
+                                    failed_count += 1
+                                
+                                # 从future字典中移除已完成的
+                                del future_to_endpoint[future]
+                    except:
+                        # 超时或没有完成的任务，继续轮询
+                        time.sleep(0.1)
             
             # 保存并发历史到 JSON 文件
             save_concurrent_history(base_ts, selected_channel, results, saved_files)
@@ -775,6 +1233,7 @@ if concurrent_transcribe_clicked:
             }
             
             # 显示最终统计
+            st.markdown("---")
             if saved_files:
                 st.success(f"🎉 并发转写完成！已自动保存并打开 {len(saved_files)} 个成功的结果")
             
@@ -879,7 +1338,7 @@ has_history = len(history_list) > 0
 # 如果有当前结果或历史记录，显示对比区
 if has_current_results or has_history:
     st.markdown("---")
-    st.markdown("## 并发结果对比区")
+    st.markdown("## 写作预览")
     
     # 决定默认显示哪个Tab（如果刚执行完并发转写，显示当前结果；否则显示历史）
     if has_current_results and st.session_state.get("show_concurrent_compare", False):
@@ -915,7 +1374,7 @@ if has_current_results or has_history:
             # 渲染结果
             render_concurrent_results(current_data, key_prefix="current")
         else:
-            st.info("暂无当前并发结果，请先执行并发转写")
+            pass
     
     with tab2:
         # 显示历史对比
@@ -999,89 +1458,93 @@ if has_current_results or has_history:
             st.info("暂无历史记录，执行并发转写后会自动保存")
 
 # ============================================================================
-# 板块分隔：MD审核与HTML预览
+# 板块分隔：MD审核与HTML预览（暂时隐藏）
 # ============================================================================
 
-# 添加视觉分隔
-st.markdown("---")
-st.markdown("<br>", unsafe_allow_html=True)
+# 暂时隐藏HTML预览区域
+SHOW_HTML_PREVIEW = False
 
-# 导入MD预览所需的模块
-from md_utils import md_to_html
-import streamlit.components.v1 as components
-from datetime import datetime
+if SHOW_HTML_PREVIEW:
+    # 添加视觉分隔
+    st.markdown("---")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-# 多语言文本
-T = {
-    "zh": {
-        "page_title": "本地MD审核与HTML预览",
-        "select_md": "选择Markdown文件：",
-        "edit": "编辑Markdown内容：",
-        "select_template": "选择HTML模板",
-        "font_size": "Markdown字号（px）",
-        "html_height": "HTML预览高度（px）",
-        "html_preview": "HTML预览",
-        "get_language()": "语言",
+    # 导入MD预览所需的模块
+    from md_utils import md_to_html
+    import streamlit.components.v1 as components
+    from datetime import datetime
+
+    # 多语言文本
+    T = {
+        "zh": {
+            "page_title": "本地MD审核与HTML预览",
+            "select_md": "选择Markdown文件：",
+            "edit": "编辑Markdown内容：",
+            "select_template": "选择HTML模板",
+            "font_size": "Markdown字号（px）",
+            "html_height": "HTML预览高度（px）",
+            "html_preview": "HTML预览",
+            "get_language()": "语言",
+        }
     }
-}
 
-st.title("📝 MD审核与HTML预览")
+    st.title("📝 MD审核与HTML预览")
 
-# 读取所有md文件（包括workspace和legacy目录）
-def get_all_md_files():
-    """获取所有markdown文件，包括workspace和legacy目录"""
-    all_files = []
-    
-    # 使用简化路径管理
-    project_root = PROJECT_ROOT
-    
-    # 从workspace目录读取
-    workspace_md_dir = get_md_review_dir()
-    if os.path.exists(workspace_md_dir):
-        try:
-            workspace_files = [f for f in os.listdir(workspace_md_dir) if f.endswith('.md')]
-            for f in workspace_files:
-                all_files.append({
-                    'name': f,
-                    'path': os.path.join(workspace_md_dir, f),
-                    'source': 'workspace'
-                })
-        except Exception as e:
-            st.warning(f"读取workspace目录失败: {e}")
-    
-    # 从legacy目录读取
-    legacy_md_dir = os.path.join(project_root, "app", "md_review")
-    if os.path.exists(legacy_md_dir):
-        try:
-            legacy_files = [f for f in os.listdir(legacy_md_dir) if f.endswith('.md')]
-            for f in legacy_files:
-                # 避免重复文件名
-                if not any(item['name'] == f for item in all_files):
+    # 读取所有md文件（包括workspace和legacy目录）
+    def get_all_md_files():
+        """获取所有markdown文件，包括workspace和legacy目录"""
+        all_files = []
+        
+        # 使用简化路径管理
+        project_root = PROJECT_ROOT
+        
+        # 从workspace目录读取
+        workspace_md_dir = get_md_review_dir()
+        if os.path.exists(workspace_md_dir):
+            try:
+                workspace_files = [f for f in os.listdir(workspace_md_dir) if f.endswith('.md')]
+                for f in workspace_files:
                     all_files.append({
                         'name': f,
-                        'path': os.path.join(legacy_md_dir, f),
-                        'source': 'legacy'
+                        'path': os.path.join(workspace_md_dir, f),
+                        'source': 'workspace'
                     })
+            except Exception as e:
+                st.warning(f"读取workspace目录失败: {e}")
+        
+        # 从legacy目录读取
+        legacy_md_dir = os.path.join(project_root, "app", "md_review")
+        if os.path.exists(legacy_md_dir):
+            try:
+                legacy_files = [f for f in os.listdir(legacy_md_dir) if f.endswith('.md')]
+                for f in legacy_files:
+                    # 避免重复文件名
+                    if not any(item['name'] == f for item in all_files):
+                        all_files.append({
+                            'name': f,
+                            'path': os.path.join(legacy_md_dir, f),
+                            'source': 'legacy'
+                        })
+            except Exception as e:
+                st.warning(f"读取legacy目录失败: {e}")
+        
+        # 按修改时间排序，最新的在前面
+        try:
+            all_files.sort(key=lambda x: os.path.getmtime(x['path']), reverse=True)
         except Exception as e:
-            st.warning(f"读取legacy目录失败: {e}")
-    
-    # 按修改时间排序，最新的在前面
-    try:
-        all_files.sort(key=lambda x: os.path.getmtime(x['path']), reverse=True)
-    except Exception as e:
-        st.warning(f"文件排序失败: {e}")
-    
-    return all_files
+            st.warning(f"文件排序失败: {e}")
+        
+        return all_files
 
-# 获取所有markdown文件
-md_files_data = get_all_md_files()
-md_files = [f['name'] for f in md_files_data]
+    # 获取所有markdown文件
+    md_files_data = get_all_md_files()
+    md_files = [f['name'] for f in md_files_data]
 
 
-# 显示文件统计信息
-if md_files_data:
-    workspace_count = len([f for f in md_files_data if f['source'] == 'workspace'])
-    legacy_count = len([f for f in md_files_data if f['source'] == 'legacy'])
+    # 显示文件统计信息
+    if md_files_data:
+        workspace_count = len([f for f in md_files_data if f['source'] == 'workspace'])
+        legacy_count = len([f for f in md_files_data if f['source'] == 'legacy'])
     
     col_stats1, col_stats2, col_stats3 = st.columns(3)
     with col_stats1:
@@ -1094,129 +1557,97 @@ if md_files_data:
     # 显示目录路径信息
     current_file_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file_dir)))
-else:
-    st.warning("未找到任何Markdown文件")
-    
-    # 显示调试信息
-    current_file_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file_dir)))
-    
-    with st.expander(f"调试信息"):
-        st.write("**检查的目录:**")
-        workspace_md_dir = get_md_review_dir()
-        legacy_md_dir = os.path.join(project_root, "app", "md_review")
-        
-        st.write(f"1. Workspace目录: {workspace_md_dir}")
-        st.write(f"   - 存在: {os.path.exists(workspace_md_dir)}")
-        if os.path.exists(workspace_md_dir):
-            try:
-                files = os.listdir(workspace_md_dir)
-                md_files = [f for f in files if f.endswith('.md')]
-                st.write(f"   - 总文件数: {len(files)}")
-                st.write(f"   - MD文件数: {len(md_files)}")
-            except Exception as e:
-                st.error(f"   - 读取失败: {e}")
-        
-        st.write(f"2. Legacy目录: {legacy_md_dir}")
-        st.write(f"   - 存在: {os.path.exists(legacy_md_dir)}")
-        if os.path.exists(legacy_md_dir):
-            try:
-                files = os.listdir(legacy_md_dir)
-                md_files = [f for f in files if f.endswith('.md')]
-                st.write(f"   - MD文件数: {len(md_files)}")
-            except Exception as e:
-                st.error(f"   - 读取失败: {e}")
 
-# 路径配置
-STATIC_DIR = get_static_dir()
-TEMPLATE_DIR = "static/templates"
-MD_DIR = get_md_review_dir()
-os.makedirs(STATIC_DIR, exist_ok=True)
-os.makedirs(MD_DIR, exist_ok=True)
+    # 路径配置
+    STATIC_DIR = get_static_dir()
+    TEMPLATE_DIR = "static/templates"
+    MD_DIR = get_md_review_dir()
+    os.makedirs(STATIC_DIR, exist_ok=True)
+    os.makedirs(MD_DIR, exist_ok=True)
 
-# 初始化变量，避免作用域问题
-selected = None
-edited = ""
-selected_file_data = None
+    # 初始化变量，避免作用域问题
+    selected = None
+    edited = ""
+    selected_file_data = None
 
-# 页面左右分栏（审核区和预览区用分割线分隔）
-col1, col_divider, col2 = st.columns([10, 0.5, 10])
+    # 页面左右分栏（审核区和预览区用分割线分隔）
+    col1, col_divider, col2 = st.columns([10, 0.5, 10])
 
-# 在中间列显示分割线
-with col_divider:
-    st.markdown("""
-        <div style="
-            width: 1px;
-            height: 100vh;
-            background: linear-gradient(to bottom, 
-                transparent 0%, 
-                #E0E0E0 10%, 
-                #E0E0E0 90%, 
-                transparent 100%);
-            margin: 0 auto;
-        "></div>
-    """, unsafe_allow_html=True)
+    # 在中间列显示分割线
+    with col_divider:
+        st.markdown("""
+            <div style="
+                width: 1px;
+                height: 100vh;
+                background: linear-gradient(to bottom, 
+                    transparent 0%, 
+                    #E0E0E0 10%, 
+                    #E0E0E0 90%, 
+                    transparent 100%);
+                margin: 0 auto;
+            "></div>
+            """, unsafe_allow_html=True)
 
-# 左侧：选择/编辑/预览Markdown
-with col1:
-    if md_files:
-        # 添加默认选项，避免自动加载第一个文件
-        file_options = ["--- 请选择Markdown文件 ---"] + md_files
-        
-        # 如果 session_state 中有指定的文件，自动选中（来自转写操作）
-        default_index = 0
-        if "current_md_file" in st.session_state and st.session_state["current_md_file"] in md_files:
-            # 只在首次触发时自动选中，用户手动选择后清除
-            if st.session_state.get("auto_select_triggered", False):
-                default_index = md_files.index(st.session_state["current_md_file"]) + 1
-        
-        selected = st.selectbox("选择Markdown文件：", file_options, index=default_index)
-        
-        # 如果用户手动选择了文件（非默认选项），清除自动选择标记
-        if selected != "--- 请选择Markdown文件 ---":
-            if "auto_select_triggered" in st.session_state:
-                # 如果当前选择的不是自动触发的文件，清除标记
-                if selected != st.session_state.get("current_md_file"):
-                    del st.session_state["auto_select_triggered"]
-                    if "current_md_file" in st.session_state:
-                        del st.session_state["current_md_file"]
-        
-        # 只有用户选择了具体文件才加载
-        if selected and selected != "--- 请选择Markdown文件 ---":
-            # 找到对应的文件数据
-            selected_file_data = next((f for f in md_files_data if f['name'] == selected), None)
-        
-            if selected_file_data:
-                # 读取文件内容
-                with open(selected_file_data['path'], 'r', encoding='utf-8') as f:
-                    md_content = f.read()
-                
-                # 显示文件信息
-                file_stat = os.stat(selected_file_data['path'])
-                st.caption(f"最后修改: {datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')}")
-                st.caption(f"文件大小: {file_stat.st_size:,} 字节")
-                
-                # 显示渲染后的Markdown内容
-                st.markdown(md_content, unsafe_allow_html=False)
-                edited = md_content
+    # 左侧：选择/编辑/预览Markdown
+    with col1:
+        if md_files:
+            # 添加默认选项，避免自动加载第一个文件
+            file_options = ["--- 请选择Markdown文件 ---"] + md_files
+            
+            # 如果 session_state 中有指定的文件，自动选中（来自转写操作）
+            default_index = 0
+            if "current_md_file" in st.session_state and st.session_state["current_md_file"] in md_files:
+                # 只在首次触发时自动选中，用户手动选择后清除
+                if st.session_state.get("auto_select_triggered", False):
+                    default_index = md_files.index(st.session_state["current_md_file"]) + 1
+            
+            selected = st.selectbox("选择Markdown文件：", file_options, index=default_index)
+            
+            # 如果用户手动选择了文件（非默认选项），清除自动选择标记
+            if selected != "--- 请选择Markdown文件 ---":
+                if "auto_select_triggered" in st.session_state:
+                    # 如果当前选择的不是自动触发的文件，清除标记
+                    if selected != st.session_state.get("current_md_file"):
+                        del st.session_state["auto_select_triggered"]
+                        if "current_md_file" in st.session_state:
+                            del st.session_state["current_md_file"]
+            
+            # 只有用户选择了具体文件才加载
+            if selected and selected != "--- 请选择Markdown文件 ---":
+                # 找到对应的文件数据
+                selected_file_data = next((f for f in md_files_data if f['name'] == selected), None)
+            
+                if selected_file_data:
+                    # 读取文件内容
+                    with open(selected_file_data['path'], 'r', encoding='utf-8') as f:
+                        md_content = f.read()
+                    
+                    # 显示文件信息
+                    file_stat = os.stat(selected_file_data['path'])
+                    st.caption(f"最后修改: {datetime.fromtimestamp(file_stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')}")
+                    st.caption(f"文件大小: {file_stat.st_size:,} 字节")
+                    
+                    # 显示渲染后的Markdown内容
+                    st.markdown(md_content, unsafe_allow_html=False)
+                    edited = md_content
+                else:
+                    st.error("无法找到选中的文件")
+                    edited = ""
             else:
-                st.error("无法找到选中的文件")
+                # 显示提示信息
+                st.info("👆 请从上方下拉框选择一个Markdown文件进行审核和预览")
                 edited = ""
         else:
-            # 显示提示信息
-            st.info("👆 请从上方下拉框选择一个Markdown文件进行审核和预览")
-            edited = ""
-    else:
-        st.info("暂无Markdown文件")
+            st.info("暂无Markdown文件")
 
-# 右侧：选择模板、HTML预览
-with col2:
-    if not md_files:
-        st.info("请先在左侧选择Markdown文件")
-    elif not selected or selected == "--- 请选择Markdown文件 ---":
-        st.info("👈 请先在左侧选择Markdown文件")
-    else:
-        template_files = [f for f in os.listdir(TEMPLATE_DIR) if f.endswith('.html')]
+    # 右侧：选择模板、HTML预览
+    with col2:
+        if not md_files:
+            st.info("请先在左侧选择Markdown文件")
+        elif not selected or selected == "--- 请选择Markdown文件 ---":
+            st.info("👈 请先在左侧选择Markdown文件")
+        else:
+            template_files = [f for f in os.listdir(TEMPLATE_DIR) if f.endswith('.html')]
         
         # 从文件名中提取频道信息，自动匹配频道绑定的模板
         default_template_idx = 0
@@ -1308,5 +1739,5 @@ with col2:
                 import traceback
                 with st.expander("查看详细错误信息"):
                     st.code(traceback.format_exc())
-        else:
-            st.info("请选择一个Markdown文件以查看HTML预览") 
+            else:
+                st.info("请选择一个Markdown文件以查看HTML预览")
