@@ -1,8 +1,16 @@
 # Excel转日历处理器
 
+> ⚠️ **已归档**：此文档已过时。该脚本的功能已整合到 `comprehensive_excel_processor.py` 中。  
+> 📅 **归档日期**：2025-01-XX  
+> 📝 **替代文档**：请参考 `scripts/README.md` 和 `docs/EXCEL_PROCESSING_SOLUTION.md`
+
+---
+
 ## 概述
 
 `excel_to_calendar_processor.py` 是一个专门用于处理 `publish_excel/` 目录下Excel文件并写入到 `publish_history_for_calendar.csv` 的脚本。该脚本具备完善的去重功能和增量更新能力。
+
+**注意**：此脚本已不存在，功能已整合到 `comprehensive_excel_processor.py` 中。
 
 ## 功能特点
 

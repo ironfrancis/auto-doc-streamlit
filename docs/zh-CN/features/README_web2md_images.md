@@ -19,7 +19,7 @@
 5. **文件保存**：保存处理后的Markdown文件
 
 ### 3. 图片保存位置
-- **目录**：`app/static/images/`
+- **目录**：`workspace/images/processed/`
 - **命名规则**：`web_img_{timestamp}_{hash}.{ext}`
 - **示例**：`web_img_1703123456_a1b2c3d4.jpg`
 
@@ -71,8 +71,8 @@ https://example.com/article-with-images
 
 这是一篇包含图片的文章。
 
-![图片1](/Users/username/Projects/Auto-doc-streamlit/app/static/images/web_img_1703123456_a1b2c3d4.jpg)
-![图片2](/Users/username/Projects/Auto-doc-streamlit/app/static/images/web_img_1703123457_e5f6g7h8.png)
+![图片1](/Users/username/Projects/Auto-doc-streamlit/workspace/images/processed/web_img_1703123456_a1b2c3d4.jpg)
+![图片2](/Users/username/Projects/Auto-doc-streamlit/workspace/images/processed/web_img_1703123457_e5f6g7h8.png)
 ```
 
 ## 注意事项
@@ -80,7 +80,7 @@ https://example.com/article-with-images
 1. **网络连接**：需要稳定的网络连接来下载图片
 2. **存储空间**：图片会占用本地存储空间
 3. **处理时间**：图片下载会增加处理时间
-4. **文件权限**：确保对 `app/static/images/` 目录有写权限
+4. **文件权限**：确保对 `workspace/images/processed/` 目录有写权限
 5. **重复下载**：相同URL的图片会生成不同的文件名
 
 ## 技术实现
@@ -105,7 +105,7 @@ https://example.com/article-with-images
    - 查看控制台错误信息
 
 2. **文件权限错误**
-   - 确保 `app/static/images/` 目录存在
+   - 确保 `workspace/images/processed/` 目录存在
    - 检查目录写权限
 
 3. **处理时间过长**

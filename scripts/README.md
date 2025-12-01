@@ -53,7 +53,7 @@ python scripts/process_excel_data.py
 
 ```
 scripts/
-├── excel_to_calendar_processor.py  # 主处理脚本
+├── comprehensive_excel_processor.py  # 主处理脚本（综合Excel数据处理器）
 ├── process_excel_data.py           # 快捷使用脚本
 ├── publish_excel/                  # Excel文件目录
 │   ├── 头条-AGI观察室.xlsx
@@ -103,7 +103,7 @@ workspace/data/publish_history_for_calendar.csv
 python scripts/process_excel_data.py
 
 # 方法2：使用主处理脚本
-python scripts/excel_to_calendar_processor.py
+python scripts/comprehensive_excel_processor.py
 ```
 
 ### 处理流程

@@ -27,12 +27,6 @@
 - `17_Publish_Calendar.py` - 发布日历
 - `content_creation.py` - 内容创作
 
-#### ✅ 备份页面
-- `backup/1_Creation_and_AI_Transcription.py`
-- `backup/5_LLM_Endpoint_Registration.py`
-- `backup/original_1_Creation_and_AI_Transcription.py`
-- `backup/original_5_LLM_Endpoint_Registration.py`
-
 ### 3. 替换的路径代码模式
 
 #### 旧模式（已替换）

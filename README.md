@@ -46,15 +46,12 @@ uv sync
 #### 方式一：使用统一启动脚本（推荐）
 ```bash
 # 使用Python启动脚本
-python3 start_app.py
-
-# 或使用Shell启动脚本
-./start.sh
+python3 run_streamlit.py
 ```
 
 #### 方式二：直接启动Streamlit
 ```bash
-streamlit run app.py
+streamlit run homepage.py
 ```
 
 ---
@@ -67,7 +64,7 @@ streamlit run app.py
 - **静态图片**：已存在的静态资源路径保持不变
 
 ### 图片处理流程
-1. **网络图片下载**：自动下载并保存到 `app/static/images/` 目录
+1. **网络图片下载**：自动下载并保存到 `workspace/images/processed/` 目录
 2. **本地图片复制**：将本地图片复制到静态目录
 3. **路径更新**：自动更新Markdown中的图片路径为绝对路径
 4. **HTML转换**：HTML中自动转换为Web可访问路径
@@ -88,8 +85,8 @@ streamlit run app.py
 ![相对路径](./images/photo.jpg)
 
 # 处理后的结果（使用绝对路径）
-![网络图片](/Users/username/Projects/Auto-doc-streamlit/app/static/images/img_1703123456_a1b2c3d4.jpg)
-![本地图片](/Users/username/Projects/Auto-doc-streamlit/app/static/images/photo_1.png)
+![网络图片](/Users/username/Projects/Auto-doc-streamlit/workspace/images/processed/img_1703123456_a1b2c3d4.jpg)
+![本地图片](/Users/username/Projects/Auto-doc-streamlit/workspace/images/processed/photo_1.png)
 
 # HTML中的结果（自动转换为Web路径）
 <img src="/static/images/img_1703123456_a1b2c3d4.jpg" alt="网络图片">
@@ -101,7 +98,7 @@ streamlit run app.py
 - 启用 "Download Images to Local" 选项
 - 网页中的图片会自动下载到本地
 - Markdown内容中的图片路径会自动更新为绝对路径
-- 图片保存在 `static/images/` 目录
+- 图片保存在 `workspace/images/processed/` 目录
 
 ---
 
@@ -109,10 +106,10 @@ streamlit run app.py
 
 ```
 📚 [项目文档](./docs/) - 详细的功能说明和使用指南
-🚀 [主应用入口](./app.py) - Streamlit应用主入口文件
+🚀 [主应用入口](./homepage.py) - Streamlit应用主入口文件
 📄 [页面文件](./pages/) - Streamlit页面模块
 ⚙️ [配置目录](./config/) - 配置文件和模板信息
-🛠️ [核心源码](./src/) - 核心业务逻辑和工具函数
+🛠️ [核心源码](./core/) - 核心业务逻辑和工具函数
 📊 [静态资源](./static/) - CSS、图片等静态文件
 📝 [模板文件](./templates/) - HTML模板文件
 ```
